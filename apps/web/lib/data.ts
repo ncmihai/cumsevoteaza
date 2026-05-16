@@ -190,7 +190,7 @@ export async function getMemberDirectoryData(filters?: { chamber?: string; group
 
   return {
     members: filterDirectoryItems(items, filters),
-    groups: demoDataset.groups,
+    groups: filterMemberDirectoryGroups(demoDataset.groups, demoDataset.mandates, demoDataset.groupMemberships, demoDataset.legislatures, filters),
     parties: demoDataset.parties,
     legislatures: demoDataset.legislatures,
     sourceKind: "demo"
@@ -425,7 +425,13 @@ async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: 
       const party = parties.find((item) => item.id === group?.partyId);
       return { member, mandate, group, party };
     });
-    return { members: filterDirectoryItems(items, filters), groups, parties, legislatures, sourceKind: "database" };
+    return {
+      members: filterDirectoryItems(items, filters),
+      groups: filterMemberDirectoryGroups(groups, mandates, memberships, legislatures, filters),
+      parties,
+      legislatures,
+      sourceKind: "database"
+    };
   } catch {
     return undefined;
   } finally {
@@ -878,6 +884,35 @@ function filterDirectoryItems(
         .some((value) => value.includes(query));
     })
     .sort((a, b) => a.member.displayName.localeCompare(b.member.displayName, "ro"));
+}
+
+function filterMemberDirectoryGroups(
+  groups: ParliamentaryGroup[],
+  mandates: MemberMandate[],
+  memberships: MemberGroupMembership[],
+  legislatures: Legislature[],
+  filters?: { chamber?: string; legislature?: string }
+): ParliamentaryGroup[] {
+  const chamber = filters?.chamber === "senate" || filters?.chamber === "deputies" ? filters.chamber : undefined;
+  const legislature = filters?.legislature ? legislatures.find((item) => item.id === filters.legislature) : undefined;
+  if (!chamber && !legislature) return groups;
+
+  return groups
+    .filter((group) => !chamber || group.chamber === chamber)
+    .filter((group) => {
+      if (!legislature) return true;
+      return memberships.some((membership) => {
+        if (membership.groupId !== group.id) return false;
+        return mandates.some(
+          (mandate) =>
+            mandate.memberId === membership.memberId &&
+            mandate.legislatureId === legislature.id &&
+            mandate.chamber === group.chamber &&
+            membership.startsOn <= earliestDate(mandate.endsOn, legislature.endsOn)! &&
+            (membership.endsOn ?? "9999-12-31") >= mandate.startsOn
+        );
+      });
+    });
 }
 
 function normalizeSearch(value?: string): string {

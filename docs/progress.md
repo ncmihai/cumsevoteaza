@@ -789,3 +789,12 @@ Verification:
   legislature period, instead of always showing the newest imported group.
 - Tightened project sponsor group filtering so a sponsor group only matches
   when the member's group membership overlaps the project date.
+- Made group/party filter options dynamic. When a legislature is selected, the
+  selector now includes only groups that had member memberships overlapping
+  that legislature.
+- Member group chips now include the chamber label, so same-name groups from
+  Senate and Deputies are distinguishable.
+- Data check examples:
+  - `2020-2024`: 12 period-relevant chamber groups
+  - `2012-2016`: 10 period-relevant chamber groups
+  - `2004-2008`: 8 period-relevant chamber groups

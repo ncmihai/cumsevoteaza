@@ -1,6 +1,17 @@
 import { sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
-import { demoDataset, type Bill, type ChamberId, type Legislature, type ParliamentaryGroup, type SourceSnapshot, type Vote } from "@cumsevoteaza/parliament-model";
+import * as schema from "@cumsevoteaza/db";
+import {
+  demoDataset,
+  type Bill,
+  type ChamberId,
+  type Legislature,
+  type MemberGroupMembership,
+  type MemberMandate,
+  type ParliamentaryGroup,
+  type SourceSnapshot,
+  type Vote
+} from "@cumsevoteaza/parliament-model";
 
 export type SourceStatusFilter = "parsed" | "partial" | "failed";
 
@@ -105,28 +116,45 @@ export function decodeCursor(cursor?: string): { date: string; id: string } | un
   }
 }
 
-export async function getDirectoryFilterOptions(): Promise<DirectoryFilterOptions> {
+export async function getDirectoryFilterOptions(filters: Pick<ExplorerFilters, "chamber" | "legislature"> = {}): Promise<DirectoryFilterOptions> {
   if (!process.env.DATABASE_URL) {
-    return { groups: demoDataset.groups, legislatures: demoDataset.legislatures };
+    return {
+      groups: filterGroupsForPeriod(demoDataset.groups, demoDataset.mandates, demoDataset.groupMemberships, demoDataset.legislatures, filters),
+      legislatures: demoDataset.legislatures
+    };
   }
 
   const session = createDbSession();
   try {
-    const [groupRows, legislatureRows] = await Promise.all([
-      session.db.execute<GroupRow>(sql`
-        select id, party_id, chamber, short_name, name, color
-        from parliamentary_groups
-        order by chamber, short_name
-      `),
+    const [groupRows, legislatureRows, mandateRows, membershipRows] = await Promise.all([
+      session.db.execute<GroupRow>(groupOptionsSql(filters)),
       session.db.execute<LegislatureRow>(sql`
         select id, label, starts_on, ends_on
         from legislatures
         order by starts_on desc
-      `)
+      `),
+      session.db.select().from(schema.memberMandates),
+      session.db.select().from(schema.memberGroupMemberships)
     ]);
-    return { groups: groupRows.map(mapGroupRow), legislatures: legislatureRows.map(mapLegislatureRow) };
+    const legislatures = legislatureRows.map(mapLegislatureRow);
+    const groups = groupRows.map(mapGroupRow);
+    return {
+      groups: filters.legislature
+        ? filterGroupsForPeriod(
+            groups,
+            mandateRows.map(mapMemberMandateForFilters),
+            membershipRows.map(mapMemberGroupMembershipForFilters),
+            legislatures,
+            filters
+          )
+        : groups,
+      legislatures
+    };
   } catch {
-    return { groups: demoDataset.groups, legislatures: demoDataset.legislatures };
+    return {
+      groups: filterGroupsForPeriod(demoDataset.groups, demoDataset.mandates, demoDataset.groupMemberships, demoDataset.legislatures, filters),
+      legislatures: demoDataset.legislatures
+    };
   } finally {
     await session.close();
   }
@@ -633,6 +661,92 @@ function mapLegislatureRow(row: LegislatureRow): Legislature {
     startsOn: dateString(row.starts_on),
     endsOn: dateString(row.ends_on)
   };
+}
+
+function groupOptionsSql(filters: Pick<ExplorerFilters, "chamber" | "legislature">) {
+  const conditions = [];
+  if (filters.chamber) conditions.push(sql`pg.chamber = ${filters.chamber}`);
+
+  if (filters.legislature) {
+    conditions.push(sql`exists (
+      select 1
+      from member_group_memberships mgm
+      join member_mandates mm on mm.member_id = mgm.member_id
+      join legislatures l on l.id = mm.legislature_id
+      where mgm.group_id = pg.id
+        and l.id = ${filters.legislature}
+        and mm.chamber = pg.chamber
+        and mgm.starts_on <= coalesce(mm.ends_on, l.ends_on)
+        and coalesce(mgm.ends_on, date '9999-12-31') >= mm.starts_on
+    )`);
+  }
+
+  const where = conditions.length ? sql`where ${sql.join(conditions, sql` and `)}` : sql``;
+  return sql`
+    select id, party_id, chamber, short_name, name, color
+    from parliamentary_groups pg
+    ${where}
+    order by pg.chamber, pg.short_name
+  `;
+}
+
+function filterGroupsForPeriod(
+  groups: ParliamentaryGroup[],
+  mandates: MemberMandate[],
+  memberships: MemberGroupMembership[],
+  legislatures: Legislature[],
+  filters: Pick<ExplorerFilters, "chamber" | "legislature">
+): ParliamentaryGroup[] {
+  const legislature = filters.legislature ? legislatures.find((item) => item.id === filters.legislature) : undefined;
+  if (!legislature && !filters.chamber) return groups;
+
+  return groups.filter((group) => {
+    if (filters.chamber && group.chamber !== filters.chamber) return false;
+    if (!legislature) return true;
+    return memberships.some((membership) => {
+      if (membership.groupId !== group.id) return false;
+      return mandates.some(
+        (mandate) =>
+          mandate.memberId === membership.memberId &&
+          mandate.legislatureId === legislature.id &&
+          mandate.chamber === group.chamber &&
+          overlaps(membership.startsOn, membership.endsOn, mandate.startsOn, earliestDateForFilters(mandate.endsOn, legislature.endsOn))
+      );
+    });
+  });
+}
+
+function mapMemberMandateForFilters(row: typeof schema.memberMandates.$inferSelect): MemberMandate {
+  return {
+    id: row.id,
+    memberId: row.memberId,
+    legislatureId: row.legislatureId,
+    chamber: row.chamber,
+    startsOn: row.startsOn,
+    endsOn: row.endsOn ?? undefined,
+    constituency: row.constituency ?? undefined,
+    status: row.status as MemberMandate["status"],
+    sourceSnapshotId: row.sourceSnapshotId ?? undefined
+  };
+}
+
+function mapMemberGroupMembershipForFilters(row: typeof schema.memberGroupMemberships.$inferSelect): MemberGroupMembership {
+  return {
+    id: row.id,
+    memberId: row.memberId,
+    groupId: row.groupId,
+    startsOn: row.startsOn,
+    endsOn: row.endsOn ?? undefined,
+    sourceSnapshotId: row.sourceSnapshotId ?? undefined
+  };
+}
+
+function overlaps(leftStart: string, leftEnd: string | undefined | null, rightStart: string, rightEnd: string | undefined | null): boolean {
+  return leftStart <= (rightEnd ?? "9999-12-31") && (leftEnd ?? "9999-12-31") >= rightStart;
+}
+
+function earliestDateForFilters(...dates: Array<string | undefined | null>): string | undefined {
+  return dates.filter((date): date is string => Boolean(date)).sort()[0];
 }
 
 function jsonRecord(value: unknown): Record<string, string> {

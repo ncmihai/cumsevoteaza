@@ -16,6 +16,7 @@ export default async function MembersPage({
   const locale: AppLocale = isLocale(rawLocale) ? rawLocale : "ro";
   const messages = messagesFor(locale);
   const data = await getMemberDirectoryData(filters);
+  const activeGroupFilter = filters.group && data.groups.some((group) => group.id === filters.group) ? filters.group : undefined;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -30,7 +31,7 @@ export default async function MembersPage({
 
       <form action={`/${locale}/members`} className="mt-6 grid gap-3 border border-slate-300 bg-white p-4 md:grid-cols-[minmax(220px,1fr)_220px_auto]">
         {filters.chamber ? <input type="hidden" name="chamber" value={filters.chamber} /> : null}
-        {filters.group ? <input type="hidden" name="group" value={filters.group} /> : null}
+        {activeGroupFilter ? <input type="hidden" name="group" value={activeGroupFilter} /> : null}
         <label className="flex items-center gap-2 border border-slate-300 px-3 py-2">
           <input
             className="min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 outline-none"
@@ -58,7 +59,7 @@ export default async function MembersPage({
       </form>
 
       <section className="mt-6 flex flex-wrap gap-2">
-        <FilterLink href={memberDirectoryHref(locale, { q: filters.q, legislature: filters.legislature })} active={!filters.chamber && !filters.group}>
+        <FilterLink href={memberDirectoryHref(locale, { q: filters.q, legislature: filters.legislature })} active={!filters.chamber && !activeGroupFilter}>
           Toți
         </FilterLink>
         <FilterLink href={memberDirectoryHref(locale, { chamber: "senate", q: filters.q, legislature: filters.legislature })} active={filters.chamber === "senate"}>
@@ -71,8 +72,8 @@ export default async function MembersPage({
 
       <section className="mt-3 flex flex-wrap gap-2">
         {data.groups.map((group) => (
-          <FilterLink key={group.id} href={memberDirectoryHref(locale, { group: group.id, q: filters.q, legislature: filters.legislature })} active={filters.group === group.id}>
-            {group.shortName}
+          <FilterLink key={group.id} href={memberDirectoryHref(locale, { group: group.id, q: filters.q, legislature: filters.legislature })} active={activeGroupFilter === group.id}>
+            {group.shortName} · {chamberLabels[locale][group.chamber]}
           </FilterLink>
         ))}
       </section>

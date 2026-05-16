@@ -17,7 +17,7 @@ export default async function VotesPage({
   const filters = parseExplorerFilters(rawFilters);
   const [data, filterOptions] = await Promise.all([
     getVoteExplorerData({ limit: 10, filters }),
-    getDirectoryFilterOptions()
+    getDirectoryFilterOptions(filters)
   ]);
   const labels = pageLabels[locale];
 
