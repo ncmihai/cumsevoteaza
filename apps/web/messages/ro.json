@@ -1,0 +1,30 @@
+{
+  "nav": {
+    "votes": "Voturi",
+    "bills": "Proiecte",
+    "members": "Parlamentari",
+    "parties": "Partide",
+    "sources": "Surse"
+  },
+  "home": {
+    "eyebrow": "Legislatura 2024-2028",
+    "title": "Cum se votează în Parlamentul României",
+    "subtitle": "Explorează voturi, proiecte legislative și istoricul parlamentar al fiecărui membru, cu linkuri către sursele oficiale.",
+    "searchPlaceholder": "Caută parlamentar, partid, PL-x, L316/2025...",
+    "latestVote": "Vot demonstrativ importat",
+    "memberHistory": "Istoric parlamentar",
+    "sourceProof": "Dovadă sursă"
+  },
+  "common": {
+    "view": "Vezi",
+    "source": "Sursă oficială",
+    "period": "Perioadă",
+    "chamber": "Cameră",
+    "type": "Tip",
+    "details": "Detalii",
+    "votesFor": "Pentru",
+    "votesAgainst": "Contra",
+    "abstentions": "Abțineri",
+    "proposals": "Propuneri"
+  }
+}

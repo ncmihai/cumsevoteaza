@@ -1,0 +1,30 @@
+{
+  "nav": {
+    "votes": "Votes",
+    "bills": "Bills",
+    "members": "Members",
+    "parties": "Parties",
+    "sources": "Sources"
+  },
+  "home": {
+    "eyebrow": "2024-2028 legislature",
+    "title": "How Romania's Parliament votes",
+    "subtitle": "Explore votes, bills, and each member's parliamentary career history with links back to official sources.",
+    "searchPlaceholder": "Search member, party, PL-x, L316/2025...",
+    "latestVote": "Imported demo vote",
+    "memberHistory": "Parliamentary history",
+    "sourceProof": "Source proof"
+  },
+  "common": {
+    "view": "View",
+    "source": "Official source",
+    "period": "Period",
+    "chamber": "Chamber",
+    "type": "Type",
+    "details": "Details",
+    "votesFor": "For",
+    "votesAgainst": "Against",
+    "abstentions": "Abstentions",
+    "proposals": "Proposals"
+  }
+}
