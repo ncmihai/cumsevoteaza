@@ -114,6 +114,7 @@ implementation steps.
 - [x] Change source discovery dedupe to canonical official URLs plus official identifiers.
 - [x] Fix member directory search so politician last-name queries work.
 - [x] Reorder chamber seat allocation left-to-right by party sector.
+- [x] Extract Chamber nominal vote subject metadata before broad 2025 backfill.
 - [x] Apply the new migration to Neon before deploying the cron route.
 - [x] Add `CRON_SECRET` in Vercel before enabling cron in production.
 - [ ] Tune Chamber seed/discovery URLs against full official 2024-present list pages before running a full backfill.
@@ -186,6 +187,8 @@ implementation steps.
   - Source discovery now dedupes legacy and ORDS Chamber vote links to the same canonical official source URL.
   - Member directory search smoke passed for `/ro/members?q=bica`, returning the roster-backed `Andra Bică` result.
   - Deputies vote page smoke passed for `/ro/votes/vote-deputies-https-www-cdep-ro-ords-pls-steno-evot2015-nominal-idv-35953`; Playwright screenshot confirmed party seats now allocate left-to-right.
+  - Chamber nominal vote parser smoke passed for `idv=35797`: extracted `PL-x 61/2025`, the full voted subject, 293 nominal rows, and no warnings.
+  - Re-imported `idv=35797` into Neon; deployed page now shows `Vot final - PL-x 61/2025 - Adoptare` and the linked bill subject.
 
 ## Import Proof
 

@@ -116,6 +116,12 @@ export async function persistChamberVote(parsed: ParsedChamberVote) {
   try {
     await upsertDefaultLegislature(session.db);
     await upsertSourceSnapshot(session.db, parsed.sourceSnapshot);
+    if (parsed.bill) {
+      await ensurePlaceholderBill(session.db, {
+        ...parsed.bill,
+        sourceSnapshotIds: [parsed.sourceSnapshot.id]
+      });
+    }
     await upsertMembers(session.db, parsed.members);
     await upsertDerivedDeputiesMandates(session.db, parsed.members.map((member) => member.id));
     await upsertVote(session.db, parsed.vote);

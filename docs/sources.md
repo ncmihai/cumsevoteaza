@@ -62,6 +62,10 @@ Observed bill page structure:
   The working 2024-present endpoint is the ORDS path
   `https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=<id>`, so legacy
   `/pls/steno` vote links are canonicalized before import.
+- Chamber nominal vote pages can contain the full voted subject in a table row
+  labelled `Subiect vot`, including the `PL-x` identifier and a project detail
+  link. This must be parsed before broad backfill; otherwise the vote page may
+  only show the generic HTML title `VOT ELECTRONIC`.
 - Source discovery uses canonical official URLs and official identifiers where
   present, so legacy and ORDS variants of the same Chamber vote detail do not
   create duplicate queue entries.
@@ -85,6 +89,8 @@ Observed bill page structure:
 
 - Store raw source URL, fetched timestamp, content hash, parser version, and
   parse status for every import.
+- If a nominal vote has member rows but no voted-subject metadata, store it as
+  partial with an inspectable warning instead of treating it as complete.
 - Parser tests use saved fixtures so UI and parsing behavior do not depend on
   live network availability.
 - Empty or inconsistent official values are stored as `unknown`, not guessed.

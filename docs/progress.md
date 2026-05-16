@@ -331,3 +331,28 @@ Append-only implementation history.
   - `npm run test` passed.
   - `npm run typecheck` passed.
   - `npm run build` passed outside the sandbox.
+
+## 2026-05-16 — Chamber Vote Subject Metadata
+
+- Investigated deployed vote `idv=35797`, which showed a generic Chamber vote
+  title without the voted subject.
+- Confirmed the official CDEP nominal vote page itself contains the needed
+  `Subiect vot` block, including:
+  - `PL-x 61/2025`;
+  - the linked Chamber project page;
+  - the full subject text;
+  - nominal rows and official totals.
+- Updated the Chamber nominal vote parser to extract that subject block and
+  attach imported Chamber votes to a placeholder bill when the real bill detail
+  has not been imported yet.
+- Chamber nominal vote imports now record a parser warning and partial snapshot
+  when nominal rows exist but no subject metadata is found.
+- Added `--persist` support to the `chamber:vote` CLI command for targeted
+  one-vote repair imports.
+- Re-imported `idv=35797` into Neon:
+  - vote title: `Vot final - PL-x 61/2025 - Adoptare`;
+  - bill id: `bill-pl-x-61-2025`;
+  - nominal rows: 293;
+  - warnings: none.
+- Deployed page smoke confirmed the vote now shows the `PL-x 61/2025` title and
+  the health-law subject from the official source.

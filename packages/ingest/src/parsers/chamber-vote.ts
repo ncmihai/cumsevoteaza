@@ -1,9 +1,11 @@
 import * as cheerio from "cheerio";
-import type { IndividualVote, Member, SourceSnapshot, Vote, VoteChoice } from "@cumsevoteaza/parliament-model";
+import type { Bill, IndividualVote, Member, SourceSnapshot, Vote, VoteChoice } from "@cumsevoteaza/parliament-model";
+import { billIdForIdentifier, canonicalBillIdentifier, findOfficialIdentifiers, identifierRecord } from "./identifiers";
 import { cleanText, slugify, snapshotFor, titleCase } from "./utils";
 
 export interface ParsedChamberVote {
   sourceSnapshot: SourceSnapshot;
+  bill?: Bill;
   vote: Vote;
   members: Member[];
   individualVotes: IndividualVote[];
@@ -19,6 +21,7 @@ export function parseChamberNominalVote(html: string, sourceUrl: string): Parsed
   const warnings: string[] = [];
   const members = new Map<string, Member>();
   const individualVotes: IndividualVote[] = [];
+  const subject = extractVoteSubject($, sourceUrl);
 
   $("table tr").each((_, row) => {
     const cells = $(row).find("td").toArray().map((cell) => cleanText($(cell).text()));
@@ -54,6 +57,9 @@ export function parseChamberNominalVote(html: string, sourceUrl: string): Parsed
   if (individualVotes.length === 0) {
     warnings.push("No nominal vote rows detected. Source structure may require a specific Chamber parser update.");
   }
+  if (!subject) {
+    warnings.push("No Chamber vote subject metadata detected.");
+  }
 
   const officialTotals = extractOfficialTotals(text);
   if (officialTotals && individualVotes.length > 0) {
@@ -78,10 +84,12 @@ export function parseChamberNominalVote(html: string, sourceUrl: string): Parsed
       status: individualVotes.length > 0 && warnings.length === 0 ? "parsed" : individualVotes.length > 0 ? "partial" : "failed",
       notes: warnings.join(" ")
     },
+    bill: subject?.bill,
     vote: {
       id: voteId,
       chamber: "deputies",
-      title: $("title").first().text() || "Chamber nominal vote",
+      billId: subject?.bill?.id,
+      title: subject?.voteTitle ?? (cleanText($("title").first().text()) || "Chamber nominal vote"),
       heldOn,
       voteType: "nominal",
       totals,
@@ -91,6 +99,60 @@ export function parseChamberNominalVote(html: string, sourceUrl: string): Parsed
     individualVotes,
     warnings
   };
+}
+
+function extractVoteSubject($: cheerio.CheerioAPI, sourceUrl: string): { voteTitle: string; bill?: Bill } | undefined {
+  const subjectCell = $("tr")
+    .toArray()
+    .map((row) => $(row).find("td").toArray())
+    .find((cells) => /Subiect\s+vot/i.test(cleanText(cells[0] ? $(cells[0]).text() : "")))
+    ?.[1];
+  if (!subjectCell) return undefined;
+
+  const cell = $(subjectCell);
+  const subjectText = cleanText(cell.text());
+  if (!subjectText) return undefined;
+
+  const boldText = cleanText(cell.find("b").first().text());
+  const identifiers = findOfficialIdentifiers(`${subjectText} ${boldText}`);
+  const canonical = canonicalBillIdentifier(identifiers);
+  const billLink = cell.find("a[href*='upl_pck2015.proiect']").first();
+  const billLinkText = cleanText(billLink.text());
+  const billUrl = billLink.attr("href") ? new URL(billLink.attr("href")!.replace(/\\/g, "/"), sourceUrl).toString() : undefined;
+  const billId = canonical ? billIdForIdentifier(canonical) : billUrl ? `bill-deputies-${slugify(billUrl)}` : undefined;
+
+  const actionText = cell.clone().find("b, a").remove().end().text();
+  const voteAction = cleanText(actionText).match(/\b(Adoptare|Respingere|Retrimitere|Procedur[ăa]|Amendament|Vot final)\b/i)?.[0];
+  const voteTitle = cleanText([boldText, voteAction && !boldText.includes(voteAction) ? voteAction : undefined].filter(Boolean).join(" - ")) || subjectText.slice(0, 180);
+  const billTitle = cleanBillTitle(subjectText, boldText, billLinkText, voteAction);
+
+  return {
+    voteTitle,
+    bill: billId
+      ? {
+          id: billId,
+          slug: billId.replace(/^bill-/, ""),
+          title: billTitle || subjectText,
+          identifiers: identifierRecord(identifiers),
+          chamberOfOrigin: "deputies",
+          status: "unknown",
+          sourceSnapshotIds: []
+        }
+      : undefined
+  };
+}
+
+function cleanBillTitle(subjectText: string, boldText: string, billLinkText: string, voteAction?: string): string {
+  let title = subjectText;
+  for (const removable of [boldText, voteAction, billLinkText]) {
+    if (removable) title = title.replace(removable, " ");
+  }
+  title = title
+    .replace(/^\s*[-–—]\s*/, "")
+    .replace(/\s*[-–—]\s*lege\s+(?:ordinar[ăa]|organic[ăa])\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return title;
 }
 
 function totalsFromVotes(individualVotes: IndividualVote[]) {

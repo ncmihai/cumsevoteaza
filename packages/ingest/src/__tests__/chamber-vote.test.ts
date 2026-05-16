@@ -9,7 +9,7 @@ describe("parseChamberNominalVote", () => {
         <body>
           <table>
             <tr><td>Data:</td><td>03.12.2025</td></tr>
-            <tr><td>Subiect vot:</td><td>Vot final adoptare PL-x 429/2025</td></tr>
+            <tr><td>Subiect vot:</td><td><b>Vot final - PL-x 429/2025</b><br>Adoptare <a href="/ords/pls/proiecte/upl_pck2015.proiect?idp=22702">PL 429/2025</a> privind implementarea unor aspecte vizând punctul unic de acces european<br>- lege ordinara</td></tr>
             <tr><td>- Pentru (DA):</td><td>1</td></tr>
             <tr><td>- Contra (NU):</td><td>1</td></tr>
             <tr><td>- Abtineri (AB):</td><td>1</td></tr>
@@ -50,6 +50,13 @@ describe("parseChamberNominalVote", () => {
 
     expect(parsed.sourceSnapshot.status).toBe("parsed");
     expect(parsed.vote.heldOn).toBe("2025-12-03");
+    expect(parsed.vote.title).toBe("Vot final - PL-x 429/2025 - Adoptare");
+    expect(parsed.vote.billId).toBe("bill-pl-x-429-2025");
+    expect(parsed.bill).toMatchObject({
+      id: "bill-pl-x-429-2025",
+      title: "privind implementarea unor aspecte vizând punctul unic de acces european",
+      identifiers: { deputies: "PL-x 429/2025" }
+    });
     expect(parsed.vote.totals).toEqual({
       present: 4,
       for: 1,

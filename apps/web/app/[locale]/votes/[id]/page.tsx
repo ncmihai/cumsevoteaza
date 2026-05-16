@@ -23,7 +23,7 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
           <h1 className="mt-2 max-w-4xl text-3xl font-semibold text-slate-950">{vote.title}</h1>
           {bill ? (
             <Link href={`/${locale}/bills/${bill.slug}`} className="mt-2 block text-sm text-slate-600 underline">
-              {bill.identifiers.senate} · {bill.title}
+              {[bill.identifiers.senate, bill.identifiers.deputies].filter(Boolean).join(" / ")} · {bill.title}
             </Link>
           ) : null}
         </div>

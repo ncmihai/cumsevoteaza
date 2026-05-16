@@ -9,7 +9,7 @@ import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterInde
 import { parseSenateVote } from "./parsers/senate-vote";
 import { fetchOfficialSource } from "./fetch-source";
 import { canonicalizeOfficialUrl } from "./official-urls";
-import { persistRoster, persistSenateBill, persistSenateVote } from "./persist";
+import { persistChamberVote, persistRoster, persistSenateBill, persistSenateVote } from "./persist";
 import { snapshotFor } from "./parsers/utils";
 import { discoverDeputiesSources, discoverSenateSources, importPendingDiscoveries, runBackfill2024, runDailySync } from "./sync";
 
@@ -47,7 +47,11 @@ async function main() {
     const url = canonicalizeOfficialUrl(flag("url") ?? "https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=35953");
     try {
       const html = await loadHtml(url);
-      await writeImport("chamber-vote", parseChamberNominalVote(html, url), html);
+      const parsed = parseChamberNominalVote(html, url);
+      await writeImport("chamber-vote", parsed, html);
+      if (hasFlag("persist")) {
+        console.log(JSON.stringify(await persistChamberVote(parsed), null, 2));
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const snapshot = snapshotFor("chamber-nominal-vote", url, message, "failed", message);
