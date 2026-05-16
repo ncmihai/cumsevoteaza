@@ -92,7 +92,27 @@ export const legislature2012: Legislature = {
   endsOn: "2016-12-20"
 };
 
+export const legislature2008: Legislature = {
+  id: "leg-2008-2012",
+  label: "2008-2012",
+  startsOn: "2008-12-15",
+  endsOn: "2012-12-18"
+};
+
+export const legislature2004: Legislature = {
+  id: "leg-2004-2008",
+  label: "2004-2008",
+  startsOn: "2004-12-17",
+  endsOn: "2008-12-14"
+};
+
 export const legislatureCatalog: Record<string, Legislature> = {
+  "2004": legislature2004,
+  "2004-2008": legislature2004,
+  "leg-2004-2008": legislature2004,
+  "2008": legislature2008,
+  "2008-2012": legislature2008,
+  "leg-2008-2012": legislature2008,
   "2012": legislature2012,
   "2012-2016": legislature2012,
   "leg-2012-2016": legislature2012,
@@ -112,7 +132,7 @@ export function legislatureFromFlag(value: string | undefined): Legislature {
   const normalized = value.trim().toLowerCase();
   const legislature = legislatureCatalog[normalized];
   if (!legislature) {
-    throw new Error(`Unsupported legislature "${value}". Supported values: 2012, 2016, 2020, 2024.`);
+    throw new Error(`Unsupported legislature "${value}". Supported values: 2004, 2008, 2012, 2016, 2020, 2024.`);
   }
   return legislature;
 }
@@ -126,10 +146,12 @@ export const partyCatalog: Record<string, Party> = {
   alde: { id: "party-alde", slug: "alde", shortName: "ALDE", name: "Alianța Liberalilor și Democraților", color: "#f97316" },
   pmp: { id: "party-pmp", slug: "pmp", shortName: "PMP", name: "Partidul Mișcarea Populară", color: "#2563eb" },
   pdl: { id: "party-pdl", slug: "pdl", shortName: "PDL", name: "Partidul Democrat Liberal", color: "#f97316" },
+  pd: { id: "party-pd", slug: "pd", shortName: "PD", name: "Partidul Democrat", color: "#f97316" },
+  prm: { id: "party-prm", slug: "prm", shortName: "PRM", name: "Partidul România Mare", color: "#7f1d1d" },
+  pur: { id: "party-pur", slug: "pur", shortName: "PUR", name: "Partidul Umanist din România", color: "#0f766e" },
   "pp-dd": { id: "party-pp-dd", slug: "pp-dd", shortName: "PP-DD", name: "Partidul Poporului - Dan Diaconescu", color: "#7c3aed" },
   pc: { id: "party-pc", slug: "pc", shortName: "PC", name: "Partidul Conservator", color: "#0f766e" },
   unpr: { id: "party-unpr", slug: "unpr", shortName: "UNPR", name: "Uniunea Națională pentru Progresul României", color: "#0ea5e9" },
-  usl: { id: "party-usl", slug: "usl", shortName: "USL", name: "Uniunea Social Liberală", color: "#7f1d1d" },
   "pro-romania": { id: "party-pro-romania", slug: "pro-romania", shortName: "PRO România", name: "PRO România", color: "#0e7490" },
   "sos-ro": { id: "party-sos-ro", slug: "sos-ro", shortName: "SOS RO", name: "SOS România", color: "#7f1d1d" },
   pot: { id: "party-pot", slug: "pot", shortName: "POT", name: "Partidul Oamenilor Tineri", color: "#9333ea" },
@@ -146,10 +168,13 @@ export const partyCatalog: Record<string, Party> = {
 
 export function partyFromText(value: string): Party | undefined {
   const text = normalize(value);
-  if (text.includes("uniunea social liberala") || /\busl\b/.test(text)) return partyCatalog.usl;
+  if (isCoalitionText(text)) return undefined;
   if (text.includes("alianta liberalilor") || /\balde\b/.test(text)) return partyCatalog.alde;
   if (text.includes("miscarea populara") || /\bpmp\b/.test(text)) return partyCatalog.pmp;
   if (text.includes("democrat liberal") || /\bpdl\b/.test(text)) return partyCatalog.pdl;
+  if (text.includes("partidul democrat") || /\bpd\b/.test(text)) return partyCatalog.pd;
+  if (text.includes("romania mare") || /\bprm\b/.test(text)) return partyCatalog.prm;
+  if (text.includes("partidul umanist") || /\bpur\b/.test(text)) return partyCatalog.pur;
   if (text.includes("partidul poporului") || /\bpp-?dd\b/.test(text)) return partyCatalog["pp-dd"];
   if (text.includes("partidul conservator") || /\bpc\b/.test(text)) return partyCatalog.pc;
   if (text.includes("progresul romaniei") || /\bunpr\b/.test(text)) return partyCatalog.unpr;
@@ -165,6 +190,18 @@ export function partyFromText(value: string): Party | undefined {
   if (text.includes("uniti pentru romania")) return partyCatalog.upr;
   if (text.includes("minoritat")) return partyCatalog.minoritati;
   return undefined;
+}
+
+function isCoalitionText(text: string): boolean {
+  return (
+    text.includes("uniunea social liberala") ||
+    /\busl\b/.test(text) ||
+    text.includes("psd+pc") ||
+    text.includes("psd-pc") ||
+    text.includes("alianta politica psd") ||
+    text.includes("dreptate si adevar") ||
+    /\bpnl-pd\b/.test(text)
+  );
 }
 
 export function shortNameFromGroupName(name: string): string {

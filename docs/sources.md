@@ -149,6 +149,8 @@ Observed bill page structure:
   - Official member profiles are available through
     `https://www.cdep.ro/ords/pls/parlam/structura2015.mp?cam=2&idl=1&idm=<id>&leg=<year>&pag=1`.
   - Verified `leg` values so far:
+    - `2004`
+    - `2008`
     - `2020`
     - `2016`
     - `2012`
@@ -162,15 +164,24 @@ Observed bill page structure:
     for 2016-2020.
   - A controlled ID scan from `1` to `650` parsed 417 valid Deputies profiles
     for 2012-2016.
+  - A controlled ID scan from `1` to `650` parsed 339 valid Deputies profiles
+    for 2008-2012.
+  - A controlled ID scan from `1` to `650` parsed 378 valid Deputies profiles
+    for 2004-2008.
   - Generic section pages such as `Activitate publică` can be returned for
     unused IDs and must be filtered before persistence.
   - The CDEP TLS chain can fail Node's default certificate verification. The
     importer keeps the normal verified fetch first, then uses a scoped
     certificate-validation fallback only for certificate failures.
-  - Historical party/group parsing currently recognizes older formations such
-    as ALDE, PMP, PDL, PP-DD, PC, UNPR, USL, and PRO România. Only parties
-    actually observed in parsed official rows are persisted by the roster
-    import.
+  - Historical party/group parsing currently recognizes older parties such as
+    ALDE, PMP, PDL, PD, PRM, PUR, PP-DD, PC, UNPR, and PRO România. Only
+    parties actually observed in parsed official rows are persisted by the
+    roster import.
+  - USL is intentionally not modelled as a party. It should be represented as a
+    coalition/alignment period involving PSD and PNL when the composition
+    alignment importer is added.
+  - Other alliance labels such as PSD+PC and DA PNL-PD are also blocked from
+    creating party rows until coalition/alliance modelling is introduced.
 - Senate 2020-2024:
   - The current `EnumGrupuri.aspx` endpoint does not expose an obvious
     historical index for all 2020 groups.

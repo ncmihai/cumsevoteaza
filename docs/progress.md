@@ -598,7 +598,6 @@ Verification:
   - PP-DD
   - PC
   - UNPR
-  - USL
   - PRO România
 - Fixed a historical import dependency issue where a parsed group could
   reference an older `partyId` that was not included in the normalized party
@@ -634,3 +633,48 @@ Verification:
 - Verification:
   - `npm run typecheck` passed.
   - `npm run test` passed.
+
+## 2026-05-16 — Deputies Historical Rosters: 2008-2012 and 2004-2008
+
+- Corrected USL modelling: USL is not a party row in this app. It is a
+  coalition/alignment concept involving PSD and PNL and belongs in future
+  government/composition alignment data, not `parties`.
+- Added 2008-2012 and 2004-2008 to the roster legislature catalog.
+- Added parser support for older real parties observed in official CDEP rows:
+  - PD
+  - PRM
+  - PUR
+- Added explicit coalition-text guards so labels like USL, PSD+PC, and DA
+  PNL-PD do not create party affiliation rows.
+- Verified official CDEP profile pages for `leg=2008` and `leg=2004`.
+  Historical group index URLs for those terms returned 404, so profile-ID
+  scanning remains the reliable official source path for Deputies.
+- Dry scans:
+  - 2008-2012: 339 valid Deputies profiles from IDs 1-650.
+  - 2004-2008: 378 valid Deputies profiles from IDs 1-650.
+- Imported 2008-2012 Deputies from official CDEP profile pages:
+  - 339 members
+  - 339 mandates
+  - 8 groups
+  - 6 parties
+  - 456 group memberships
+  - 335 party affiliations
+  - 802 committee memberships
+- Imported 2004-2008 Deputies from official CDEP profile pages:
+  - 378 members
+  - 378 mandates
+  - 8 groups
+  - 9 parties
+  - 504 group memberships
+  - 476 party affiliations
+  - 797 committee memberships
+- Refreshed people linkage after the new historical imports:
+  - 2440 members read
+  - 1679 people upserted
+  - 2440 members linked
+- Database verification:
+  - `leg-2008-2012` Deputies mandates: 339
+  - `leg-2004-2008` Deputies mandates: 378
+  - historical party rows present include PD, PRM, and PUR.
+  - `party-usl` is not present.
+  - no unscoped Deputies member ID spans multiple legislatures.

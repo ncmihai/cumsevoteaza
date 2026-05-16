@@ -313,13 +313,28 @@ implementation steps.
     2016-2020 has 361 Deputies mandates, 9 groups, 508 group memberships, and 929 committee memberships;
     2012-2016 has 417 Deputies mandates, 10 groups, 702 group memberships, and 857 committee memberships.
   - Added parser support for older parties/formations:
-    ALDE, PMP, PDL, PP-DD, PC, UNPR, USL, and PRO România.
+    ALDE, PMP, PDL, PP-DD, PC, UNPR, and PRO România.
   - Fixed historical group-to-party persistence so groups referencing old parties create the party rows before parliamentary groups are upserted.
   - Fixed duplicate member slug persistence across legislatures by suffixing duplicate member slugs with deterministic member IDs.
   - People backfill after the 2016/2012 imports:
     1723 members read, 1280 people upserted, 1723 members linked.
   - Database check after the import:
     417 Deputies mandates for `leg-2012-2016`, 361 Deputies mandates for `leg-2016-2020`, and no unscoped Deputies IDs spanning multiple legislatures.
+  - Corrected USL modelling: USL is not a party row; it belongs in future
+    coalition/alignment data involving PSD and PNL.
+  - Added 2008-2012 and 2004-2008 legislature support and parser support for
+    PD, PRM, and PUR.
+  - Added coalition-text guards so USL, PSD+PC, and DA PNL-PD do not create
+    party rows.
+  - Extended historical Deputies imports to 2008-2012 and 2004-2008 using official CDEP profile URLs:
+    2008-2012 has 339 Deputies mandates, 8 groups, 456 group memberships, and 802 committee memberships;
+    2004-2008 has 378 Deputies mandates, 8 groups, 504 group memberships, and 797 committee memberships.
+  - People backfill after the 2008/2004 imports:
+    2440 members read, 1679 people upserted, 2440 members linked.
+  - Database check after the 2008/2004 import:
+    339 Deputies mandates for `leg-2008-2012`, 378 Deputies mandates for
+    `leg-2004-2008`, `party-usl` absent, and no unscoped Deputies IDs spanning
+    multiple legislatures.
 
 ## Import Proof
 
@@ -352,12 +367,12 @@ implementation steps.
 ## Next Actions
 
 - Find an official, reliable source path for 2020 Senate unaffiliated members.
-- Find official historical Senate roster paths for 2016-2020 and 2012-2016.
-- Decide whether to seed manually curated historical party rows that are known from election history but not directly observed in parsed CDEP group/profile rows, such as USL, or keep persistence strictly source-observed.
+- Find official historical Senate roster paths for 2004-2008 through 2016-2020.
+- Add coalition/alliance modelling for USL, PSD+PC, and DA PNL-PD in composition alignment data instead of `parties`.
 - Add dated mandate end/replacement parsing so 2020-era compositions show exact seats-at-date, while member profiles can still show everyone who served during the term.
 - Treat historical member imports as person-linked source records, not one globally stable chamber ID; CDEP `idm` can be reused by legislature.
 - Smoke-check `/ro/compozitii` on Vercel after the 2020 roster deploy and confirm 2020 government stops show imported chamber data.
-- Extend the historical roster strategy to 2008-2012 after 2012-2016 is visually verified.
+- Extend the historical roster strategy to 2000-2004 after 2004-2008 is visually verified.
 - Add composition alignment imports for governments/coalitions so seat maps can distinguish government support vs opposition by period.
 - Expand member profile importers for earlier legislatures.
 - Replace member and party pages with DB read models after roster import exists.
