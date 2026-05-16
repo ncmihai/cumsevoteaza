@@ -46,7 +46,7 @@ implementation steps.
 - [x] Add `.vercelignore` for local env, data snapshots, and build outputs.
 - [x] Document Vercel settings and env vars in `docs/deployment.md`.
 - [x] Add deployment Git remote for `ncmihai/cumvoteaza`.
-- [ ] Push deploy-ready branch to the Vercel repo.
+- [x] Push deploy-ready branch to the Vercel repo.
 - [ ] Connect Vercel project to `ncmihai/cumvoteaza`.
 - [ ] Set `CUMSEVOTEAZA_SITE_PASSWORD` in Vercel.
 - [ ] Add Neon `DATABASE_URL` when the hosted database is ready.

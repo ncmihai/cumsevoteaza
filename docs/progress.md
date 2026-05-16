@@ -104,3 +104,4 @@ Append-only implementation history.
 - Added `.vercelignore` so local env files, data snapshots, and build outputs are not uploaded.
 - Added `docs/deployment.md` with Vercel project settings, env vars, and the deployment repo target `ncmihai/cumvoteaza`.
 - Added a local Git remote named `vercel` pointing at `https://github.com/ncmihai/cumvoteaza.git`.
+- Pushed deploy-ready `main` to `ncmihai/cumvoteaza` at commit `9566e5d`.
