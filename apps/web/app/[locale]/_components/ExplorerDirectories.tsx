@@ -170,12 +170,12 @@ function DirectoryFilters({
   return (
     <form
       ref={formRef}
-      className="mt-6 grid gap-3 border border-slate-300 bg-white p-4 md:grid-cols-[1.4fr_repeat(5,minmax(0,1fr))_auto]"
+      className="mt-6 grid gap-3 border border-slate-300 bg-white p-4 md:grid-cols-[1.4fr_repeat(6,minmax(0,1fr))_auto]"
       onSubmit={(event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const params = new URLSearchParams();
-        for (const key of ["q", "year", "month", "chamber", "sourceStatus", "group"]) {
+        for (const key of ["q", "legislature", "year", "month", "chamber", "sourceStatus", "group"]) {
           const value = String(data.get(key) ?? "").trim();
           if (value) params.set(key, value);
         }
@@ -186,6 +186,12 @@ function DirectoryFilters({
         <Search size={16} className="text-slate-500" aria-hidden="true" />
         <input className="min-w-0 flex-1 bg-transparent text-sm outline-none" name="q" defaultValue={filters.q ?? ""} placeholder={labels.search} />
       </label>
+      <Select
+        name="legislature"
+        label={labels.legislature}
+        defaultValue={filters.legislature ?? ""}
+        options={filterOptions.legislatures.map((legislature) => [legislature.id, legislature.label])}
+      />
       <Select name="year" label={labels.year} defaultValue={filters.year ?? ""} options={years.map((year) => [year, year])} />
       <Select name="month" label={labels.month} defaultValue={filters.month ?? ""} options={monthOptions(locale)} />
       <Select
@@ -329,6 +335,7 @@ export interface DirectoryLabels {
   loading: string;
   apply: string;
   search: string;
+  legislature: string;
   year: string;
   month: string;
   chamber: string;

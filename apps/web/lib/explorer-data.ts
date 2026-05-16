@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
-import { demoDataset, type Bill, type ChamberId, type ParliamentaryGroup, type SourceSnapshot, type Vote } from "@cumsevoteaza/parliament-model";
+import { demoDataset, type Bill, type ChamberId, type Legislature, type ParliamentaryGroup, type SourceSnapshot, type Vote } from "@cumsevoteaza/parliament-model";
 
 export type SourceStatusFilter = "parsed" | "partial" | "failed";
 
@@ -11,6 +11,7 @@ export interface ExplorerFilters {
   sourceStatus?: SourceStatusFilter;
   q?: string;
   group?: string;
+  legislature?: string;
 }
 
 export interface ExplorerQuery {
@@ -44,6 +45,7 @@ export interface ExplorerPageData<T> {
 
 export interface DirectoryFilterOptions {
   groups: ParliamentaryGroup[];
+  legislatures: Legislature[];
 }
 
 export interface HomeDashboardData {
@@ -76,6 +78,7 @@ export function parseExplorerFilters(input: Record<string, string | string[] | u
   const sourceStatus = first(input.sourceStatus);
   const q = first(input.q)?.trim();
   const group = first(input.group)?.trim();
+  const legislature = first(input.legislature)?.trim();
 
   return {
     ...(year ? { year } : {}),
@@ -83,7 +86,8 @@ export function parseExplorerFilters(input: Record<string, string | string[] | u
     ...(chamber === "senate" || chamber === "deputies" ? { chamber } : {}),
     ...(sourceStatus === "parsed" || sourceStatus === "partial" || sourceStatus === "failed" ? { sourceStatus } : {}),
     ...(q ? { q } : {}),
-    ...(group ? { group } : {})
+    ...(group ? { group } : {}),
+    ...(legislature ? { legislature } : {})
   };
 }
 
@@ -103,19 +107,26 @@ export function decodeCursor(cursor?: string): { date: string; id: string } | un
 
 export async function getDirectoryFilterOptions(): Promise<DirectoryFilterOptions> {
   if (!process.env.DATABASE_URL) {
-    return { groups: demoDataset.groups };
+    return { groups: demoDataset.groups, legislatures: demoDataset.legislatures };
   }
 
   const session = createDbSession();
   try {
-    const rows = await session.db.execute<GroupRow>(sql`
-      select id, party_id, chamber, short_name, name, color
-      from parliamentary_groups
-      order by chamber, short_name
-    `);
-    return { groups: rows.map(mapGroupRow) };
+    const [groupRows, legislatureRows] = await Promise.all([
+      session.db.execute<GroupRow>(sql`
+        select id, party_id, chamber, short_name, name, color
+        from parliamentary_groups
+        order by chamber, short_name
+      `),
+      session.db.execute<LegislatureRow>(sql`
+        select id, label, starts_on, ends_on
+        from legislatures
+        order by starts_on desc
+      `)
+    ]);
+    return { groups: groupRows.map(mapGroupRow), legislatures: legislatureRows.map(mapLegislatureRow) };
   } catch {
-    return { groups: demoDataset.groups };
+    return { groups: demoDataset.groups, legislatures: demoDataset.legislatures };
   } finally {
     await session.close();
   }
@@ -378,6 +389,15 @@ function voteConditions(filters: ExplorerFilters, cursor?: { date: string; id: s
     conditions.push(sql`v.held_on < ${range.end}::date`);
   }
   if (filters.chamber) conditions.push(sql`v.chamber = ${filters.chamber}`);
+  if (filters.legislature) {
+    conditions.push(sql`exists (
+      select 1
+      from legislatures l
+      where l.id = ${filters.legislature}
+        and v.held_on >= l.starts_on
+        and v.held_on < l.ends_on
+    )`);
+  }
   if (filters.sourceStatus) conditions.push(sql`ss.status = ${filters.sourceStatus}`);
   if (filters.q) {
     const pattern = `%${filters.q}%`;
@@ -404,6 +424,15 @@ function billConditions(filters: ExplorerFilters, cursor?: { date: string; id: s
     conditions.push(sql`${sortDate} < ${range.end}::date`);
   }
   if (filters.chamber) conditions.push(sql`b.chamber_of_origin = ${filters.chamber}`);
+  if (filters.legislature) {
+    conditions.push(sql`exists (
+      select 1
+      from legislatures l
+      where l.id = ${filters.legislature}
+        and ${sortDate} >= l.starts_on
+        and ${sortDate} < l.ends_on
+    )`);
+  }
   if (filters.sourceStatus) conditions.push(sql`ss.status = ${filters.sourceStatus}`);
   if (filters.q) {
     const pattern = `%${filters.q}%`;
@@ -415,7 +444,10 @@ function billConditions(filters: ExplorerFilters, cursor?: { date: string; id: s
       from bill_sponsors bs
       join member_group_memberships mgm on mgm.member_id = bs.member_id
       left join parliamentary_groups pg on pg.id = mgm.group_id
-      where bs.bill_id = b.id and (mgm.group_id = ${filters.group} or pg.party_id = ${filters.group})
+      where bs.bill_id = b.id
+        and mgm.starts_on <= ${sortDate}
+        and (mgm.ends_on is null or mgm.ends_on >= ${sortDate})
+        and (mgm.group_id = ${filters.group} or pg.party_id = ${filters.group})
     )`);
   }
   if (cursor) conditions.push(sql`(${sortDate} < ${cursor.date}::date or (${sortDate} = ${cursor.date}::date and b.id < ${cursor.id}))`);
@@ -594,6 +626,15 @@ function mapGroupRow(row: GroupRow): ParliamentaryGroup {
   };
 }
 
+function mapLegislatureRow(row: LegislatureRow): Legislature {
+  return {
+    id: row.id,
+    label: row.label,
+    startsOn: dateString(row.starts_on),
+    endsOn: dateString(row.ends_on)
+  };
+}
+
 function jsonRecord(value: unknown): Record<string, string> {
   if (!value) return {};
   if (typeof value === "string") {
@@ -688,6 +729,14 @@ interface GroupRow {
   short_name: string;
   name: string;
   color: string;
+}
+
+interface LegislatureRow {
+  [key: string]: unknown;
+  id: string;
+  label: string;
+  starts_on: string | Date;
+  ends_on: string | Date;
 }
 
 interface AggregateRow {

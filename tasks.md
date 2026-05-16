@@ -155,6 +155,8 @@ implementation steps.
 ## Active Milestone — Historical Members + Compoziții Foundation
 
 - [x] Pause broad `Voturi` / `Proiecte` expansion until the composition model is ready.
+- [x] Add legislature/election-period filters to member, vote, and project directories.
+- [x] Make member directory rows resolve mandate/group context inside the selected legislature period.
 - [x] Add canonical `people` identity table for cross-legislature and cross-chamber person matching.
 - [x] Link `members` to `people` with nullable `person_id` so existing imports remain valid.
 - [x] Add government/cabinet tables for PM, ministers, and other official government roles.

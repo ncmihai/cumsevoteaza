@@ -775,3 +775,17 @@ Verification:
   sending only the member/group fields used by the UI.
 - Replaced mobile per-stop full seat maps with compact chamber summaries, so
   the server does not render every historical chamber map at once.
+
+## 2026-05-16 — Legislature Filters for Directories
+
+- Added a shared `legislature` URL filter for vote and project explorers.
+- Populated directory filter options from the `legislatures` table, ordered by
+  newest election period first.
+- Vote filters now constrain `held_on` to the selected legislature period.
+- Project filters now constrain the known parliamentary date to the selected
+  legislature period.
+- Added a legislature selector to the members directory.
+- Member rows now resolve the mandate and group context inside the selected
+  legislature period, instead of always showing the newest imported group.
+- Tightened project sponsor group filtering so a sponsor group only matches
+  when the member's group membership overlaps the project date.

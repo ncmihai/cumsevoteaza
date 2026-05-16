@@ -78,6 +78,7 @@ export interface MemberDirectoryData {
   members: MemberDirectoryItem[];
   groups: ParliamentaryGroup[];
   parties: Party[];
+  legislatures: Legislature[];
   sourceKind: "database" | "demo";
 }
 
@@ -175,7 +176,7 @@ export async function getBillPageData(id: string): Promise<BillPageData | undefi
   };
 }
 
-export async function getMemberDirectoryData(filters?: { chamber?: string; group?: string; q?: string }): Promise<MemberDirectoryData> {
+export async function getMemberDirectoryData(filters?: { chamber?: string; group?: string; q?: string; legislature?: string }): Promise<MemberDirectoryData> {
   const dbData = await tryDatabaseMemberDirectory(filters);
   if (dbData) return dbData;
 
@@ -191,6 +192,7 @@ export async function getMemberDirectoryData(filters?: { chamber?: string; group
     members: filterDirectoryItems(items, filters),
     groups: demoDataset.groups,
     parties: demoDataset.parties,
+    legislatures: demoDataset.legislatures,
     sourceKind: "demo"
   };
 }
@@ -387,7 +389,7 @@ async function tryDatabaseBill(id: string): Promise<BillPageData | undefined> {
   }
 }
 
-async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: string; q?: string }): Promise<MemberDirectoryData | undefined> {
+async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: string; q?: string; legislature?: string }): Promise<MemberDirectoryData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
   const session = createDbSession();
@@ -395,21 +397,35 @@ async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: 
     const memberRows = await session.db.select().from(schema.members);
     const mandateRows = await session.db.select().from(schema.memberMandates);
     const membershipRows = await session.db.select().from(schema.memberGroupMemberships);
+    const legislatureRows = await session.db.select().from(schema.legislatures);
     const groupRows = await session.db.select().from(schema.parliamentaryGroups);
     const partyRows = await session.db.select().from(schema.parties);
     const groups = groupRows.map(mapGroup);
     const parties = partyRows.map(mapParty);
+    const legislatures = legislatureRows.map(mapLegislature).sort((a, b) => b.startsOn.localeCompare(a.startsOn));
+    const legislatureById = new Map(legislatures.map((legislature) => [legislature.id, legislature]));
+    const mandates = mandateRows.map(mapMemberMandate);
+    const memberships = membershipRows.map(mapMemberGroupMembership);
     const items = memberRows.map((memberRow) => {
       const member = mapMember(memberRow);
-      const mandate = mandateRows
-        .map(mapMemberMandate)
-        .find((item) => item.memberId === member.id && (!filters?.chamber || item.chamber === filters.chamber));
-      const membership = latestMembership(membershipRows.map(mapMemberGroupMembership).filter((item) => item.memberId === member.id));
+      const memberMandates = mandates.filter(
+        (item) =>
+          item.memberId === member.id &&
+          (!filters?.chamber || item.chamber === filters.chamber) &&
+          (!filters?.legislature || item.legislatureId === filters.legislature)
+      );
+      const mandate = latestMandate(memberMandates);
+      const legislature = mandate ? legislatureById.get(mandate.legislatureId) : undefined;
+      const memberMemberships = memberships.filter((item) => item.memberId === member.id);
+      const membership =
+        mandate && filters?.legislature
+          ? latestMembershipDuring(memberMemberships, mandate.startsOn, earliestDate(mandate.endsOn, legislature?.endsOn))
+          : latestMembership(memberMemberships);
       const group = groups.find((item) => item.id === membership?.groupId);
       const party = parties.find((item) => item.id === group?.partyId);
       return { member, mandate, group, party };
     });
-    return { members: filterDirectoryItems(items, filters), groups, parties, sourceKind: "database" };
+    return { members: filterDirectoryItems(items, filters), groups, parties, legislatures, sourceKind: "database" };
   } catch {
     return undefined;
   } finally {
@@ -815,6 +831,15 @@ function latestMembershipOn(memberships: MemberGroupMembership[], date: string):
   return [...(active.length > 0 ? active : [])].sort((a, b) => b.startsOn.localeCompare(a.startsOn)).at(0);
 }
 
+function latestMembershipDuring(memberships: MemberGroupMembership[], startsOn: string, endsOn: string | undefined): MemberGroupMembership | undefined {
+  const active = memberships.filter((membership) => {
+    const membershipEndsOn = membership.endsOn ?? "9999-12-31";
+    const periodEndsOn = endsOn ?? "9999-12-31";
+    return membership.startsOn <= periodEndsOn && membershipEndsOn >= startsOn;
+  });
+  return [...active].sort((a, b) => b.startsOn.localeCompare(a.startsOn)).at(0);
+}
+
 function activeMandateOnDate(mandate: MemberMandate, legislature: Legislature | undefined, date: string): boolean {
   return activeOnDate(mandate.startsOn, earliestDate(mandate.endsOn, legislature?.endsOn), date);
 }
@@ -839,11 +864,12 @@ function latestMandate(mandates: MemberMandate[]): MemberMandate | undefined {
 
 function filterDirectoryItems(
   items: MemberDirectoryItem[],
-  filters?: { chamber?: string; group?: string; q?: string }
+  filters?: { chamber?: string; group?: string; q?: string; legislature?: string }
 ): MemberDirectoryItem[] {
   const query = normalizeSearch(filters?.q);
   return items
     .filter((item) => !filters?.chamber || item.mandate?.chamber === filters.chamber)
+    .filter((item) => !filters?.legislature || item.mandate?.legislatureId === filters.legislature)
     .filter((item) => !filters?.group || item.group?.id === filters.group)
     .filter((item) => {
       if (!query) return true;
