@@ -10,6 +10,7 @@ import { parseSenateVote } from "./parsers/senate-vote";
 import { fetchOfficialSource } from "./fetch-source";
 import { persistRoster, persistSenateBill, persistSenateVote } from "./persist";
 import { snapshotFor } from "./parsers/utils";
+import { discoverDeputiesSources, discoverSenateSources, importPendingDiscoveries, runBackfill2024, runDailySync } from "./sync";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -89,6 +90,31 @@ async function main() {
         )
       );
     }
+    return;
+  }
+
+  if (command === "discover:senate") {
+    console.log(JSON.stringify(await discoverSenateSources(syncOptions()), null, 2));
+    return;
+  }
+
+  if (command === "discover:deputies") {
+    console.log(JSON.stringify(await discoverDeputiesSources(syncOptions()), null, 2));
+    return;
+  }
+
+  if (command === "backfill:2024") {
+    console.log(JSON.stringify(await runBackfill2024(syncOptions()), null, 2));
+    return;
+  }
+
+  if (command === "sync:daily") {
+    console.log(JSON.stringify(await runDailySync(syncOptions()), null, 2));
+    return;
+  }
+
+  if (command === "import:pending") {
+    console.log(JSON.stringify(await importPendingDiscoveries(syncOptions()), null, 2));
     return;
   }
 
@@ -305,6 +331,10 @@ async function mapLimit<T, R>(items: T[], limit: number, task: (item: T) => Prom
 }
 
 async function writeImport(name: string, payload: unknown, raw: string) {
+  if (hasFlag("no-files") || process.env.VERCEL === "1") {
+    console.log(`Skipped local file output for ${name}`);
+    return;
+  }
   const now = new Date().toISOString().replace(/[:.]/g, "-");
   const importDir = path.join(repoRoot, "data/imports");
   const snapshotDir = path.join(repoRoot, "data/snapshots");
@@ -313,6 +343,26 @@ async function writeImport(name: string, payload: unknown, raw: string) {
   await writeFile(path.join(importDir, `${now}-${name}.json`), JSON.stringify(payload, null, 2));
   await writeFile(path.join(snapshotDir, `${now}-${name}.html`), raw);
   console.log(`Wrote ${name} import at ${now}`);
+}
+
+function syncOptions() {
+  const years = flag("years")
+    ?.split(",")
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isInteger(value));
+  return {
+    years: years && years.length > 0 ? years : undefined,
+    maxImports: numberFlag("max-imports"),
+    maxRetries: numberFlag("max-retries"),
+    discoveryLimit: numberFlag("discovery-limit")
+  };
+}
+
+function numberFlag(name: string): number | undefined {
+  const value = flag(name);
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 main().catch((error) => {

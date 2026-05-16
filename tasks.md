@@ -89,6 +89,27 @@ implementation steps.
 - [x] Document how the Romanian Parliament works using official sources plus Wikipedia as overview context.
 - [x] Add reusable role/committee/procedure descriptions for future UI explainers.
 
+## Active Milestone — Daily Auto-Import + 2024-Present Backfill
+
+- [x] Add `ingestion_runs` table for cron/backfill observability.
+- [x] Add `source_discoveries` table for resumable official URL discovery and checkpoints.
+- [x] Add protected `/api/cron/daily-import` route.
+- [x] Configure Vercel Cron to call the daily importer once per day.
+- [x] Add `CRON_SECRET` env docs and examples.
+- [x] Add shared sync functions used by both CLI and the cron route.
+- [x] Add discovery/backfill CLI commands:
+  - `ingest:discover:senate`
+  - `ingest:discover:deputies`
+  - `ingest:backfill:2024`
+  - `ingest:sync:daily`
+- [x] Add Chamber bill persistence path and Chamber nominal vote persistence path.
+- [x] Make production importer output database-first instead of file-artifact-first.
+- [x] Add discovery parser tests for official-style Senate and Chamber links.
+- [x] Apply the new migration to Neon before deploying the cron route.
+- [ ] Add `CRON_SECRET` in Vercel before enabling cron in production.
+- [ ] Tune Senate and Chamber seed/discovery URLs against full official 2024-present list pages before running a full backfill.
+- [ ] Re-check Vercel Cron suitability after real daily sync runs; move to Render Cron if duration/reliability becomes a problem.
+
 ## Verification
 
 - `npm run test` — passed.
@@ -130,6 +151,13 @@ implementation steps.
   - `/ro/bills` returned `200` and renders the latest imported submitted projects list.
   - `/ro/votes/vote-senate-l316-2025-10-27-final` returned `200` after artifact cleanup.
   - Cleaned vote page no longer renders `PIR` or `Fără grup`; it renders `PACE` and canonical `Neafiliați`.
+- Daily auto-import checks:
+  - `npm run test` passed with discovery parser coverage.
+  - `npm run typecheck` passed.
+  - `npm run build` passed outside the sandbox because Turbopack worker binding is sandbox-blocked.
+  - New Drizzle migration applied successfully to local Docker Postgres.
+  - New Drizzle migration applied successfully to Neon.
+  - Local Senate discovery smoke against the default Senate search shell completed without errors but found `0` links, so full backfill still needs tuned source-specific list seeds.
 
 ## Import Proof
 
@@ -160,4 +188,6 @@ implementation steps.
 - Replace member and party pages with DB read models after roster import exists.
 - Add source snapshot inspection pages or admin-only views.
 - Redeploy Vercel after Neon env vars are saved, then smoke-check the live URL.
-- Add scheduled or one-command refresh workflow for roster and vote imports.
+- Add `CRON_SECRET` to Vercel.
+- Push cron/backfill implementation to the Vercel repo.
+- Tune official source seeds and run a small date-slice backfill before the full 2024-present backfill.

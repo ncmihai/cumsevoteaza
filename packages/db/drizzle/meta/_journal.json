@@ -15,6 +15,13 @@
       "when": 1778919914984,
       "tag": "0001_mature_loners",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778925887071,
+      "tag": "0002_tiresome_chronomancer",
+      "breakpoints": true
     }
   ]
 }

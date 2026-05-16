@@ -21,6 +21,10 @@ Observed bill page structure:
 - Prefer the detail panel field `Număr de înregistrare Senat`, then the detail
   heading, then the search result table.
 - Chamber identifiers can appear as `PLX429/2025`; normalize to `PL-x 429/2025`.
+- The default Senate `Lista.aspx` page is a search shell and may not expose
+  bill result links without a valid query/postback context. Backfill discovery
+  should treat Senate list seeds as source-specific tuning work, not assume the
+  default page is a complete feed.
 
 ## Chamber of Deputies
 
@@ -40,6 +44,8 @@ Observed bill page structure:
   pages for mandates, committees, groups, and party history.
 - Chamber nominal vote links may be referenced from Senate legislative timeline,
   for example `cdep.ro/pls/steno/evot2015.Nominal?idv=35953`.
+- Chamber bill discovery targets official `upl_pck2015.proiect` detail URLs
+  when they are exposed by list or timeline pages.
 - Direct fetches can be slower or flaky. Importers must retry, store failures,
   and keep the official URL as source metadata.
 - 2026-05-16: first importer attempt against

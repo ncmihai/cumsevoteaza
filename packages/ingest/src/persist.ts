@@ -22,6 +22,8 @@ import type {
 import type { ParsedSenateBill } from "./parsers/senate-bill";
 import type { ParsedSenateVote } from "./parsers/senate-vote";
 import type { ParsedRoster } from "./parsers/roster";
+import type { ParsedDeputiesBill } from "./parsers/deputies-bill";
+import type { ParsedChamberVote } from "./parsers/chamber-vote";
 
 const defaultLegislature = {
   id: "leg-2024-2028",
@@ -83,6 +85,48 @@ export async function persistSenateVote(parsed: ParsedSenateVote) {
       members: parsed.members.length,
       groups: parsed.groups.length,
       individualVotes: parsed.individualVotes.length
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+export async function persistDeputiesBill(parsed: ParsedDeputiesBill) {
+  const session = createDbSession();
+  try {
+    await upsertSourceSnapshot(session.db, parsed.sourceSnapshot);
+    await upsertBill(session.db, parsed.bill);
+    await Promise.all(parsed.events.map((event) => upsertBillEvent(session.db, event)));
+    await Promise.all(parsed.sponsors.map((sponsor) => upsertBillSponsor(session.db, sponsor)));
+    await Promise.all(parsed.documents.map((document) => upsertDocument(session.db, document)));
+
+    return {
+      billId: parsed.bill.id,
+      sourceSnapshotId: parsed.sourceSnapshot.id,
+      events: parsed.events.length,
+      documents: parsed.documents.length
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+export async function persistChamberVote(parsed: ParsedChamberVote) {
+  const session = createDbSession();
+  try {
+    await upsertDefaultLegislature(session.db);
+    await upsertSourceSnapshot(session.db, parsed.sourceSnapshot);
+    await Promise.all(parsed.members.map((member) => upsertMember(session.db, member)));
+    await Promise.all(parsed.individualVotes.map((vote) => upsertDerivedDeputiesMandate(session.db, vote.memberId)));
+    await upsertVote(session.db, parsed.vote);
+    await Promise.all(parsed.individualVotes.map((vote) => upsertIndividualVote(session.db, vote)));
+
+    return {
+      voteId: parsed.vote.id,
+      sourceSnapshotId: parsed.sourceSnapshot.id,
+      members: parsed.members.length,
+      individualVotes: parsed.individualVotes.length,
+      warnings: parsed.warnings
     };
   } finally {
     await session.close();
@@ -495,4 +539,27 @@ async function upsertDerivedMandateAndMembership(db: Db, vote: IndividualVote, p
     startsOn,
     sourceSnapshotId: parsed.sourceSnapshot.id
   });
+}
+
+async function upsertDerivedDeputiesMandate(db: Db, memberId: string) {
+  await db
+    .insert(schema.memberMandates)
+    .values({
+      id: `mandate-${memberId}-2024-2028-deputies`,
+      memberId,
+      legislatureId: defaultLegislature.id,
+      chamber: "deputies",
+      startsOn: defaultLegislature.startsOn,
+      status: "active"
+    })
+    .onConflictDoUpdate({
+      target: schema.memberMandates.id,
+      set: {
+        memberId,
+        legislatureId: defaultLegislature.id,
+        chamber: "deputies",
+        startsOn: defaultLegislature.startsOn,
+        status: "active"
+      }
+    });
 }

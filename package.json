@@ -25,7 +25,11 @@
     "ingest:chamber:vote": "npm --workspace @cumsevoteaza/ingest run chamber:vote --",
     "ingest:senate:roster": "npm --workspace @cumsevoteaza/ingest run senate:roster --",
     "ingest:deputies:roster": "npm --workspace @cumsevoteaza/ingest run deputies:roster --",
-    "ingest:roster:all": "npm --workspace @cumsevoteaza/ingest run roster:all --"
+    "ingest:roster:all": "npm --workspace @cumsevoteaza/ingest run roster:all --",
+    "ingest:discover:senate": "npm --workspace @cumsevoteaza/ingest run discover:senate --",
+    "ingest:discover:deputies": "npm --workspace @cumsevoteaza/ingest run discover:deputies --",
+    "ingest:backfill:2024": "npm --workspace @cumsevoteaza/ingest run backfill:2024 --",
+    "ingest:sync:daily": "npm --workspace @cumsevoteaza/ingest run sync:daily --"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

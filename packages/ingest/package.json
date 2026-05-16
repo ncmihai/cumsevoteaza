@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -11,7 +14,11 @@
     "chamber:vote": "tsx src/cli.ts chamber:vote",
     "senate:roster": "tsx src/cli.ts senate:roster",
     "deputies:roster": "tsx src/cli.ts deputies:roster",
-    "roster:all": "tsx src/cli.ts roster:all"
+    "roster:all": "tsx src/cli.ts roster:all",
+    "discover:senate": "tsx src/cli.ts discover:senate",
+    "discover:deputies": "tsx src/cli.ts discover:deputies",
+    "backfill:2024": "tsx src/cli.ts backfill:2024",
+    "sync:daily": "tsx src/cli.ts sync:daily"
   },
   "dependencies": {
     "@cumsevoteaza/db": "0.1.0",

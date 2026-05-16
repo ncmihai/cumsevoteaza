@@ -20,6 +20,9 @@ export const voteChoiceEnum = pgEnum("vote_choice", [
   "unknown"
 ]);
 export const sourceStatusEnum = pgEnum("source_status", ["parsed", "partial", "failed"]);
+export const ingestionRunStatusEnum = pgEnum("ingestion_run_status", ["running", "completed", "partial", "failed"]);
+export const sourceDiscoveryStatusEnum = pgEnum("source_discovery_status", ["pending", "imported", "partial", "failed", "skipped"]);
+export const sourceDiscoveryKindEnum = pgEnum("source_discovery_kind", ["bill", "vote"]);
 
 export const legislatures = pgTable("legislatures", {
   id: text("id").primaryKey(),
@@ -69,6 +72,36 @@ export const sourceSnapshots = pgTable("source_snapshots", {
   notes: text("notes")
 }, (table) => ({
   hashIdx: uniqueIndex("source_snapshots_content_hash_idx").on(table.contentHash)
+}));
+
+export const ingestionRuns = pgTable("ingestion_runs", {
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  status: ingestionRunStatusEnum("status").notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  summary: jsonb("summary").$type<Record<string, unknown>>().notNull().default({}),
+  error: text("error")
+});
+
+export const sourceDiscoveries = pgTable("source_discoveries", {
+  id: text("id").primaryKey(),
+  chamber: chamberEnum("chamber").notNull(),
+  kind: sourceDiscoveryKindEnum("kind").notNull(),
+  sourceUrl: text("source_url").notNull(),
+  officialId: text("official_id"),
+  title: text("title"),
+  discoveredOn: date("discovered_on"),
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
+  lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+  importedAt: timestamp("imported_at", { withTimezone: true }),
+  status: sourceDiscoveryStatusEnum("status").notNull().default("pending"),
+  failureCount: integer("failure_count").notNull().default(0),
+  lastError: text("last_error"),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
+}, (table) => ({
+  sourceUrlIdx: uniqueIndex("source_discoveries_source_url_idx").on(table.sourceUrl)
 }));
 
 export const memberMandates = pgTable("member_mandates", {

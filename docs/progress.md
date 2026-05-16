@@ -165,3 +165,31 @@ Append-only implementation history.
 - Updated the Senate vote parser so future imports map 2024-present `PIR`/`PACE` style labels to canonical `PACE` and old no-group labels to canonical unaffiliated.
 - Added `docs/parliament-how-it-works.md` with a factual working model of chambers, legislative flow, committees, groups, roles, plenary votes, and product copy rules.
 - Smoke-checked `/ro/votes`, `/ro/bills`, and the cleaned Senate vote page locally.
+
+## 2026-05-16 — Daily Auto-Import And Backfill Infrastructure
+
+- Added Drizzle schema support for `ingestion_runs` and `source_discoveries`.
+- Generated migration `0002_tiresome_chronomancer.sql`.
+- Added a protected Next.js route at `/api/cron/daily-import`.
+- Configured Vercel Cron to call the route once per day.
+- Added `CRON_SECRET` to env examples and deployment documentation.
+- Added reusable ingest sync functions for:
+  - Senate source discovery
+  - Deputies source discovery
+  - pending discovery imports
+  - bounded daily sync
+  - staged 2024-present backfill
+- Added root and ingest package commands:
+  - `ingest:discover:senate`
+  - `ingest:discover:deputies`
+  - `ingest:backfill:2024`
+  - `ingest:sync:daily`
+- Added a Deputies bill parser/persistence path and a Chamber nominal vote persistence path.
+- Added discovery parser tests for official-style Senate and Chamber links.
+- Verified:
+  - `npm run test` passed.
+  - `npm run typecheck` passed.
+  - `npm run build` passed outside the sandbox.
+  - The migration applied to local Docker Postgres.
+  - The migration applied to Neon.
+- Local Senate discovery against the default Senate list/search page found no exposed result links, so full historical scraping still needs tuned official list seeds before the first real backfill run.
