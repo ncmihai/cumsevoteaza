@@ -161,6 +161,11 @@ implementation steps.
   - New Drizzle migration applied successfully to Neon.
   - Local Senate discovery smoke against the default Senate search shell completed without errors but found `0` links, so full backfill still needs tuned source-specific list seeds.
   - Neon Senate generated-discovery smoke passed for `L316/2025`: discovered `1`, imported `1`.
+  - Vercel deployment URL verified: `https://cumvoteaza.vercel.app/ro`, `/ro/bills`, and `/ro/votes` return `200`.
+  - Initial production Senate start run:
+    - discovered generated Senate candidates `L1/2025` through `L30/2025`
+    - imported a capped batch of `10`
+    - current discovery statuses in Neon: 11 Senate bills imported, 64 Senate bills pending, 9 Senate votes pending, 5 Deputies votes pending, 1 Deputies vote failed.
 
 ## Import Proof
 

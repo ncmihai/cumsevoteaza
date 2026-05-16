@@ -203,3 +203,20 @@ Append-only implementation history.
   - `npm run ingest:discover:senate -- --years=2025 --discovery-limit=0 --senate-from=316 --senate-to=316`
   - `npm run ingest:import:pending -- --max-imports=1`
   - Result: discovered `1`, imported `1`.
+
+## 2026-05-16 — Production Deploy And First Start
+
+- Verified Vercel deployment at `https://cumvoteaza.vercel.app`.
+- Smoke-checked deployed routes:
+  - `/ro`
+  - `/ro/bills`
+  - `/ro/votes`
+- Started the first controlled production data run against Neon:
+  - discovered generated Senate candidates `L1/2025` through `L30/2025`
+  - imported a capped batch of `10`
+- Discovery status after the start run:
+  - 11 Senate bills imported
+  - 64 Senate bills pending
+  - 9 Senate votes pending
+  - 5 Deputies votes pending
+  - 1 Deputies vote failed
