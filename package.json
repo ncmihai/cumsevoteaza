@@ -22,7 +22,10 @@
     "db:studio": "npm --workspace @cumsevoteaza/db run studio",
     "ingest:senate:bill": "npm --workspace @cumsevoteaza/ingest run senate:bill --",
     "ingest:senate:vote": "npm --workspace @cumsevoteaza/ingest run senate:vote --",
-    "ingest:chamber:vote": "npm --workspace @cumsevoteaza/ingest run chamber:vote --"
+    "ingest:chamber:vote": "npm --workspace @cumsevoteaza/ingest run chamber:vote --",
+    "ingest:senate:roster": "npm --workspace @cumsevoteaza/ingest run senate:roster --",
+    "ingest:deputies:roster": "npm --workspace @cumsevoteaza/ingest run deputies:roster --",
+    "ingest:roster:all": "npm --workspace @cumsevoteaza/ingest run roster:all --"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

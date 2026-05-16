@@ -54,6 +54,23 @@ implementation steps.
 - [x] Persist first Senate bill and vote proof dataset into Neon.
 - [x] Verify Neon row counts and vote totals.
 
+## Active Milestone — Real Rosters
+
+- [x] Add shared normalized roster import shape.
+- [x] Add Senate roster parser and importer.
+- [x] Add Deputies roster parser and importer.
+- [x] Add `senate:roster`, `deputies:roster`, and `roster:all` commands.
+- [x] Add root scripts for roster import commands.
+- [x] Add source snapshot traceability to mandates, committees, and roles.
+- [x] Add parser fixtures for Senate and Deputies roster pages.
+- [x] Add DB-backed member directory at `/[locale]/members`.
+- [x] Switch member profile pages to DB-first data.
+- [x] Switch party pages to DB-first data.
+- [x] Verify local Docker Postgres roster import.
+- [x] Apply roster migration to Neon.
+- [x] Import verified rosters into Neon.
+- [x] Smoke-check DB-backed member directory, member profile, and party page locally.
+
 ## Verification
 
 - `npm run test` — passed.
@@ -75,6 +92,12 @@ implementation steps.
   - Senate bill `bill-l316-2025` persisted with 1 dated event and 28 documents.
   - Senate vote `vote-senate-l316-2025-10-27-final` persisted with 121 members, 121 nominal votes, 8 group totals, and 2 source snapshots.
   - Vote totals verified: 121 present, 116 for, 0 against, 5 abstentions, 0 present-not-voting.
+- Real roster smoke test passed:
+  - Senate: 134 mandates, 7 parsed current groups, 403 committee rows, 36 role rows.
+  - Deputies: 330 mandates, 9 parsed current groups, 817 committee rows, 24 role rows.
+  - Total members in Neon after roster import: 464.
+  - Sample slugs verified in Neon: `andra-bica`, `popa-stefan-ovidiu`.
+  - Local UI smoke returned `200` for `/ro/members`, `/en/members`, `/ro/members/popa-stefan-ovidiu`, and `/ro/parties/psd`.
 - Browser smoke checks:
   - `/ro`
   - `/en`
@@ -109,5 +132,5 @@ implementation steps.
 - Expand member profile importers for current legislature rosters.
 - Replace member and party pages with DB read models after roster import exists.
 - Add source snapshot inspection pages or admin-only views.
-- Push deployment-ready code to `ncmihai/cumvoteaza` after final checks pass.
 - Redeploy Vercel after Neon env vars are saved, then smoke-check the live URL.
+- Add scheduled or one-command refresh workflow for roster and vote imports.

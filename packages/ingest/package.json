@@ -8,7 +8,10 @@
     "test": "vitest run",
     "senate:bill": "tsx src/cli.ts senate:bill",
     "senate:vote": "tsx src/cli.ts senate:vote",
-    "chamber:vote": "tsx src/cli.ts chamber:vote"
+    "chamber:vote": "tsx src/cli.ts chamber:vote",
+    "senate:roster": "tsx src/cli.ts senate:roster",
+    "deputies:roster": "tsx src/cli.ts deputies:roster",
+    "roster:all": "tsx src/cli.ts roster:all"
   },
   "dependencies": {
     "@cumsevoteaza/db": "0.1.0",

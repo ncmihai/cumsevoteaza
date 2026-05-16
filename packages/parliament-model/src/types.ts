@@ -65,6 +65,7 @@ export interface MemberMandate {
   endsOn?: string;
   constituency?: string;
   status: "active" | "ended" | "unknown";
+  sourceSnapshotId?: string;
 }
 
 export interface MemberGroupMembership {
@@ -93,6 +94,7 @@ export interface MemberCommitteeMembership {
   startsOn: string;
   endsOn?: string;
   role?: string;
+  sourceSnapshotId?: string;
 }
 
 export interface MemberRole {
@@ -102,6 +104,7 @@ export interface MemberRole {
   chamber: ChamberId;
   startsOn: string;
   endsOn?: string;
+  sourceSnapshotId?: string;
 }
 
 export interface Bill {

@@ -119,3 +119,26 @@ Append-only implementation history.
   - 8 group totals
   - 2 source snapshots
 - Verified hosted vote totals: 121 present, 116 for, 0 against, 5 abstentions, 0 present-not-voting.
+
+## 2026-05-16 — Real Roster Milestone
+
+- Added a shared normalized roster import shape for both chambers.
+- Added Senate roster ingestion from official group and profile pages.
+- Added Deputies roster ingestion from current `structura2015` group and profile pages.
+- Added `senate:roster`, `deputies:roster`, and `roster:all` importer commands with bounded profile-fetch concurrency.
+- Added source snapshot traceability to member mandates, committee memberships, and roles.
+- Added fixtures and parser tests for Senate and Deputies index, group, and profile pages.
+- Added DB-backed `/[locale]/members` directory with chamber and group filters.
+- Switched member profile and party pages to DB-first read models with demo fallback.
+- Added a narrow curl fallback for official-source fetches when Node rejects the Chamber certificate chain.
+- Verified local Docker Postgres roster import:
+  - 134 Senate mandates
+  - 330 Deputies mandates
+  - 464 total members
+  - 403 Senate committee rows
+  - 817 Deputies committee rows
+  - 36 Senate role rows
+  - 24 Deputies role rows
+- Applied the roster migration to Neon and imported the verified roster dataset.
+- Verified Neon sample slugs `andra-bica` and `popa-stefan-ovidiu`.
+- Browser-smoked local DB-backed member directory, real member profile, and party page.

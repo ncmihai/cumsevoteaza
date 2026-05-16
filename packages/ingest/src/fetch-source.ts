@@ -1,3 +1,8 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
+
 export async function fetchOfficialSource(url: string, attempts = 2): Promise<string> {
   let lastError: unknown;
 
@@ -20,6 +25,9 @@ export async function fetchOfficialSource(url: string, attempts = 2): Promise<st
       return await response.text();
     } catch (error) {
       lastError = error;
+      if (isCertificateError(error)) {
+        return fetchWithCurl(url);
+      }
       if (attempt < attempts) {
         await new Promise((resolve) => setTimeout(resolve, 1500));
       }
@@ -27,4 +35,26 @@ export async function fetchOfficialSource(url: string, attempts = 2): Promise<st
   }
 
   throw lastError instanceof Error ? lastError : new Error("Unknown fetch error");
+}
+
+async function fetchWithCurl(url: string): Promise<string> {
+  const { stdout } = await execFileAsync("curl", [
+    "-L",
+    "--max-time",
+    "30",
+    "-A",
+    "cumsevoteaza-ingest/0.1 (+private research)",
+    "-s",
+    url
+  ]);
+  return stdout;
+}
+
+function isCertificateError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const cause = (error as Error & { cause?: { code?: string; message?: string } }).cause;
+  return (
+    error.message.includes("fetch failed") &&
+    Boolean(cause?.code?.includes("UNABLE_TO_VERIFY") || cause?.message?.includes("certificate"))
+  );
 }

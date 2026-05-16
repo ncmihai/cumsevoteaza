@@ -24,6 +24,20 @@ Observed bill page structure:
 
 ## Chamber of Deputies
 
+- Current public site pages use `cdep.ro/ords/pls/parlam/structura2015.*`
+  endpoints for 2024-present structure:
+  - Group index cards are linked from
+    `https://cdep.ro/ords/pls/dic/site2015.home?idl=1`.
+  - Group details use
+    `https://cdep.ro/ords/pls/parlam/structura2015.gp?cam=2&leg=2024&idl=1&idg=<id>`.
+  - Member profiles use
+    `https://cdep.ro/ords/pls/parlam/structura2015.mp?idm=<id>&cam=2&leg=2024`.
+- Node's built-in fetch can reject the Chamber certificate chain. The importer
+  falls back to `curl` for that specific fetch failure while still storing
+  source snapshots and failures.
+- Deputies profile pages can title activity tabs as `Activitate parlamentară`;
+  importer identity uses group-list names for member display names and profile
+  pages for mandates, committees, groups, and party history.
 - Chamber nominal vote links may be referenced from Senate legislative timeline,
   for example `cdep.ro/pls/steno/evot2015.Nominal?idv=35953`.
 - Direct fetches can be slower or flaky. Importers must retry, store failures,

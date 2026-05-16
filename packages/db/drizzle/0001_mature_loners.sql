@@ -1,0 +1,6 @@
+ALTER TABLE "member_committee_memberships" ADD COLUMN "source_snapshot_id" text;--> statement-breakpoint
+ALTER TABLE "member_mandates" ADD COLUMN "source_snapshot_id" text;--> statement-breakpoint
+ALTER TABLE "member_roles" ADD COLUMN "source_snapshot_id" text;--> statement-breakpoint
+ALTER TABLE "member_committee_memberships" ADD CONSTRAINT "member_committee_memberships_source_snapshot_id_source_snapshots_id_fk" FOREIGN KEY ("source_snapshot_id") REFERENCES "public"."source_snapshots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "member_mandates" ADD CONSTRAINT "member_mandates_source_snapshot_id_source_snapshots_id_fk" FOREIGN KEY ("source_snapshot_id") REFERENCES "public"."source_snapshots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "member_roles" ADD CONSTRAINT "member_roles_source_snapshot_id_source_snapshots_id_fk" FOREIGN KEY ("source_snapshot_id") REFERENCES "public"."source_snapshots"("id") ON DELETE no action ON UPDATE no action;

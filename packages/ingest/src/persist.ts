@@ -9,12 +9,19 @@ import type {
   GroupVoteTotal,
   IndividualVote,
   Member,
+  MemberCommitteeMembership,
+  MemberGroupMembership,
+  MemberMandate,
+  MemberPartyAffiliation,
+  MemberRole,
   ParliamentaryGroup,
+  Party,
   SourceSnapshot,
   Vote
 } from "@cumsevoteaza/parliament-model";
 import type { ParsedSenateBill } from "./parsers/senate-bill";
 import type { ParsedSenateVote } from "./parsers/senate-vote";
+import type { ParsedRoster } from "./parsers/roster";
 
 const defaultLegislature = {
   id: "leg-2024-2028",
@@ -82,6 +89,38 @@ export async function persistSenateVote(parsed: ParsedSenateVote) {
   }
 }
 
+export async function persistRoster(parsed: ParsedRoster) {
+  const session = createDbSession();
+  try {
+    await upsertDefaultLegislature(session.db);
+    await Promise.all(parsed.sourceSnapshots.map((source) => upsertSourceSnapshot(session.db, source)));
+    await Promise.all(parsed.parties.map((party) => upsertParty(session.db, party)));
+    await Promise.all(parsed.groups.map((group) => upsertGroup(session.db, group)));
+    await Promise.all(parsed.members.map((member) => upsertMember(session.db, member)));
+    await Promise.all(parsed.mandates.map((mandate) => upsertMemberMandate(session.db, mandate)));
+    await Promise.all(parsed.groupMemberships.map((membership) => upsertMemberGroupMembership(session.db, membership)));
+    await Promise.all(parsed.partyAffiliations.map((affiliation) => upsertMemberPartyAffiliation(session.db, affiliation)));
+    await Promise.all(parsed.committeeMemberships.map((membership) => upsertMemberCommitteeMembership(session.db, membership)));
+    await Promise.all(parsed.roles.map((role) => upsertMemberRole(session.db, role)));
+
+    return {
+      chamber: parsed.chamber,
+      sources: parsed.sourceSnapshots.length,
+      parties: parsed.parties.length,
+      groups: parsed.groups.length,
+      members: parsed.members.length,
+      mandates: parsed.mandates.length,
+      groupMemberships: parsed.groupMemberships.length,
+      partyAffiliations: parsed.partyAffiliations.length,
+      committeeMemberships: parsed.committeeMemberships.length,
+      roles: parsed.roles.length,
+      groupCounts: parsed.groupCounts
+    };
+  } finally {
+    await session.close();
+  }
+}
+
 async function upsertDefaultLegislature(db: Db) {
   await db
     .insert(schema.legislatures)
@@ -135,6 +174,21 @@ async function upsertGroup(db: Db, group: ParliamentaryGroup) {
     });
 }
 
+async function upsertParty(db: Db, party: Party) {
+  await db
+    .insert(schema.parties)
+    .values(party)
+    .onConflictDoUpdate({
+      target: schema.parties.id,
+      set: {
+        slug: party.slug,
+        shortName: party.shortName,
+        name: party.name,
+        color: party.color
+      }
+    });
+}
+
 async function upsertMember(db: Db, member: Member) {
   await db
     .insert(schema.members)
@@ -147,6 +201,92 @@ async function upsertMember(db: Db, member: Member) {
         lastName: member.lastName,
         displayName: member.displayName,
         sourceIds: member.sourceIds
+      }
+    });
+}
+
+async function upsertMemberMandate(db: Db, mandate: MemberMandate) {
+  await db
+    .insert(schema.memberMandates)
+    .values(mandate)
+    .onConflictDoUpdate({
+      target: schema.memberMandates.id,
+      set: {
+        memberId: mandate.memberId,
+        legislatureId: mandate.legislatureId,
+        chamber: mandate.chamber,
+        startsOn: mandate.startsOn,
+        endsOn: mandate.endsOn,
+        constituency: mandate.constituency,
+        status: mandate.status,
+        sourceSnapshotId: mandate.sourceSnapshotId
+      }
+    });
+}
+
+async function upsertMemberGroupMembership(db: Db, membership: MemberGroupMembership) {
+  await db
+    .insert(schema.memberGroupMemberships)
+    .values(membership)
+    .onConflictDoUpdate({
+      target: schema.memberGroupMemberships.id,
+      set: {
+        memberId: membership.memberId,
+        groupId: membership.groupId,
+        startsOn: membership.startsOn,
+        endsOn: membership.endsOn,
+        sourceSnapshotId: membership.sourceSnapshotId
+      }
+    });
+}
+
+async function upsertMemberPartyAffiliation(db: Db, affiliation: MemberPartyAffiliation) {
+  await db
+    .insert(schema.memberPartyAffiliations)
+    .values(affiliation)
+    .onConflictDoUpdate({
+      target: schema.memberPartyAffiliations.id,
+      set: {
+        memberId: affiliation.memberId,
+        partyId: affiliation.partyId,
+        startsOn: affiliation.startsOn,
+        endsOn: affiliation.endsOn,
+        sourceSnapshotId: affiliation.sourceSnapshotId
+      }
+    });
+}
+
+async function upsertMemberCommitteeMembership(db: Db, membership: MemberCommitteeMembership) {
+  await db
+    .insert(schema.memberCommitteeMemberships)
+    .values(membership)
+    .onConflictDoUpdate({
+      target: schema.memberCommitteeMemberships.id,
+      set: {
+        memberId: membership.memberId,
+        committeeName: membership.committeeName,
+        chamber: membership.chamber,
+        role: membership.role,
+        startsOn: membership.startsOn,
+        endsOn: membership.endsOn,
+        sourceSnapshotId: membership.sourceSnapshotId
+      }
+    });
+}
+
+async function upsertMemberRole(db: Db, role: MemberRole) {
+  await db
+    .insert(schema.memberRoles)
+    .values(role)
+    .onConflictDoUpdate({
+      target: schema.memberRoles.id,
+      set: {
+        memberId: role.memberId,
+        title: role.title,
+        chamber: role.chamber,
+        startsOn: role.startsOn,
+        endsOn: role.endsOn,
+        sourceSnapshotId: role.sourceSnapshotId
       }
     });
 }

@@ -35,7 +35,7 @@ export default async function LocaleLayout({
               <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${locale}/bills/l316-2025`}>
                 {messages.nav.bills}
               </Link>
-              <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${locale}/members/andra-bica`}>
+              <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${locale}/members`}>
                 {messages.nav.members}
               </Link>
               <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${otherLocale}`}>

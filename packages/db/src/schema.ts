@@ -79,7 +79,8 @@ export const memberMandates = pgTable("member_mandates", {
   startsOn: date("starts_on").notNull(),
   endsOn: date("ends_on"),
   constituency: text("constituency"),
-  status: text("status").notNull().default("unknown")
+  status: text("status").notNull().default("unknown"),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
 });
 
 export const memberGroupMemberships = pgTable("member_group_memberships", {
@@ -107,7 +108,8 @@ export const memberCommitteeMemberships = pgTable("member_committee_memberships"
   chamber: chamberEnum("chamber").notNull(),
   role: text("role"),
   startsOn: date("starts_on").notNull(),
-  endsOn: date("ends_on")
+  endsOn: date("ends_on"),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
 });
 
 export const memberRoles = pgTable("member_roles", {
@@ -116,7 +118,8 @@ export const memberRoles = pgTable("member_roles", {
   title: text("title").notNull(),
   chamber: chamberEnum("chamber").notNull(),
   startsOn: date("starts_on").notNull(),
-  endsOn: date("ends_on")
+  endsOn: date("ends_on"),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
 });
 
 export const bills = pgTable("bills", {
