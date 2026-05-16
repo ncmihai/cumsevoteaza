@@ -174,7 +174,7 @@ export async function getBillPageData(id: string): Promise<BillPageData | undefi
   };
 }
 
-export async function getMemberDirectoryData(filters?: { chamber?: string; group?: string }): Promise<MemberDirectoryData> {
+export async function getMemberDirectoryData(filters?: { chamber?: string; group?: string; q?: string }): Promise<MemberDirectoryData> {
   const dbData = await tryDatabaseMemberDirectory(filters);
   if (dbData) return dbData;
 
@@ -384,7 +384,7 @@ async function tryDatabaseBill(id: string): Promise<BillPageData | undefined> {
   }
 }
 
-async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: string }): Promise<MemberDirectoryData | undefined> {
+async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: string; q?: string }): Promise<MemberDirectoryData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
   const session = createDbSession();
@@ -788,12 +788,27 @@ function latestMembership(memberships: MemberGroupMembership[]): MemberGroupMemb
 
 function filterDirectoryItems(
   items: MemberDirectoryItem[],
-  filters?: { chamber?: string; group?: string }
+  filters?: { chamber?: string; group?: string; q?: string }
 ): MemberDirectoryItem[] {
+  const query = normalizeSearch(filters?.q);
   return items
     .filter((item) => !filters?.chamber || item.mandate?.chamber === filters.chamber)
     .filter((item) => !filters?.group || item.group?.id === filters.group)
+    .filter((item) => {
+      if (!query) return true;
+      return [item.member.displayName, item.member.firstName, item.member.lastName, item.group?.shortName, item.party?.shortName]
+        .map(normalizeSearch)
+        .some((value) => value.includes(query));
+    })
     .sort((a, b) => a.member.displayName.localeCompare(b.member.displayName, "ro"));
+}
+
+function normalizeSearch(value?: string): string {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 function buildMemberHistory(input: {

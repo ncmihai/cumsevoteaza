@@ -62,6 +62,9 @@ Observed bill page structure:
   The working 2024-present endpoint is the ORDS path
   `https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=<id>`, so legacy
   `/pls/steno` vote links are canonicalized before import.
+- Source discovery uses canonical official URLs and official identifiers where
+  present, so legacy and ORDS variants of the same Chamber vote detail do not
+  create duplicate queue entries.
 - Chamber bill discovery targets official `upl_pck2015.proiect` detail URLs
   when they are exposed by list or timeline pages.
 - Chamber displayed identifiers normalize to `PL-x <number>/<year>`, even when
@@ -85,6 +88,7 @@ Observed bill page structure:
 - Parser tests use saved fixtures so UI and parsing behavior do not depend on
   live network availability.
 - Empty or inconsistent official values are stored as `unknown`, not guessed.
+- URL fragments and in-page anchors are not treated as separate sources.
 - Parliament structure/procedure explanations are tracked in
   `docs/parliament-how-it-works.md`; official procedure, group, committee, and
   constitutional pages take priority over Wikipedia overview text.

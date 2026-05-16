@@ -111,6 +111,9 @@ implementation steps.
 - [x] Add generated Senate discovery prefixes via `--senate-prefixes=B,BP,L,PLX`.
 - [x] Add a dedicated Deputies yearly-list parser for `upl_pck2015.lista?anp=<year>` as the project backbone when the official endpoint is reachable.
 - [x] Use Senate bill timelines as a complementary lifecycle/vote source by parsing dated lifecycle rows and nested Senate/Deputies vote or bill links.
+- [x] Change source discovery dedupe to canonical official URLs plus official identifiers.
+- [x] Fix member directory search so politician last-name queries work.
+- [x] Reorder chamber seat allocation left-to-right by party sector.
 - [x] Apply the new migration to Neon before deploying the cron route.
 - [x] Add `CRON_SECRET` in Vercel before enabling cron in production.
 - [ ] Tune Chamber seed/discovery URLs against full official 2024-present list pages before running a full backfill.
@@ -180,6 +183,9 @@ implementation steps.
   - Chamber nominal vote links now canonicalize to the working `cdep.ro/ords/pls/steno` endpoint.
   - Repaired CDEP vote pass imported `6` Deputies votes into Neon with nominal row counts matching parsed totals.
   - Chamber vote persistence now batches members, derived mandates, and nominal rows so CDEP vote imports are cron-friendlier.
+  - Source discovery now dedupes legacy and ORDS Chamber vote links to the same canonical official source URL.
+  - Member directory search smoke passed for `/ro/members?q=bica`, returning the roster-backed `Andra Bică` result.
+  - Deputies vote page smoke passed for `/ro/votes/vote-deputies-https-www-cdep-ro-ords-pls-steno-evot2015-nominal-idv-35953`; Playwright screenshot confirmed party seats now allocate left-to-right.
 
 ## Import Proof
 

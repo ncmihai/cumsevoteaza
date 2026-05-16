@@ -8,7 +8,7 @@ export default async function MembersPage({
   searchParams
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ chamber?: string; group?: string }>;
+  searchParams: Promise<{ chamber?: string; group?: string; q?: string }>;
 }) {
   const { locale: rawLocale } = await params;
   const filters = await searchParams;
@@ -26,21 +26,37 @@ export default async function MembersPage({
         <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{data.sourceKind}</span>
       </div>
 
+      <form action={`/${locale}/members`} className="mt-6 flex max-w-xl items-center gap-2 border border-slate-300 bg-white px-3 py-2">
+        {filters.chamber ? <input type="hidden" name="chamber" value={filters.chamber} /> : null}
+        {filters.group ? <input type="hidden" name="group" value={filters.group} /> : null}
+        <input
+          className="min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 outline-none"
+          type="search"
+          name="q"
+          defaultValue={filters.q ?? ""}
+          placeholder={messages.home.searchPlaceholder}
+          aria-label={messages.home.searchPlaceholder}
+        />
+        <button className="rounded-md bg-slate-950 px-3 py-2 text-sm text-white" type="submit">
+          {locale === "ro" ? "Caută" : "Search"}
+        </button>
+      </form>
+
       <section className="mt-6 flex flex-wrap gap-2">
-        <FilterLink href={`/${locale}/members`} active={!filters.chamber && !filters.group}>
+        <FilterLink href={memberDirectoryHref(locale, { q: filters.q })} active={!filters.chamber && !filters.group}>
           Toți
         </FilterLink>
-        <FilterLink href={`/${locale}/members?chamber=senate`} active={filters.chamber === "senate"}>
+        <FilterLink href={memberDirectoryHref(locale, { chamber: "senate", q: filters.q })} active={filters.chamber === "senate"}>
           {chamberLabels[locale].senate}
         </FilterLink>
-        <FilterLink href={`/${locale}/members?chamber=deputies`} active={filters.chamber === "deputies"}>
+        <FilterLink href={memberDirectoryHref(locale, { chamber: "deputies", q: filters.q })} active={filters.chamber === "deputies"}>
           {chamberLabels[locale].deputies}
         </FilterLink>
       </section>
 
       <section className="mt-3 flex flex-wrap gap-2">
         {data.groups.map((group) => (
-          <FilterLink key={group.id} href={`/${locale}/members?group=${group.id}`} active={filters.group === group.id}>
+          <FilterLink key={group.id} href={memberDirectoryHref(locale, { group: group.id, q: filters.q })} active={filters.group === group.id}>
             {group.shortName}
           </FilterLink>
         ))}
@@ -84,6 +100,15 @@ export default async function MembersPage({
       </section>
     </main>
   );
+}
+
+function memberDirectoryHref(locale: AppLocale, filters: { chamber?: string; group?: string; q?: string }): string {
+  const params = new URLSearchParams();
+  if (filters.chamber) params.set("chamber", filters.chamber);
+  if (filters.group) params.set("group", filters.group);
+  if (filters.q) params.set("q", filters.q);
+  const query = params.toString();
+  return `/${locale}/members${query ? `?${query}` : ""}`;
 }
 
 function FilterLink({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {

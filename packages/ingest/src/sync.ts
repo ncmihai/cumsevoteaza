@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import type { ChamberId, SourceSnapshot, SourceStatus } from "@cumsevoteaza/parliament-model";
@@ -261,12 +261,13 @@ export function discoverOfficialLinks(
 ): SourceDiscoveryInput[] {
   const $ = cheerio.load(html);
   const discoveries: SourceDiscoveryInput[] = [];
+  const canonicalSourceUrl = canonicalizeOfficialUrl(sourceUrl);
 
   $("a[href]").each((_, node) => {
     const href = $(node).attr("href");
     if (!href || href.startsWith("javascript:") || href.trim().startsWith("#")) return;
     const absoluteUrl = canonicalizeOfficialUrl(new URL(href.replace(/\\/g, "/"), sourceUrl).toString());
-    if (isSameDocumentAnchor(absoluteUrl, sourceUrl)) return;
+    if (absoluteUrl === canonicalSourceUrl || isSameDocumentAnchor(absoluteUrl, canonicalSourceUrl)) return;
     const text = cleanText($(node).text());
     const rowText = cleanText($(node).closest("tr").text()) || text;
     const kind = kindFromUrl(absoluteUrl);
@@ -406,7 +407,7 @@ function officialIdFromText(text: string, sourceUrl: string): string | undefined
   const url = new URL(sourceUrl);
   const nrCls = url.searchParams.get("nr_cls") ?? url.searchParams.get("NR");
   const urlIdentifier = normalizeOfficialIdentifier(nrCls ?? undefined, year);
-  return urlIdentifier?.value ?? url.searchParams.get("cod") ?? url.searchParams.get("idp") ?? undefined;
+  return urlIdentifier?.value ?? url.searchParams.get("cod") ?? url.searchParams.get("idp") ?? url.searchParams.get("idv") ?? undefined;
 }
 
 function titleFromRow(rowText: string, linkText: string): string | undefined {
@@ -495,12 +496,14 @@ async function markDiscovery(id: string, status: DiscoveryStatus, sourceSnapshot
 
 async function upsertSourceDiscovery(db: ReturnType<typeof createDbSession>["db"], discovery: SourceDiscoveryInput) {
   const now = new Date();
+  const sourceUrl = canonicalizeOfficialUrl(discovery.sourceUrl);
+  const officialId = discovery.officialId?.trim() || undefined;
   const values = {
-    id: `discovery-${discovery.chamber}-${discovery.kind}-${hashContent(discovery.sourceUrl).slice(0, 16)}`,
+    id: `discovery-${discovery.chamber}-${discovery.kind}-${hashContent(discoveryKey({ ...discovery, officialId, sourceUrl })).slice(0, 16)}`,
     chamber: discovery.chamber,
     kind: discovery.kind,
-    sourceUrl: discovery.sourceUrl,
-    officialId: discovery.officialId,
+    sourceUrl,
+    officialId,
     title: discovery.title,
     discoveredOn: discovery.discoveredOn,
     firstSeenAt: now,
@@ -508,6 +511,44 @@ async function upsertSourceDiscovery(db: ReturnType<typeof createDbSession>["db"
     status: "pending" as const,
     sourceSnapshotId: discovery.sourceSnapshotId
   };
+
+  const [existingByUrl] = await db
+    .select({ id: schema.sourceDiscoveries.id })
+    .from(schema.sourceDiscoveries)
+    .where(eq(schema.sourceDiscoveries.sourceUrl, values.sourceUrl))
+    .limit(1);
+  const [existingByOfficialId] = values.officialId
+    ? await db
+        .select({ id: schema.sourceDiscoveries.id })
+        .from(schema.sourceDiscoveries)
+        .where(
+          and(
+            eq(schema.sourceDiscoveries.chamber, values.chamber),
+            eq(schema.sourceDiscoveries.kind, values.kind),
+            eq(schema.sourceDiscoveries.officialId, values.officialId)
+          )
+        )
+        .limit(1)
+    : [];
+
+  const existing = existingByUrl ?? existingByOfficialId;
+  if (existing) {
+    await db
+      .update(schema.sourceDiscoveries)
+      .set({
+        chamber: values.chamber,
+        kind: values.kind,
+        sourceUrl: values.sourceUrl,
+        officialId: values.officialId,
+        title: values.title,
+        discoveredOn: values.discoveredOn,
+        lastSeenAt: values.lastSeenAt,
+        sourceSnapshotId: values.sourceSnapshotId
+      })
+      .where(eq(schema.sourceDiscoveries.id, existing.id));
+    return;
+  }
+
   await db
     .insert(schema.sourceDiscoveries)
     .values(values)
@@ -523,6 +564,10 @@ async function upsertSourceDiscovery(db: ReturnType<typeof createDbSession>["db"
         sourceSnapshotId: values.sourceSnapshotId
       }
     });
+}
+
+function discoveryKey(discovery: Pick<SourceDiscoveryInput, "chamber" | "kind" | "sourceUrl" | "officialId">): string {
+  return [discovery.chamber, discovery.kind, discovery.officialId ?? canonicalizeOfficialUrl(discovery.sourceUrl)].join(":");
 }
 
 async function upsertSourceSnapshot(db: ReturnType<typeof createDbSession>["db"], source: SourceSnapshot) {

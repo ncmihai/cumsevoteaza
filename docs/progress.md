@@ -309,3 +309,25 @@ Append-only implementation history.
   - `npm run test` passed.
   - `npm run typecheck` passed.
   - `npm run build` passed outside the sandbox.
+
+## 2026-05-16 — Dedupe, Search, And Seat Ordering
+
+- Changed official source discovery dedupe to canonicalize URLs before identity
+  checks, including legacy Chamber `/pls/steno` vote links to the working ORDS
+  endpoint.
+- Discovery now also dedupes by official source identifier when available, so
+  re-runs update the existing row instead of creating duplicate work.
+- Fixed member directory search:
+  - the homepage search submits to `/[locale]/members`;
+  - the directory accepts `q`;
+  - matching covers display name, first name, last name, group, and party, with
+    Romanian diacritics normalized.
+- Reordered chamber seat slots so grouped party seats progress left-to-right
+  across the semicircle instead of filling each arc row from bottom to top.
+- Verification:
+  - `/ro/members?q=bica` returned the roster-backed `Andra Bică` result.
+  - The Deputies vote page for `idv=35953` rendered the updated seat map in a
+    Playwright screenshot.
+  - `npm run test` passed.
+  - `npm run typecheck` passed.
+  - `npm run build` passed outside the sandbox.

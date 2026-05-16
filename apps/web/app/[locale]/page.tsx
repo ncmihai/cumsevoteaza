@@ -21,14 +21,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {messages.home.title}
           </h1>
           <p className="mt-4 max-w-3xl text-lg leading-7 text-slate-600">{messages.home.subtitle}</p>
-          <div className="mt-6 flex max-w-2xl items-center gap-3 border border-slate-300 bg-white px-4 py-3">
+          <form action={`/${locale}/members`} className="mt-6 flex max-w-2xl items-center gap-3 border border-slate-300 bg-white px-4 py-3">
             <Search size={20} className="text-slate-500" aria-hidden="true" />
             <input
               className="w-full border-0 bg-transparent text-slate-900 outline-none"
+              name="q"
+              type="search"
               placeholder={messages.home.searchPlaceholder}
               aria-label={messages.home.searchPlaceholder}
             />
-          </div>
+          </form>
         </div>
 
         <aside className="border border-slate-300 bg-white p-4">

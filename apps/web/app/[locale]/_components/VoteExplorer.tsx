@@ -33,6 +33,13 @@ interface PositionedSeat {
 
 const choiceOrder: VoteChoice[] = ["for", "against", "abstention", "present_not_voting", "absent", "unknown"];
 
+interface SeatSlot {
+  left: number;
+  top: number;
+  progress: number;
+  rowIndex: number;
+}
+
 export function VoteExplorer({ locale, chamber, groups, members, individualVotes, groupTotals }: VoteExplorerProps) {
   const [activeGroup, setActiveGroup] = useState<string>("all");
   const [activeChoice, setActiveChoice] = useState<VoteChoice | "all">("all");
@@ -198,32 +205,43 @@ function positionSeats(
   members: Map<string, Member>,
   groups: Map<string, ParliamentaryGroup>
 ): PositionedSeat[] {
-  const rows = votes.length > 260 ? 8 : votes.length > 170 ? 7 : 6;
-  const counts = distributeCounts(votes.length, rows);
-  const positioned: PositionedSeat[] = [];
-  let index = 0;
+  const slots = buildSeatSlots(votes.length);
+  return votes.flatMap((vote, index) => {
+    const slot = slots[index];
+    if (!slot) return [];
+    return {
+      vote,
+      member: members.get(vote.memberId),
+      group: vote.groupId ? groups.get(vote.groupId) : undefined,
+      left: slot.left,
+      top: slot.top
+    };
+  });
+}
+
+function buildSeatSlots(total: number): SeatSlot[] {
+  const rows = total > 260 ? 8 : total > 170 ? 7 : 6;
+  const counts = distributeCounts(total, rows);
+  const slots: SeatSlot[] = [];
 
   counts.forEach((count, rowIndex) => {
     const radius = 22 + (rowIndex / Math.max(rows - 1, 1)) * 34;
     const startAngle = 210;
     const endAngle = 330;
     for (let seatIndex = 0; seatIndex < count; seatIndex += 1) {
-      const vote = votes[index];
-      if (!vote) return;
-      const angle = count === 1 ? 270 : startAngle + (seatIndex / (count - 1)) * (endAngle - startAngle);
+      const progress = count === 1 ? 0.5 : seatIndex / (count - 1);
+      const angle = startAngle + progress * (endAngle - startAngle);
       const radians = (angle * Math.PI) / 180;
-      positioned.push({
-        vote,
-        member: members.get(vote.memberId),
-        group: vote.groupId ? groups.get(vote.groupId) : undefined,
+      slots.push({
         left: 50 + Math.cos(radians) * radius,
-        top: 86 + Math.sin(radians) * radius
+        top: 86 + Math.sin(radians) * radius,
+        progress,
+        rowIndex
       });
-      index += 1;
     }
   });
 
-  return positioned;
+  return slots.sort((a, b) => a.progress - b.progress || b.rowIndex - a.rowIndex);
 }
 
 function distributeCounts(total: number, rows: number): number[] {

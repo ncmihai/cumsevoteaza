@@ -10,5 +10,6 @@ coverage
 *.log
 *.tsbuildinfo
 .DS_Store
+.playwright-cli/
 data/imports/*.json
 data/snapshots/*.html

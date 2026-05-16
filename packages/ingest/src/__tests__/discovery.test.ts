@@ -81,6 +81,24 @@ describe("official source discovery", () => {
     );
   });
 
+  it("dedupes legacy and ORDS Chamber vote links to the canonical source URL", () => {
+    const html = `
+      <a href="http://www.cdep.ro/pls/steno/evot2015.Nominal?idv=35953">legacy</a>
+      <a href="https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=35953">ords</a>
+    `;
+
+    const discoveries = discoverOfficialLinks(html, "https://www.cdep.ro/ords/pls/steno/evot2015.data?idl=1", "deputies");
+
+    expect(discoveries).toEqual([
+      expect.objectContaining({
+        chamber: "deputies",
+        kind: "vote",
+        officialId: "35953",
+        sourceUrl: "https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=35953"
+      })
+    ]);
+  });
+
   it("parses Deputies yearly list rows as project discoveries", () => {
     const html = `
       <p>Număr înregistrări găsite: 2</p>
