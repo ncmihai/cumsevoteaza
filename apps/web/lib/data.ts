@@ -8,6 +8,7 @@ import {
   type DocumentSource,
   type GroupVoteTotal,
   type IndividualVote,
+  type Legislature,
   type Member,
   type MemberCommitteeMembership,
   type MemberGroupMembership,
@@ -251,6 +252,7 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
     const memberRows = await session.db.select().from(schema.members);
     const mandateRows = await session.db.select().from(schema.memberMandates);
     const membershipRows = await session.db.select().from(schema.memberGroupMemberships);
+    const legislatureRows = await session.db.select().from(schema.legislatures);
     const groupTotalRows = await session.db
       .select()
       .from(schema.groupVoteTotals)
@@ -273,7 +275,8 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
         vote: mapVote(voteRow),
         individualVotes,
         mandates: mandateRows.map(mapMemberMandate),
-        memberships: membershipRows.map(mapMemberGroupMembership)
+        memberships: membershipRows.map(mapMemberGroupMembership),
+        legislatures: legislatureRows.map(mapLegislature)
       }),
       sourceKind: "database"
     };
@@ -642,6 +645,15 @@ function mapMemberMandate(row: typeof schema.memberMandates.$inferSelect): Membe
   };
 }
 
+function mapLegislature(row: typeof schema.legislatures.$inferSelect): Legislature {
+  return {
+    id: row.id,
+    label: row.label,
+    startsOn: row.startsOn,
+    endsOn: row.endsOn
+  };
+}
+
 function mapMemberGroupMembership(row: typeof schema.memberGroupMemberships.$inferSelect): MemberGroupMembership {
   return {
     id: row.id,
@@ -737,11 +749,17 @@ function buildVoteSeatRows(input: {
   individualVotes: IndividualVote[];
   mandates: MemberMandate[];
   memberships: MemberGroupMembership[];
+  legislatures: Legislature[];
 }): IndividualVote[] {
   const votedByMember = new Map(input.individualVotes.map((vote) => [vote.memberId, vote]));
+  const legislatureById = new Map(input.legislatures.map((legislature) => [legislature.id, legislature]));
   const chamberMemberIds = new Set(
     input.mandates
-      .filter((mandate) => mandate.chamber === input.vote.chamber && mandate.status !== "ended")
+      .filter(
+        (mandate) =>
+          mandate.chamber === input.vote.chamber &&
+          activeMandateOnDate(mandate, legislatureById.get(mandate.legislatureId), input.vote.heldOn)
+      )
       .map((mandate) => mandate.memberId)
   );
 
@@ -753,7 +771,7 @@ function buildVoteSeatRows(input: {
   for (const memberId of chamberMemberIds) {
     currentMembershipByMember.set(
       memberId,
-      latestMembership(input.memberships.filter((membership) => membership.memberId === memberId))
+      latestMembershipOn(input.memberships.filter((membership) => membership.memberId === memberId), input.vote.heldOn)
     );
   }
 
@@ -790,6 +808,23 @@ function latestMembership(memberships: MemberGroupMembership[]): MemberGroupMemb
       return b.startsOn.localeCompare(a.startsOn);
     })
     .at(0);
+}
+
+function latestMembershipOn(memberships: MemberGroupMembership[], date: string): MemberGroupMembership | undefined {
+  const active = memberships.filter((membership) => activeOnDate(membership.startsOn, membership.endsOn, date));
+  return [...(active.length > 0 ? active : [])].sort((a, b) => b.startsOn.localeCompare(a.startsOn)).at(0);
+}
+
+function activeMandateOnDate(mandate: MemberMandate, legislature: Legislature | undefined, date: string): boolean {
+  return activeOnDate(mandate.startsOn, earliestDate(mandate.endsOn, legislature?.endsOn), date);
+}
+
+function activeOnDate(startsOn: string, endsOn: string | undefined | null, date: string): boolean {
+  return startsOn <= date && (!endsOn || endsOn >= date);
+}
+
+function earliestDate(...dates: Array<string | undefined | null>): string | undefined {
+  return dates.filter((date): date is string => Boolean(date)).sort()[0];
 }
 
 function latestMandate(mandates: MemberMandate[]): MemberMandate | undefined {

@@ -162,6 +162,9 @@ implementation steps.
 - [x] Add dated `composition_events` for legislature, government, coalition, group, member, committee, and role changes.
 - [x] Add migration `0004_redundant_kate_bishop.sql`.
 - [x] Add visible hover/focus labels to chamber seats with member name, group, and vote choice.
+- [x] Fix vote chamber maps to use only mandates and groups active on the vote date.
+- [x] Make the composition timeline pinned stage viewport-bounded so both chambers remain reachable while scrolling.
+- [x] Compact composition timeline payloads so historical stops do not send full member/mandate records to the browser.
 - [x] Apply composition migration locally.
 - [x] Build first `people` backfill to create canonical person records from the current 2024-present roster.
 - [x] Add first `Compoziții` read model for current legislature/chamber composition.

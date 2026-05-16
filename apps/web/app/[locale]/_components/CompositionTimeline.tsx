@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CompositionEvent, Locale } from "@cumsevoteaza/parliament-model";
-import type { CompositionMode, CompositionTimelineStop } from "@/lib/composition-data";
+import { chamberLabels, type CompositionEvent, type Locale } from "@cumsevoteaza/parliament-model";
+import type { ChamberComposition, CompositionMode, CompositionTimelineStop } from "@/lib/composition-data";
 import { CompositionSeatMap } from "./CompositionSeatMap";
 
 interface CompositionTimelineProps {
@@ -66,8 +66,8 @@ export function CompositionTimeline({ locale, mode, stops }: CompositionTimeline
         ))}
       </ol>
 
-      <div className="hidden lg:block">
-        <div className="sticky top-6 grid gap-4">
+      <div className="hidden min-w-0 lg:block">
+        <div className="sticky top-4 grid max-h-[calc(100vh-2rem)] gap-4 overflow-y-auto overscroll-contain pr-2">
           {activeStop ? <PinnedStage locale={locale} mode={mode} stop={activeStop} /> : null}
         </div>
       </div>
@@ -100,7 +100,7 @@ function PinnedStage({ locale, mode, stop }: { locale: Locale; mode: Composition
       </section>
 
       {stop.chambers.length > 0 ? (
-        <div className="grid gap-4">
+        <div className="grid gap-4 2xl:grid-cols-2">
           {stop.chambers.map((chamber) => (
             <CompositionSeatMap key={chamber.chamber} locale={locale} chamber={chamber.chamber} seats={chamber.seats} />
           ))}
@@ -122,15 +122,27 @@ function MobileStop({ locale, mode, stop }: { locale: Locale; mode: CompositionM
       <TimelineCard locale={locale} stop={stop} active compact />
       {mode === "computed" ? <p className="mt-3 border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">{labels.computedEmpty}</p> : null}
       {stop.chambers.length > 0 ? (
-        <div className="mt-4 grid gap-4">
+        <div className="mt-4 grid gap-2">
           {stop.chambers.map((chamber) => (
-            <CompositionSeatMap key={chamber.chamber} locale={locale} chamber={chamber.chamber} seats={chamber.seats} />
+            <MobileChamberSummary key={chamber.chamber} locale={locale} chamber={chamber} />
           ))}
         </div>
       ) : (
         <p className="mt-4 border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">{labels.noCompositionBody}</p>
       )}
     </article>
+  );
+}
+
+function MobileChamberSummary({ locale, chamber }: { locale: Locale; chamber: ChamberComposition }) {
+  const labels = timelineLabels[locale];
+  return (
+    <div className="border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+      <div className="font-medium text-slate-950">{chamberLabels[locale][chamber.chamber]}</div>
+      <div className="mt-1">
+        {chamber.seats.length} {labels.seats} · {chamber.groups.length} {labels.groups}
+      </div>
+    </div>
   );
 }
 
@@ -201,6 +213,8 @@ type TimelineLabels = {
   noCompositionBody: string;
   computedEmpty: string;
   emptyTimeline: string;
+  seats: string;
+  groups: string;
   events: Record<CompositionEvent["eventType"], string>;
 };
 
@@ -223,6 +237,8 @@ const timelineLabels = {
     noCompositionBody: "Pentru această perioadă avem skeleton-ul guvernamental, dar nu avem încă rosters parlamentare importate.",
     computedEmpty: "Modul de susținere la vot va deveni disponibil după ce importăm suficiente voturi nominale pentru această perioadă.",
     emptyTimeline: "Nu există încă evenimente de compoziție importate.",
+    seats: "mandate",
+    groups: "grupuri",
     events: {
       legislature_start: "Început legislatură",
       legislature_end: "Sfârșit legislatură",
@@ -261,6 +277,8 @@ const timelineLabels = {
     noCompositionBody: "This period has a government skeleton, but parliamentary rosters are not imported yet.",
     computedEmpty: "Voting-support mode will become available after enough nominal votes are imported for this period.",
     emptyTimeline: "No composition events are imported yet.",
+    seats: "seats",
+    groups: "groups",
     events: {
       legislature_start: "Legislature start",
       legislature_end: "Legislature end",

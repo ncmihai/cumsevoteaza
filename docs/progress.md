@@ -756,3 +756,22 @@ Verification:
   - older party rows present include FSN, FDSN, PDSR, PSDR, PNȚCD, PUNR, PDAR,
     PER, MER, PSM, and PL '93.
   - no unscoped Deputies member ID spans multiple legislatures.
+
+## 2026-05-16 — Date-Bounded Chamber Seat Maps
+
+- Fixed vote chamber maps so the roster is built from mandates active on the
+  vote date, bounded by the mandate period and the legislature end date.
+- Fixed group coloring for vote maps to use the group membership active on the
+  vote date, instead of the newest imported membership.
+- Verified the root cause on a 2025 Deputies vote:
+  - unbounded historical Deputies mandates: 3771
+  - fixed date-bounded active Deputies mandates: 331
+- Adjusted the `Compoziții` sticky stage so it is viewport-bounded and
+  internally scrollable. This keeps the lower chamber reachable while moving
+  through the timeline.
+- Reduced composition map minimum heights and allowed the two chamber maps to
+  sit side by side on very wide screens.
+- Compacted composition timeline payloads from about 65 MB to about 7.9 MB by
+  sending only the member/group fields used by the UI.
+- Replaced mobile per-stop full seat maps with compact chamber summaries, so
+  the server does not render every historical chamber map at once.

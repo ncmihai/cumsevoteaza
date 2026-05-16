@@ -53,7 +53,7 @@ export function CompositionSeatMap({ locale, chamber, seats }: CompositionSeatMa
         </div>
       </div>
 
-      <div className="relative isolate mx-auto mt-4 aspect-[2/1] min-h-[250px] w-full max-w-5xl overflow-visible">
+      <div className="relative isolate mx-auto mt-4 aspect-[2/1] min-h-[190px] w-full max-w-5xl overflow-visible sm:min-h-[220px]">
         <div className="pointer-events-none absolute left-1/2 top-[77%] z-0 -translate-x-1/2 text-center">
           <div className="text-5xl font-semibold leading-none tracking-normal text-slate-950 md:text-6xl">{seats.length}</div>
           <div className="mt-1 text-xs font-semibold uppercase text-slate-500">{labels.seats}</div>

@@ -20,10 +20,8 @@ import {
 export type CompositionMode = "official" | "computed";
 
 export interface CompositionSeat {
-  member: Member;
-  mandate: MemberMandate;
-  group?: ParliamentaryGroup;
-  party?: Party;
+  member: Pick<Member, "id" | "slug" | "displayName">;
+  group?: Pick<ParliamentaryGroup, "id" | "shortName" | "name" | "color">;
   alignment: GovernanceAlignment;
   alignmentBasis: AlignmentBasis;
 }
@@ -32,8 +30,8 @@ export interface ChamberComposition {
   chamber: ChamberId;
   seats: CompositionSeat[];
   groups: Array<{
-    group: ParliamentaryGroup;
-    party?: Party;
+    group: Pick<ParliamentaryGroup, "id" | "shortName" | "name" | "color">;
+    party?: Pick<Party, "id" | "slug" | "shortName" | "name" | "color">;
     seats: number;
     alignment: GovernanceAlignment;
   }>;
@@ -300,7 +298,13 @@ function buildComposition(input: {
           groupAlignments: input.groupAlignments,
           partyAlignments: input.partyAlignments
         });
-        return [{ member, mandate, group, party, ...alignment }];
+        return [
+          {
+            member: compactMember(member),
+            group: group ? compactGroup(group) : undefined,
+            ...alignment
+          }
+        ];
       })
       .sort(
         (a, b) =>
@@ -316,8 +320,8 @@ function buildComposition(input: {
         const groupSeats = seats.filter((seat) => seat.group?.id === group.id);
         return [
           {
-            group,
-            party,
+            group: compactGroup(group),
+            party: party ? compactParty(party) : undefined,
             seats: groupSeats.length,
             alignment: mostCommonAlignment(groupSeats.map((seat) => seat.alignment))
           }
@@ -333,6 +337,33 @@ function buildComposition(input: {
     asOf: input.asOf,
     chambers,
     sourceKind: input.sourceKind
+  };
+}
+
+function compactMember(member: Member): Pick<Member, "id" | "slug" | "displayName"> {
+  return {
+    id: member.id,
+    slug: member.slug,
+    displayName: member.displayName
+  };
+}
+
+function compactGroup(group: ParliamentaryGroup): Pick<ParliamentaryGroup, "id" | "shortName" | "name" | "color"> {
+  return {
+    id: group.id,
+    shortName: group.shortName,
+    name: group.name,
+    color: group.color
+  };
+}
+
+function compactParty(party: Party): Pick<Party, "id" | "slug" | "shortName" | "name" | "color"> {
+  return {
+    id: party.id,
+    slug: party.slug,
+    shortName: party.shortName,
+    name: party.name,
+    color: party.color
   };
 }
 
@@ -388,9 +419,9 @@ function earliestDate(...dates: Array<string | undefined | null>): string | unde
   return dates.filter((date): date is string => Boolean(date)).sort()[0];
 }
 
-function groupSortKey(group?: ParliamentaryGroup): string {
+function groupSortKey(group?: Pick<ParliamentaryGroup, "shortName">): string {
   if (!group) return "zzzz";
-  return `${group.chamber}-${group.shortName}`;
+  return group.shortName;
 }
 
 function mostCommonAlignment(values: GovernanceAlignment[]): GovernanceAlignment {
