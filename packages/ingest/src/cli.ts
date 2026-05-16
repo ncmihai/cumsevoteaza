@@ -11,7 +11,14 @@ import { fetchOfficialSource } from "./fetch-source";
 import { canonicalizeOfficialUrl } from "./official-urls";
 import { persistChamberVote, persistRoster, persistSenateBill, persistSenateVote } from "./persist";
 import { snapshotFor } from "./parsers/utils";
-import { discoverDeputiesSources, discoverSenateSources, importPendingDiscoveries, runBackfill2024, runDailySync } from "./sync";
+import {
+  discoverDeputiesSources,
+  discoverDeputiesVoteSources,
+  discoverSenateSources,
+  importPendingDiscoveries,
+  runBackfill2024,
+  runDailySync
+} from "./sync";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -105,6 +112,11 @@ async function main() {
 
   if (command === "discover:deputies") {
     console.log(JSON.stringify(await discoverDeputiesSources(syncOptions()), null, 2));
+    return;
+  }
+
+  if (command === "discover:deputies-votes") {
+    console.log(JSON.stringify(await discoverDeputiesVoteSources(syncOptions()), null, 2));
     return;
   }
 
@@ -360,6 +372,10 @@ function syncOptions() {
     maxImports: numberFlag("max-imports"),
     maxRetries: numberFlag("max-retries"),
     discoveryLimit: numberFlag("discovery-limit"),
+    chamber: chamberFlag(),
+    kind: kindFlag(),
+    deputiesVoteDates: listFlag("deputies-vote-dates"),
+    deputiesVoteMonths: numberListFlag("deputies-vote-months"),
     senateFrom: numberFlag("senate-from"),
     senateTo: numberFlag("senate-to"),
     senatePrefixes: senatePrefixesFlag()
@@ -373,6 +389,23 @@ function numberFlag(name: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function listFlag(name: string): string[] | undefined {
+  const value = flag(name);
+  if (!value) return undefined;
+  const items = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length > 0 ? items : undefined;
+}
+
+function numberListFlag(name: string): number[] | undefined {
+  const values = listFlag(name)
+    ?.map((value) => Number(value))
+    .filter((value) => Number.isInteger(value));
+  return values && values.length > 0 ? values : undefined;
+}
+
 function senatePrefixesFlag(): Array<"B" | "BP" | "L" | "PLX"> | undefined {
   const value = flag("senate-prefixes");
   if (!value) return undefined;
@@ -381,6 +414,16 @@ function senatePrefixesFlag(): Array<"B" | "BP" | "L" | "PLX"> | undefined {
     .map((item) => item.trim().toUpperCase())
     .filter((item): item is "B" | "BP" | "L" | "PLX" => ["B", "BP", "L", "PLX"].includes(item));
   return prefixes.length > 0 ? prefixes : undefined;
+}
+
+function chamberFlag(): "senate" | "deputies" | undefined {
+  const value = flag("chamber");
+  return value === "senate" || value === "deputies" ? value : undefined;
+}
+
+function kindFlag(): "bill" | "vote" | undefined {
+  const value = flag("kind");
+  return value === "bill" || value === "vote" ? value : undefined;
 }
 
 main().catch((error) => {

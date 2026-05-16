@@ -17,6 +17,7 @@
     "roster:all": "tsx src/cli.ts roster:all",
     "discover:senate": "tsx src/cli.ts discover:senate",
     "discover:deputies": "tsx src/cli.ts discover:deputies",
+    "discover:deputies-votes": "tsx src/cli.ts discover:deputies-votes",
     "backfill:2024": "tsx src/cli.ts backfill:2024",
     "sync:daily": "tsx src/cli.ts sync:daily",
     "import:pending": "tsx src/cli.ts import:pending"

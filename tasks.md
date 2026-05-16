@@ -115,6 +115,9 @@ implementation steps.
 - [x] Fix member directory search so politician last-name queries work.
 - [x] Reorder chamber seat allocation left-to-right by party sector.
 - [x] Extract Chamber nominal vote subject metadata before broad 2025 backfill.
+- [x] Add filtered pending importer support for `--chamber=deputies --kind=vote`.
+- [x] Add controlled Deputies electronic-vote day discovery command.
+- [x] Run a controlled Deputies vote sample before broader 2025 backfill.
 - [x] Apply the new migration to Neon before deploying the cron route.
 - [x] Add `CRON_SECRET` in Vercel before enabling cron in production.
 - [ ] Tune Chamber seed/discovery URLs against full official 2024-present list pages before running a full backfill.
@@ -189,6 +192,13 @@ implementation steps.
   - Deputies vote page smoke passed for `/ro/votes/vote-deputies-https-www-cdep-ro-ords-pls-steno-evot2015-nominal-idv-35953`; Playwright screenshot confirmed party seats now allocate left-to-right.
   - Chamber nominal vote parser smoke passed for `idv=35797`: extracted `PL-x 61/2025`, the full voted subject, 293 nominal rows, and no warnings.
   - Re-imported `idv=35797` into Neon; deployed page now shows `Vot final - PL-x 61/2025 - Adoptare` and the linked bill subject.
+  - Controlled CDEP vote-day discovery sample:
+    - Dates: `20251022`, `20251203`.
+    - Discovered 39 official links across vote and bill pages.
+    - Canonicalized CDEP nominal vote URLs so lowercase `nominal` and `idl=1` variants do not duplicate canonical `idv` URLs.
+    - Imported 10 pending Deputies votes with `0` partials and `0` failures.
+    - Re-imported 5 older pre-fix Deputies votes with generic `VOT ELECTRONIC` titles.
+    - Neon Deputies vote quality after repair: 16 parsed, 0 partial, 0 failed, 0 generic `VOT ELECTRONIC` titles.
 
 ## Import Proof
 

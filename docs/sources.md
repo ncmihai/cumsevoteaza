@@ -66,9 +66,17 @@ Observed bill page structure:
   labelled `Subiect vot`, including the `PL-x` identifier and a project detail
   link. This must be parsed before broad backfill; otherwise the vote page may
   only show the generic HTML title `VOT ELECTRONIC`.
+- Chamber electronic-vote days are discoverable from
+  `evot2015.zile_vot?lu=<month>&an=<year>`, which returns compact `YYYYMMDD`
+  values. Each day can then be fetched through
+  `evot2015.data?dat=<YYYYMMDD>&cam=2&idl=1`, whose rows link nominal vote
+  pages and often include adjacent bill/project title rows.
 - Source discovery uses canonical official URLs and official identifiers where
   present, so legacy and ORDS variants of the same Chamber vote detail do not
   create duplicate queue entries.
+- CDEP nominal vote URLs vary by case and language parameter, for example
+  `evot2015.nominal?idv=<id>&idl=1`; canonical identity is
+  `evot2015.Nominal?idv=<id>`.
 - Chamber bill discovery targets official `upl_pck2015.proiect` detail URLs
   when they are exposed by list or timeline pages.
 - Chamber displayed identifiers normalize to `PL-x <number>/<year>`, even when

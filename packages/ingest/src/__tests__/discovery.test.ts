@@ -85,6 +85,7 @@ describe("official source discovery", () => {
     const html = `
       <a href="http://www.cdep.ro/pls/steno/evot2015.Nominal?idv=35953">legacy</a>
       <a href="https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=35953">ords</a>
+      <a href="https://www.cdep.ro/ords/pls/steno/evot2015.nominal?idv=35953&idl=1">ords lowercase with language</a>
     `;
 
     const discoveries = discoverOfficialLinks(html, "https://www.cdep.ro/ords/pls/steno/evot2015.data?idl=1", "deputies");

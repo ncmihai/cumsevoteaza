@@ -28,6 +28,7 @@
     "ingest:roster:all": "npm --workspace @cumsevoteaza/ingest run roster:all --",
     "ingest:discover:senate": "npm --workspace @cumsevoteaza/ingest run discover:senate --",
     "ingest:discover:deputies": "npm --workspace @cumsevoteaza/ingest run discover:deputies --",
+    "ingest:discover:deputies-votes": "npm --workspace @cumsevoteaza/ingest run discover:deputies-votes --",
     "ingest:backfill:2024": "npm --workspace @cumsevoteaza/ingest run backfill:2024 --",
     "ingest:sync:daily": "npm --workspace @cumsevoteaza/ingest run sync:daily --",
     "ingest:import:pending": "npm --workspace @cumsevoteaza/ingest run import:pending --"

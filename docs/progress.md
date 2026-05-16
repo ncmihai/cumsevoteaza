@@ -356,3 +356,35 @@ Append-only implementation history.
   - warnings: none.
 - Deployed page smoke confirmed the vote now shows the `PL-x 61/2025` title and
   the health-law subject from the official source.
+
+## 2026-05-16 — Controlled Deputies Vote Sample
+
+- Added `discover:deputies-votes` / `ingest:discover:deputies-votes` for CDEP
+  electronic-vote day pages.
+- Added filtered pending imports, so validation runs can import only a scoped
+  queue such as `--chamber=deputies --kind=vote`.
+- Ran a controlled CDEP vote-day discovery sample against Neon:
+  - dates: `20251022`, `20251203`;
+  - discovered 39 official links across nominal vote pages and bill pages;
+  - after canonical cleanup: 23 pending Deputies vote discoveries, 6 already
+    imported, 14 stale duplicate variants skipped.
+- Fixed CDEP vote canonicalization before importing:
+  - lowercase `evot2015.nominal` now normalizes to `evot2015.Nominal`;
+  - `idl` language params are removed from nominal vote identity;
+  - vote discoveries use `idv` as the official id, not the row's `PL-x`
+    identifier.
+- Imported a capped sample of 10 pending Deputies votes:
+  - imported: 10;
+  - partial: 0;
+  - failed: 0.
+- Re-imported 5 older Deputies votes that had been imported before subject
+  parsing existed.
+- Final Neon quality check after the sample:
+  - Deputies votes in DB: 16 parsed;
+  - partial Deputies vote snapshots: 0;
+  - failed Deputies vote snapshots: 0;
+  - remaining generic `VOT ELECTRONIC` vote titles: 0.
+
+Next broader backfill should use the CDEP vote-day calendar by month, then
+import in batches with the same `--chamber=deputies --kind=vote` filter and
+inspect partial/failed counts after each batch.

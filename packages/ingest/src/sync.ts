@@ -36,6 +36,10 @@ export interface SyncOptions {
   maxImports?: number;
   maxRetries?: number;
   discoveryLimit?: number;
+  chamber?: ChamberId;
+  kind?: DiscoveryKind;
+  deputiesVoteDates?: string[];
+  deputiesVoteMonths?: number[];
   senateFrom?: number;
   senateTo?: number;
   senatePrefixes?: Array<"B" | "BP" | "L" | "PLX">;
@@ -72,6 +76,12 @@ export async function discoverSenateSources(options: SyncOptions = {}): Promise<
 
 export async function discoverDeputiesSources(options: SyncOptions = {}): Promise<SyncSummary> {
   return discoverDeputiesYearlyLists(options.years ?? defaultYears, options);
+}
+
+export async function discoverDeputiesVoteSources(options: SyncOptions = {}): Promise<SyncSummary> {
+  const years = options.years ?? defaultYears;
+  const dates = options.deputiesVoteDates ?? (await discoverDeputiesVoteDates(years, options));
+  return discoverSources("deputies", deputiesVoteListUrls(dates), options);
 }
 
 export async function runDailySync(options: SyncOptions = {}): Promise<SyncSummary> {
@@ -118,10 +128,15 @@ export async function importPendingDiscoveries(options: SyncOptions = {}): Promi
   try {
     const maxImports = options.maxImports ?? 30;
     const maxRetries = options.maxRetries ?? 4;
+    const filters = [
+      inArray(schema.sourceDiscoveries.status, ["pending", "partial", "failed"]),
+      options.chamber ? eq(schema.sourceDiscoveries.chamber, options.chamber) : undefined,
+      options.kind ? eq(schema.sourceDiscoveries.kind, options.kind) : undefined
+    ].filter((filter): filter is Exclude<typeof filter, undefined> => Boolean(filter));
     const rows = await session.db
       .select()
       .from(schema.sourceDiscoveries)
-      .where(inArray(schema.sourceDiscoveries.status, ["pending", "partial", "failed"]))
+      .where(and(...filters))
       .orderBy(asc(schema.sourceDiscoveries.failureCount), desc(schema.sourceDiscoveries.lastSeenAt))
       .limit(maxImports);
 
@@ -277,7 +292,7 @@ export function discoverOfficialLinks(
       chamber: inferredChamber,
       kind,
       sourceUrl: absoluteUrl,
-      officialId: officialIdFromText(rowText, absoluteUrl),
+      officialId: officialIdFromText(rowText, absoluteUrl, kind),
       title: titleFromRow(rowText, text),
       discoveredOn: dateFromText(rowText),
       sourceSnapshotId
@@ -393,6 +408,24 @@ function deputiesSeedUrls(years: number[]): string[] {
   return years.map((year) => `https://www.cdep.ro/pls/proiecte/upl_pck2015.lista?anp=${year}`);
 }
 
+async function discoverDeputiesVoteDates(years: number[], options: SyncOptions): Promise<string[]> {
+  const dates = new Set<string>();
+  const months = options.deputiesVoteMonths ?? Array.from({ length: 12 }, (_, index) => index + 1);
+  for (const year of years) {
+    for (const month of months) {
+      const html = await fetchOfficialSource(`https://www.cdep.ro/ords/pls/steno/evot2015.zile_vot?lu=${month}&an=${year}`, 3);
+      for (const match of html.matchAll(/\b(20\d{6})\b/g)) {
+        dates.add(match[1]!);
+      }
+    }
+  }
+  return [...dates].sort();
+}
+
+function deputiesVoteListUrls(dates: string[]): string[] {
+  return dates.map((date) => `https://www.cdep.ro/ords/pls/steno/evot2015.data?dat=${date}&cam=2&idl=1`);
+}
+
 function deputiesTitleFromRow(rowText: string, identifier: string): string | undefined {
   const withoutIndex = rowText.replace(/^\d+\.\s*/, "");
   const afterIdentifier = withoutIndex.slice(withoutIndex.indexOf(identifier) + identifier.length);
@@ -400,14 +433,16 @@ function deputiesTitleFromRow(rowText: string, identifier: string): string | und
   return title.length > 8 ? title.slice(0, 500) : undefined;
 }
 
-function officialIdFromText(text: string, sourceUrl: string): string | undefined {
+function officialIdFromText(text: string, sourceUrl: string, kind?: DiscoveryKind): string | undefined {
   const year = yearFromUrlParam(sourceUrl);
+  const url = new URL(sourceUrl);
+  const voteId = url.searchParams.get("idv");
+  if (kind === "vote" && voteId) return voteId;
   const identifier = findOfficialIdentifiers(text, year)[0];
   if (identifier) return identifier.value;
-  const url = new URL(sourceUrl);
   const nrCls = url.searchParams.get("nr_cls") ?? url.searchParams.get("NR");
   const urlIdentifier = normalizeOfficialIdentifier(nrCls ?? undefined, year);
-  return urlIdentifier?.value ?? url.searchParams.get("cod") ?? url.searchParams.get("idp") ?? url.searchParams.get("idv") ?? undefined;
+  return urlIdentifier?.value ?? url.searchParams.get("cod") ?? url.searchParams.get("idp") ?? voteId ?? undefined;
 }
 
 function titleFromRow(rowText: string, linkText: string): string | undefined {
