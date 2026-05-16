@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { demoDataset, formatDate } from "@cumsevoteaza/parliament-model";
+import { formatDate } from "@cumsevoteaza/parliament-model";
+import { getBillPageData } from "@/lib/data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
 import { SourceBadge } from "../../_components/SourceBadge";
 
@@ -8,13 +9,9 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
   const { locale: rawLocale, id } = await params;
   const locale: AppLocale = isLocale(rawLocale) ? rawLocale : "ro";
   const messages = messagesFor(locale);
-  const bill = demoDataset.bills.find((item) => item.slug === id || item.id === id);
-  if (!bill) notFound();
-
-  const events = demoDataset.billEvents.filter((event) => event.billId === bill.id);
-  const documents = demoDataset.documents.filter((document) => document.billId === bill.id);
-  const votes = demoDataset.votes.filter((vote) => vote.billId === bill.id);
-  const source = demoDataset.sourceSnapshots.find((item) => bill.sourceSnapshotIds.includes(item.id));
+  const data = await getBillPageData(id);
+  if (!data) notFound();
+  const { bill, events, documents, votes, source, sourceKind } = data;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -24,7 +21,10 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
           <h1 className="mt-2 max-w-5xl text-3xl font-semibold text-slate-950">{bill.title}</h1>
           <p className="mt-3 text-slate-600">{bill.status}</p>
         </div>
-        {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
+        <div className="flex flex-col items-start gap-2">
+          {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
+          <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
+        </div>
       </div>
 
       <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_380px]">

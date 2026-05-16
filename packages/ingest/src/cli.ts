@@ -5,6 +5,7 @@ import { parseChamberNominalVote } from "./parsers/chamber-vote";
 import { parseSenateBill } from "./parsers/senate-bill";
 import { parseSenateVote } from "./parsers/senate-vote";
 import { fetchOfficialSource } from "./fetch-source";
+import { persistSenateBill, persistSenateVote } from "./persist";
 import { snapshotFor } from "./parsers/utils";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -16,7 +17,11 @@ async function main() {
     const cod = flag("cod") ?? "27035";
     const url = flag("url") ?? `https://www.senat.ro/Legis/Lista.aspx?cod=${cod}`;
     const html = await loadHtml(url);
-    await writeImport("senate-bill", parseSenateBill(html, url), html);
+    const parsed = parseSenateBill(html, url);
+    await writeImport("senate-bill", parsed, html);
+    if (hasFlag("persist")) {
+      console.log(JSON.stringify(await persistSenateBill(parsed), null, 2));
+    }
     return;
   }
 
@@ -25,7 +30,11 @@ async function main() {
       flag("url") ??
       "https://www.senat.ro/VoturiPlenDetaliu.aspx?AppID=EF4EE11F-7327-4C71-9B76-2CB5C930E88C&Cod=27035&Data=2025-10-27";
     const html = await loadHtml(url);
-    await writeImport("senate-vote", parseSenateVote(html, url), html);
+    const parsed = parseSenateVote(html, url);
+    await writeImport("senate-vote", parsed, html);
+    if (hasFlag("persist")) {
+      console.log(JSON.stringify(await persistSenateVote(parsed), null, 2));
+    }
     return;
   }
 
@@ -48,6 +57,10 @@ async function main() {
 function flag(name: string): string | undefined {
   const prefix = `--${name}=`;
   return process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
+}
+
+function hasFlag(name: string): boolean {
+  return process.argv.includes(`--${name}`);
 }
 
 async function loadHtml(url: string): Promise<string> {

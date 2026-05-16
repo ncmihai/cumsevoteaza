@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { demoDataset, formatDate, voteChoiceLabels } from "@cumsevoteaza/parliament-model";
+import { formatDate, voteChoiceLabels } from "@cumsevoteaza/parliament-model";
+import { getVotePageData } from "@/lib/data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
 import { SourceBadge } from "../../_components/SourceBadge";
 import { Stat } from "../../_components/Stat";
@@ -10,13 +11,9 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
   const { locale: rawLocale, id } = await params;
   const locale: AppLocale = isLocale(rawLocale) ? rawLocale : "ro";
   const messages = messagesFor(locale);
-  const vote = demoDataset.votes.find((item) => item.id === id);
-  if (!vote) notFound();
-
-  const bill = demoDataset.bills.find((item) => item.id === vote.billId);
-  const source = demoDataset.sourceSnapshots.find((item) => item.id === vote.sourceSnapshotId);
-  const groupTotals = demoDataset.groupVoteTotals.filter((item) => item.voteId === vote.id);
-  const individualVotes = demoDataset.individualVotes.filter((item) => item.voteId === vote.id);
+  const data = await getVotePageData(id);
+  if (!data) notFound();
+  const { vote, bill, source, groups, members, groupTotals, individualVotes, sourceKind } = data;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -30,7 +27,10 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
             </Link>
           ) : null}
         </div>
-        {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
+        <div className="flex flex-col items-start gap-2">
+          {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
+          <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
+        </div>
       </div>
 
       <section className="mt-6 grid grid-cols-2 gap-y-4 border border-slate-300 bg-white py-4 md:grid-cols-5">
@@ -44,8 +44,8 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
       <div className="mt-6">
         <VoteExplorer
           locale={locale}
-          groups={demoDataset.groups}
-          members={demoDataset.members}
+          groups={groups}
+          members={members}
           individualVotes={individualVotes}
           groupTotals={groupTotals}
         />
@@ -63,8 +63,8 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
           </thead>
           <tbody className="divide-y divide-slate-200">
             {individualVotes.map((individualVote) => {
-              const member = demoDataset.members.find((item) => item.id === individualVote.memberId);
-              const group = demoDataset.groups.find((item) => item.id === individualVote.groupId);
+              const member = members.find((item) => item.id === individualVote.memberId);
+              const group = groups.find((item) => item.id === individualVote.groupId);
               return (
                 <tr key={individualVote.id}>
                   <td className="px-3 py-3">

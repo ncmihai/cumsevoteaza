@@ -34,8 +34,10 @@ export function parseSenateVote(html: string, sourceUrl: string): ParsedSenateVo
   const dateMatch = headerText.match(/(\d{2})\/(\d{2})\/(\d{4})/);
   const heldOn = dateMatch ? `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}` : new Date().toISOString().slice(0, 10);
   const voteType = headerLines.at(-1) ?? "unknown";
+  const voteKind = normalizeVoteKind(voteType);
   const title = cleanText($(".plenary-votes h5").first().text()) || billCode || "Senate vote";
-  const voteId = `vote-senate-${slugify(`${billCode ?? title}-${heldOn}-${voteType}`)}`;
+  const shortDate = heldOn.slice(5);
+  const voteId = `vote-senate-${slugify(`${billCode ?? title}-${shortDate}-${voteKind}`)}`;
 
   const totalsText = $(".total-votes li")
     .toArray()
@@ -127,6 +129,7 @@ export function parseSenateVote(html: string, sourceUrl: string): ParsedSenateVo
     sourceSnapshot,
     vote: {
       id: voteId,
+      billId: billCode ? `bill-${slugify(billCode)}` : undefined,
       chamber: "senate",
       title: billCode ? `${billCode} — ${voteType}` : title,
       heldOn,
@@ -139,6 +142,15 @@ export function parseSenateVote(html: string, sourceUrl: string): ParsedSenateVo
     groupVoteTotals,
     individualVotes
   };
+}
+
+function normalizeVoteKind(voteType: string): string {
+  const normalized = cleanText(voteType)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/^vot\s+/, "");
+  return normalized || "unknown";
 }
 
 function countFromLabel(lines: string[], label: string): number {

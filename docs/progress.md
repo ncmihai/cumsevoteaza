@@ -52,3 +52,55 @@ Append-only implementation history.
   - `npm run typecheck` passed.
   - `npm run build` passed when run outside sandbox.
   - Browser smoke checks passed for homepage, English page, vote page, and member page.
+
+## 2026-05-16 — V2 Persistence Layer
+
+- Added local Postgres Docker Compose service.
+- Generated initial Drizzle migration under `packages/db/drizzle/`.
+- Added `.env.example` and `apps/web/.env.example` guidance for `DATABASE_URL`.
+- Added `createDbSession()` so CLI importers can close Postgres connections cleanly.
+- Added persistent Senate import paths:
+  - `npm run ingest:senate:bill -- --cod=27035 --persist`
+  - `npm run ingest:senate:vote -- --persist`
+- Added deterministic upserts for source snapshots, bills, events, sponsors, documents, groups, members, derived mandates, group memberships, votes, group vote totals, and individual votes.
+- Updated vote and bill pages to query Postgres first and fall back to demo data when no database is configured or reachable.
+- Verification:
+  - `npm run test` passed.
+  - `npm run typecheck` passed.
+  - `npm run build` passed outside sandbox.
+- Initial local Postgres smoke test was blocked until Docker was started.
+
+## 2026-05-16 — Local Postgres Smoke Verified
+
+- Started the local Docker Postgres service with `npm run db:up`.
+- Applied the initial Drizzle migration with `npm run db:migrate`.
+- Persisted the corrected Senate bill import for `L316/2025`:
+  - 1 bill
+  - 1 dated bill event
+  - 28 documents
+  - 1 source snapshot
+- Persisted the Senate vote detail import:
+  - 1 vote
+  - 121 members
+  - 121 nominal votes
+  - 8 group totals
+  - 1 source snapshot
+- Verified official vote totals in Postgres:
+  - 121 present
+  - 116 for
+  - 0 against
+  - 5 abstentions
+  - 0 present-not-voting
+- Tightened Senate bill parsing so missing event dates are not replaced with the current date.
+- Confirmed local Next routes return `200` for DB-backed vote and bill pages.
+
+## 2026-05-16 — Deployment Prep
+
+- Added root `vercel.json` for monorepo deployment:
+  - install with `npm ci`
+  - build with `npm run build`
+  - output from `apps/web/.next`
+- Pinned Vercel/Node runtime through root `package.json` engines.
+- Added `.vercelignore` so local env files, data snapshots, and build outputs are not uploaded.
+- Added `docs/deployment.md` with Vercel project settings, env vars, and the deployment repo target `ncmihai/cumvoteaza`.
+- Added a local Git remote named `vercel` pointing at `https://github.com/ncmihai/cumvoteaza.git`.

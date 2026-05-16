@@ -41,31 +41,34 @@ export function parseSenateBill(html: string, sourceUrl: string): ParsedSenateBi
     });
 
   const events: BillEvent[] = [];
-  if (/inregistrat|înregistrat/i.test(allText)) {
+  const registeredDate = inferDate(allText);
+  if (/inregistrat|înregistrat/i.test(allText) && registeredDate) {
     events.push({
       id: `event-${billId}-registered`,
       billId,
-      occurredOn: inferDate(allText) ?? new Date().toISOString().slice(0, 10),
+      occurredOn: registeredDate,
       chamber: "senate",
       label: "Înregistrat la Senat pentru dezbatere",
       sourceUrl
     });
   }
-  if (/adoptat[^.]+Senat/i.test(allText)) {
+  const adoptedDate = inferDateNear(allText, "adoptat");
+  if (/adoptat[^.]+Senat/i.test(allText) && adoptedDate) {
     events.push({
       id: `event-${billId}-adopted-senate`,
       billId,
-      occurredOn: inferDateNear(allText, "adoptat") ?? new Date().toISOString().slice(0, 10),
+      occurredOn: adoptedDate,
       chamber: "senate",
       label: "Adoptat de Senat",
       sourceUrl
     });
   }
-  if (/Camera Deputa/i.test(allText)) {
+  const sentDeputiesDate = inferDateNear(allText, "Camera Deput");
+  if (/Camera Deputa/i.test(allText) && sentDeputiesDate) {
     events.push({
       id: `event-${billId}-sent-deputies`,
       billId,
-      occurredOn: inferDateNear(allText, "Camera Deput") ?? new Date().toISOString().slice(0, 10),
+      occurredOn: sentDeputiesDate,
       chamber: "deputies",
       label: "Înregistrat sau transmis la Camera Deputaților",
       sourceUrl

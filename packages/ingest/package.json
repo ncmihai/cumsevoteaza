@@ -11,6 +11,7 @@
     "chamber:vote": "tsx src/cli.ts chamber:vote"
   },
   "dependencies": {
+    "@cumsevoteaza/db": "0.1.0",
     "@cumsevoteaza/parliament-model": "0.1.0",
     "cheerio": "^1.0.0"
   },

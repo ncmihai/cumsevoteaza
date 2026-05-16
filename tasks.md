@@ -6,7 +6,8 @@ implementation steps.
 ## Current Status
 
 - Project repo cloned from `https://github.com/ncmihai/cumsevoteaza`.
-- First milestone scaffold complete: docs, parsers, schema, UI proof, tests, build, and local browser smoke checks.
+- V2 persistence layer is locally verified: Docker Postgres, Drizzle migration, persistent Senate importers, DB-backed bill/vote pages with demo fallback.
+- Deployment layer in progress for Vercel repo `https://github.com/ncmihai/cumvoteaza`.
 - Scope is private-first, bilingual, data-first, and factual only.
 
 ## Active Milestone — Data Proof + First UI
@@ -26,11 +27,46 @@ implementation steps.
 - [x] Run production build.
 - [x] Start local dev server and verify main pages.
 
+## Active Milestone — V2 Persistence
+
+- [x] Add Docker Compose local Postgres service.
+- [x] Generate initial Drizzle migration.
+- [x] Add root and web env examples for `DATABASE_URL`.
+- [x] Add persistent Senate bill importer via `--persist`.
+- [x] Add persistent Senate vote importer via `--persist`.
+- [x] Add deterministic DB upserts for source snapshots, bills, events, documents, groups, members, memberships, votes, group totals, and nominal votes.
+- [x] Switch bill and vote pages to read from Postgres first.
+- [x] Keep demo fallback when `DATABASE_URL` is missing or DB is unreachable.
+- [x] Run migration and persistent importer smoke test against local Postgres.
+
+## Active Milestone — Deployment
+
+- [x] Add Vercel build configuration at repo root.
+- [x] Pin Node runtime for Vercel builds.
+- [x] Add `.vercelignore` for local env, data snapshots, and build outputs.
+- [x] Document Vercel settings and env vars in `docs/deployment.md`.
+- [x] Add deployment Git remote for `ncmihai/cumvoteaza`.
+- [ ] Push deploy-ready branch to the Vercel repo.
+- [ ] Connect Vercel project to `ncmihai/cumvoteaza`.
+- [ ] Set `CUMSEVOTEAZA_SITE_PASSWORD` in Vercel.
+- [ ] Add Neon `DATABASE_URL` when the hosted database is ready.
+
 ## Verification
 
 - `npm run test` — passed.
 - `npm run typecheck` — passed.
 - `npm run build` — passed with escalation because Turbopack worker binding is sandbox-blocked.
+- V2 `npm run test` — passed.
+- V2 `npm run typecheck` — passed.
+- V2 `npm run build` — passed.
+- Local Postgres smoke test passed after Docker was started:
+  - `npm run db:up` started the Postgres container.
+  - `npm run db:migrate` applied the initial Drizzle migration.
+  - `npm run ingest:senate:bill -- --cod=27035 --persist` persisted `bill-l316-2025`.
+  - `npm run ingest:senate:vote -- --persist` persisted `vote-senate-l316-2025-10-27-final`.
+  - Database row counts: 1 bill, 1 vote, 121 members, 121 nominal votes, 8 group totals, 2 source snapshots.
+  - Vote totals verified: 121 present, 116 for, 0 against, 5 abstentions, 0 present-not-voting.
+  - Bill events verified: one dated official event, `2025-09-04` registration at the Senate.
 - Browser smoke checks:
   - `/ro`
   - `/en`
@@ -44,6 +80,9 @@ implementation steps.
 - Live Senate bill import succeeded for `L316/2025` / `PL-x 429/2025`.
 - Live Senate vote import succeeded with 121 nominal votes.
 - Chamber nominal vote official URL was attempted and wrote a failed import snapshot for inspection.
+- Persistent import command shape:
+  - `npm run ingest:senate:bill -- --cod=27035 --persist`
+  - `npm run ingest:senate:vote -- --persist`
 
 ## Decision Log
 
@@ -59,7 +98,7 @@ implementation steps.
 
 ## Next Actions
 
-- Commit the first scaffold when reviewed.
-- Decide whether to wire importer persistence into Postgres next or continue broadening parser coverage first.
-- Add real local Postgres setup and Drizzle migration generation.
 - Expand member profile importers for current legislature rosters.
+- Replace member and party pages with DB read models after roster import exists.
+- Add source snapshot inspection pages or admin-only views.
+- Push deployment-ready code to `ncmihai/cumvoteaza` after final checks pass.

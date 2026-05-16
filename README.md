@@ -17,6 +17,10 @@ docs                      Planning, progress, and source notes
 
 ```bash
 npm install
+cp .env.example .env
+cp apps/web/.env.example apps/web/.env.local
+npm run db:up
+npm run db:migrate
 npm run dev
 ```
 
@@ -24,6 +28,43 @@ The web app defaults to Romanian at `http://localhost:3000/ro`.
 
 For private deployments, set `CUMSEVOTEAZA_SITE_PASSWORD`. If the variable is
 missing, the local app stays open for development.
+
+## Import Data
+
+With local Postgres running:
+
+```bash
+npm run ingest:senate:bill -- --cod=27035 --persist
+npm run ingest:senate:vote -- --persist
+```
+
+The app reads from Postgres when `DATABASE_URL` is set and falls back to the
+bundled demo dataset when it is not.
+
+## Deploy
+
+This repo can deploy to Vercel from the monorepo root. The build settings are
+encoded in `vercel.json`:
+
+```bash
+npm ci
+npm run build
+```
+
+Required Vercel environment variable for private access:
+
+```text
+CUMSEVOTEAZA_SITE_PASSWORD
+```
+
+Optional until Neon is connected:
+
+```text
+DATABASE_URL
+```
+
+Without `DATABASE_URL`, deployed pages use the bundled demo dataset. See
+`docs/deployment.md` for the deployment repo and dashboard settings.
 
 ## Data Principles
 
