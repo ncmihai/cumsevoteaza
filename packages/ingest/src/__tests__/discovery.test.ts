@@ -24,17 +24,23 @@ describe("official source discovery", () => {
   });
 
   it("classifies Senate number-search URLs as bill sources", () => {
-    const html = `<a href="/legis/lista.aspx?an_cls=2025&nr_cls=L316">L316/2025</a>`;
+    const html = `
+      <a href="/legis/lista.aspx?an_cls=2025&nr_cls=L316">L316/2025</a>
+      <a href="/legis/lista.aspx?an_cls=2026&nr_cls=B286">B286/2026</a>
+      <a href="/legis/lista.aspx?an_cls=2025&nr_cls=BP12">BP12/2025</a>
+      <a href="/legis/lista.aspx?an_cls=2025&nr_cls=PLX6">PLX6/2025</a>
+    `;
 
     const discoveries = discoverOfficialLinks(html, "https://www.senat.ro/Legis/Lista.aspx", "senate");
 
-    expect(discoveries).toEqual([
-      expect.objectContaining({
-        chamber: "senate",
-        kind: "bill",
-        officialId: "L316/2025"
-      })
-    ]);
+    expect(discoveries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ chamber: "senate", kind: "bill", officialId: "L316/2025" }),
+        expect.objectContaining({ chamber: "senate", kind: "bill", officialId: "B286/2026" }),
+        expect.objectContaining({ chamber: "senate", kind: "bill", officialId: "BP12/2025" }),
+        expect.objectContaining({ chamber: "senate", kind: "bill", officialId: "PL-x 6/2025" })
+      ])
+    );
   });
 
   it("detects Chamber bill and nominal vote links from official-style pages", () => {

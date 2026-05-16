@@ -29,6 +29,10 @@ Observed bill page structure:
   `https://www.senat.ro/legis/lista.aspx?an_cls=<year>&nr_cls=L<number>`.
   The backfill importer supports bounded generated `L<number>/<year>` discovery
   ranges for this reason.
+- Senate `Număr` values are not limited to `L<number>`. The official search
+  form says the number can start with `L`, `B`, `BP`, or `PLX`; importers
+  normalize these as aliases and prefer the established `L` identifier when
+  an official page links multiple identifiers for the same project.
 
 ## Chamber of Deputies
 
@@ -50,6 +54,8 @@ Observed bill page structure:
   for example `cdep.ro/pls/steno/evot2015.Nominal?idv=35953`.
 - Chamber bill discovery targets official `upl_pck2015.proiect` detail URLs
   when they are exposed by list or timeline pages.
+- Chamber displayed identifiers normalize to `PL-x <number>/<year>`, even when
+  cross-linked Senate pages write them as compact `PLX<number>/<year>`.
 - Direct fetches can be slower or flaky. Importers must retry, store failures,
   and keep the official URL as source metadata.
 - 2026-05-16: first importer attempt against

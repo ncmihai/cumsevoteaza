@@ -220,3 +220,16 @@ Append-only implementation history.
   - 9 Senate votes pending
   - 5 Deputies votes pending
   - 1 Deputies vote failed
+
+## 2026-05-16 — Identifier-Aware Discovery
+
+- Added official identifier normalization for:
+  - Senate `B<number>/<year>`
+  - Senate `BP<number>/<year>`
+  - Senate `L<number>/<year>`
+  - compact Senate-side `PLX<number>/<year>`
+  - Chamber `PL-x <number>/<year>`
+- Updated Senate and Deputies bill parsers to store aliases in `bill.identifiers`.
+- Updated discovery to classify Senate generated/search URLs for `B`, `BP`, `L`, and `PLX`.
+- Added `--senate-prefixes=B,BP,L,PLX` for controlled generated Senate discovery.
+- Verified a tiny Neon smoke for 2025 `B1-B2`, `BP1-BP2`, and `PLX1-PLX2`: discovered `6`.

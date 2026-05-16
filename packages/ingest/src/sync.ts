@@ -9,6 +9,7 @@ import { parseDeputiesBill } from "./parsers/deputies-bill";
 import { parseSenateBill } from "./parsers/senate-bill";
 import { parseSenateVote } from "./parsers/senate-vote";
 import { cleanText, hashContent, slugify, snapshotFor } from "./parsers/utils";
+import { findOfficialIdentifiers, normalizeOfficialIdentifier } from "./parsers/identifiers";
 import { persistChamberVote, persistDeputiesBill, persistSenateBill, persistSenateVote } from "./persist";
 
 export type DiscoveryKind = "bill" | "vote";
@@ -31,6 +32,7 @@ export interface SyncOptions {
   discoveryLimit?: number;
   senateFrom?: number;
   senateTo?: number;
+  senatePrefixes?: Array<"B" | "BP" | "L" | "PLX">;
 }
 
 export interface SyncSummary {
@@ -48,7 +50,15 @@ const defaultYears = yearsSince2024();
 export async function discoverSenateSources(options: SyncOptions = {}): Promise<SyncSummary> {
   const summary = await discoverSources("senate", senateSeedUrls(options.years ?? defaultYears), options);
   if (options.senateFrom && options.senateTo) {
-    addSummary(summary, await discoverGeneratedSenateBills(options.years ?? defaultYears, options.senateFrom, options.senateTo));
+    addSummary(
+      summary,
+      await discoverGeneratedSenateBills(
+        options.years ?? defaultYears,
+        options.senateFrom,
+        options.senateTo,
+        options.senatePrefixes ?? ["L"]
+      )
+    );
   }
   return summary;
 }
@@ -234,7 +244,7 @@ export function discoverOfficialLinks(
 
 function kindFromUrl(url: string): DiscoveryKind | undefined {
   if (/senat\.ro\/Legis\/Lista\.aspx\?cod=\d+/i.test(url)) return "bill";
-  if (/senat\.ro\/legis\/lista\.aspx/i.test(url) && /[?&]nr_cls=L\d+/i.test(url) && /[?&]an_cls=\d{4}/i.test(url)) {
+  if (/senat\.ro\/legis\/lista\.aspx/i.test(url) && /[?&]nr_cls=(?:BP|B|L|PLX)\d+/i.test(url) && /[?&]an_cls=\d{4}/i.test(url)) {
     return "bill";
   }
   if (/cdep\.ro\/pls\/proiecte\/upl_pck2015\.proiect/i.test(url)) return "bill";
@@ -262,22 +272,30 @@ function senateSeedUrls(years: number[]): string[] {
   );
 }
 
-async function discoverGeneratedSenateBills(years: number[], from: number, to: number): Promise<SyncSummary> {
+async function discoverGeneratedSenateBills(
+  years: number[],
+  from: number,
+  to: number,
+  prefixes: Array<"B" | "BP" | "L" | "PLX">
+): Promise<SyncSummary> {
   const session = createDbSession();
   const summary: SyncSummary = { discovered: 0, imported: 0, partial: 0, failed: 0, skipped: 0, errors: [] };
   const start = Math.max(1, Math.min(from, to));
   const end = Math.max(from, to);
   try {
     for (const year of years) {
-      for (let number = start; number <= end; number += 1) {
-        await upsertSourceDiscovery(session.db, {
-          chamber: "senate",
-          kind: "bill",
-          sourceUrl: `https://www.senat.ro/legis/lista.aspx?an_cls=${year}&nr_cls=L${number}`,
-          officialId: `L${number}/${year}`,
-          title: `Senate bill candidate L${number}/${year}`
-        });
-        summary.discovered += 1;
+      for (const prefix of prefixes) {
+        for (let number = start; number <= end; number += 1) {
+          const displayPrefix = prefix === "PLX" ? "PLX" : prefix;
+          await upsertSourceDiscovery(session.db, {
+            chamber: "senate",
+            kind: "bill",
+            sourceUrl: `https://www.senat.ro/legis/lista.aspx?an_cls=${year}&nr_cls=${displayPrefix}${number}`,
+            officialId: `${displayPrefix}${number}/${year}`,
+            title: `Senate bill candidate ${displayPrefix}${number}/${year}`
+          });
+          summary.discovered += 1;
+        }
       }
     }
     return summary;
@@ -291,13 +309,13 @@ function deputiesSeedUrls(years: number[]): string[] {
 }
 
 function officialIdFromText(text: string, sourceUrl: string): string | undefined {
-  return (
-    text.match(/L\d+\/\d{4}/)?.[0] ??
-    cleanText(text.match(/PL[-\s]*x\s*(?:nr\.\s*)?\d+\/(?:\d{2}\.\d{2}\.)?\d{4}/i)?.[0] ?? "") ??
-    new URL(sourceUrl).searchParams.get("cod") ??
-    new URL(sourceUrl).searchParams.get("idp") ??
-    undefined
-  );
+  const year = yearFromUrlParam(sourceUrl);
+  const identifier = findOfficialIdentifiers(text, year)[0];
+  if (identifier) return identifier.value;
+  const url = new URL(sourceUrl);
+  const nrCls = url.searchParams.get("nr_cls") ?? url.searchParams.get("NR");
+  const urlIdentifier = normalizeOfficialIdentifier(nrCls ?? undefined, year);
+  return urlIdentifier?.value ?? url.searchParams.get("cod") ?? url.searchParams.get("idp") ?? undefined;
 }
 
 function titleFromRow(rowText: string, linkText: string): string | undefined {
@@ -309,6 +327,12 @@ function titleFromRow(rowText: string, linkText: string): string | undefined {
 function dateFromText(text: string): string | undefined {
   const match = text.match(/(\d{2})[./-](\d{2})[./-](\d{4})/);
   return match ? `${match[3]}-${match[2]}-${match[1]}` : undefined;
+}
+
+function yearFromUrlParam(sourceUrl: string): number | undefined {
+  const url = new URL(sourceUrl);
+  const value = url.searchParams.get("an_cls") ?? url.searchParams.get("AN") ?? url.searchParams.get("anp");
+  return value && /^\d{4}$/.test(value) ? Number(value) : undefined;
 }
 
 async function saveNestedDiscoveries(discoveries: SourceDiscoveryInput[], sourceSnapshotId: string) {

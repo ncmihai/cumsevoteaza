@@ -81,6 +81,13 @@ npm run ingest:discover:senate -- --years=2025 --senate-from=1 --senate-to=700
 
 Start with a narrow range, verify imports, then widen it.
 
+To include early Senate registration and cross-chamber search forms, pass
+explicit prefixes:
+
+```bash
+npm run ingest:discover:senate -- --years=2025 --senate-from=1 --senate-to=700 --senate-prefixes=B,BP,L,PLX
+```
+
 ## Git Flow
 
 Use `origin` for the canonical development repo and a separate deployment remote

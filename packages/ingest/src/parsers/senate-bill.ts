@@ -1,6 +1,14 @@
 import * as cheerio from "cheerio";
 import type { Bill, BillEvent, BillSponsor, DocumentSource, SourceSnapshot } from "@cumsevoteaza/parliament-model";
 import { cleanText, slugify, snapshotFor } from "./utils";
+import {
+  billIdForIdentifier,
+  canonicalBillIdentifier,
+  findOfficialIdentifiers,
+  identifierRecord,
+  normalizeOfficialIdentifier,
+  yearFromUrl
+} from "./identifiers";
 
 export interface ParsedSenateBill {
   sourceSnapshot: SourceSnapshot;
@@ -14,18 +22,21 @@ export function parseSenateBill(html: string, sourceUrl: string): ParsedSenateBi
   const $ = cheerio.load(html);
   const sourceSnapshot = snapshotFor("senate-bill", sourceUrl, html, "parsed");
   const allText = cleanText($("body").text());
-  const senateId =
-    fieldValue($, "Număr de înregistrare Senat") ??
-    cleanText($(".lista-legis-panel-2 h4").first().text()).match(/L\d+\/\d{4}/)?.[0] ??
-    cleanText($("#ctl00_B_Center_Lista_grdLista font").first().text()).match(/L\d+\/\d{4}/)?.[0] ??
-    allText.match(/L\d+\/\d{4}/)?.[0] ??
-    "unknown";
-  const deputiesId = normalizeDeputiesIdentifier(
-    fieldValue($, "Număr de înregistrare Camera Deputaților") ?? allText.match(/PL[-\s]*x?\s*\d+\/\d{4}|PLX\d+\/\d{4}/i)?.[0]
-  );
-  const slug = slugify(senateId);
-  const billId = `bill-${slug}`;
-  const title = extractTitle($, senateId);
+  const fallbackYear = yearFromUrl(sourceUrl);
+  const explicitSenate = normalizeOfficialIdentifier(fieldValue($, "Număr de înregistrare Senat"), fallbackYear);
+  const explicitDeputies = normalizeOfficialIdentifier(fieldValue($, "Număr de înregistrare Camera Deputaților"), fallbackYear);
+  const identifiers = [
+    ...(explicitSenate ? [explicitSenate] : []),
+    ...(explicitDeputies ? [explicitDeputies] : []),
+    ...findOfficialIdentifiers(cleanText($(".lista-legis-panel-2 h4").first().text()), fallbackYear),
+    ...findOfficialIdentifiers(cleanText($("#ctl00_B_Center_Lista_grdLista font").first().text()), fallbackYear),
+    ...findOfficialIdentifiers(allText, fallbackYear)
+  ];
+  const canonical = canonicalBillIdentifier(identifiers) ?? normalizeOfficialIdentifier("unknown", fallbackYear);
+  const canonicalValue = canonical?.value ?? "unknown";
+  const slug = slugify(canonicalValue);
+  const billId = canonical ? billIdForIdentifier(canonical) : `bill-${slug}`;
+  const title = extractTitle($, canonicalValue);
 
   const documents: DocumentSource[] = $("a[href$='.pdf'], a[href*='.pdf?']")
     .toArray()
@@ -81,10 +92,7 @@ export function parseSenateBill(html: string, sourceUrl: string): ParsedSenateBi
       id: billId,
       slug,
       title,
-      identifiers: {
-        senate: senateId,
-        ...(deputiesId ? { deputies: deputiesId } : {})
-      },
+      identifiers: identifierRecord(identifiers.length > 0 ? identifiers : []),
       chamberOfOrigin: /Senat/i.test(allText) ? "senate" : "unknown",
       status: /adoptat/i.test(allText) ? "Adoptat" : "unknown",
       sourceSnapshotIds: [sourceSnapshot.id]
@@ -132,14 +140,6 @@ function fieldValue($: cheerio.CheerioAPI, label: string): string | undefined {
   });
 
   return value;
-}
-
-function normalizeDeputiesIdentifier(value: string | undefined): string | undefined {
-  if (!value) return undefined;
-  const compact = cleanText(value).replace(/\s+/g, "");
-  const match = compact.match(/PLX?[-xX]*(\d+)\/(\d{4})/i);
-  if (match) return `PL-x ${match[1]}/${match[2]}`;
-  return cleanText(value);
 }
 
 function normalize(value: string): string {

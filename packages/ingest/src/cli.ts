@@ -356,7 +356,8 @@ function syncOptions() {
     maxRetries: numberFlag("max-retries"),
     discoveryLimit: numberFlag("discovery-limit"),
     senateFrom: numberFlag("senate-from"),
-    senateTo: numberFlag("senate-to")
+    senateTo: numberFlag("senate-to"),
+    senatePrefixes: senatePrefixesFlag()
   };
 }
 
@@ -365,6 +366,16 @@ function numberFlag(name: string): number | undefined {
   if (!value) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function senatePrefixesFlag(): Array<"B" | "BP" | "L" | "PLX"> | undefined {
+  const value = flag("senate-prefixes");
+  if (!value) return undefined;
+  const prefixes = value
+    .split(",")
+    .map((item) => item.trim().toUpperCase())
+    .filter((item): item is "B" | "BP" | "L" | "PLX" => ["B", "BP", "L", "PLX"].includes(item));
+  return prefixes.length > 0 ? prefixes : undefined;
 }
 
 main().catch((error) => {

@@ -107,6 +107,8 @@ implementation steps.
 - [x] Add discovery parser tests for official-style Senate and Chamber links.
 - [x] Add bounded generated Senate `L<number>/<year>` discovery for backfill smoke and range runs.
 - [x] Add `ingest:import:pending` command for bounded pending imports.
+- [x] Add identifier normalization for Senate `B`, `BP`, `L`, compact `PLX`, and Chamber `PL-x`.
+- [x] Add generated Senate discovery prefixes via `--senate-prefixes=B,BP,L,PLX`.
 - [x] Apply the new migration to Neon before deploying the cron route.
 - [x] Add `CRON_SECRET` in Vercel before enabling cron in production.
 - [ ] Tune Chamber seed/discovery URLs against full official 2024-present list pages before running a full backfill.
@@ -166,6 +168,7 @@ implementation steps.
     - discovered generated Senate candidates `L1/2025` through `L30/2025`
     - imported a capped batch of `10`
     - current discovery statuses in Neon: 11 Senate bills imported, 64 Senate bills pending, 9 Senate votes pending, 5 Deputies votes pending, 1 Deputies vote failed.
+  - Identifier discovery smoke passed in Neon for `B1-B2`, `BP1-BP2`, and `PLX1-PLX2` 2025 candidates: discovered `6`.
 
 ## Import Proof
 

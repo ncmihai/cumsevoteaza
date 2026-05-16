@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import type { Bill, BillEvent, BillSponsor, DocumentSource, SourceSnapshot } from "@cumsevoteaza/parliament-model";
 import { cleanText, slugify, snapshotFor } from "./utils";
+import { billIdForIdentifier, canonicalBillIdentifier, findOfficialIdentifiers, identifierRecord, normalizeOfficialIdentifier } from "./identifiers";
 
 export interface ParsedDeputiesBill {
   sourceSnapshot: SourceSnapshot;
@@ -15,11 +16,13 @@ export function parseDeputiesBill(html: string, sourceUrl: string): ParsedDeputi
   const sourceSnapshot = snapshotFor("deputies-bill", sourceUrl, html, "parsed");
   const bodyText = cleanText($("body").text());
   const titleText = cleanText($("h1, h2, h3, h4").toArray().map((node) => $(node).text()).join(" "));
-  const plx = normalizePlx(bodyText.match(/PL[-\s]*x\s*(?:nr\.\s*)?\d+\/(?:\d{2}\.\d{2}\.)?\d{4}/i)?.[0]) ?? idFromUrl(sourceUrl);
-  const senateId = bodyText.match(/L\d+\/\d{4}/)?.[0];
-  const billSlug = slugify(plx);
-  const billId = `bill-${billSlug}`;
-  const title = extractTitle($, titleText, plx);
+  const urlIdentifier = normalizeOfficialIdentifier(idFromUrl(sourceUrl));
+  const identifiers = [...findOfficialIdentifiers(bodyText), ...(urlIdentifier ? [urlIdentifier] : [])];
+  const canonical = canonicalBillIdentifier(identifiers) ?? urlIdentifier;
+  const canonicalValue = canonical?.value ?? idFromUrl(sourceUrl);
+  const billSlug = slugify(canonicalValue);
+  const billId = canonical ? billIdForIdentifier(canonical) : `bill-${billSlug}`;
+  const title = extractTitle($, titleText, canonicalValue);
   const events = extractEvents($, billId, sourceUrl);
   const documents = $("a[href$='.pdf'], a[href*='.pdf?']")
     .toArray()
@@ -37,10 +40,7 @@ export function parseDeputiesBill(html: string, sourceUrl: string): ParsedDeputi
       id: billId,
       slug: billSlug,
       title,
-      identifiers: {
-        deputies: plx,
-        ...(senateId ? { senate: senateId } : {})
-      },
+      identifiers: identifierRecord(identifiers),
       chamberOfOrigin: bodyText.includes("Camera Deputa") ? "deputies" : "unknown",
       status: extractStatus(bodyText),
       sourceSnapshotIds: [sourceSnapshot.id]
@@ -87,12 +87,6 @@ function extractEvents($: cheerio.CheerioAPI, billId: string, sourceUrl: string)
     });
   });
   return uniqueBy(rows, (event) => event.id).slice(0, 80);
-}
-
-function normalizePlx(value: string | undefined): string | undefined {
-  if (!value) return undefined;
-  const match = cleanText(value).match(/PL[-\s]*x\s*(?:nr\.\s*)?(\d+)\/(?:\d{2}\.\d{2}\.)?(\d{4})/i);
-  return match ? `PL-x ${match[1]}/${match[2]}` : undefined;
 }
 
 function idFromUrl(sourceUrl: string): string {
