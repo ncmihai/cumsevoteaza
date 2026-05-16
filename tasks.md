@@ -301,6 +301,8 @@ implementation steps.
     613 members read, 574 people upserted, 613 members linked.
   - `Compoziții` timeline stops now build chamber compositions for the stop date when data exists, instead of only showing today's composition.
   - Seat-map hover labels now render above graph seats/center text.
+  - Fixed overlap bug where open-ended 2020-2024 mandates were counted together with 2024-2028 mandates in later government periods.
+  - Added 2020, 2016, 2012, and 2008 Wikipedia elected-list pages to `docs/sources.md` as validation references.
 
 ## Import Proof
 
@@ -333,6 +335,7 @@ implementation steps.
 ## Next Actions
 
 - Find an official, reliable source path for 2020 Senate unaffiliated members.
+- Add dated mandate end/replacement parsing so 2020-era compositions show exact seats-at-date, while member profiles can still show everyone who served during the term.
 - Smoke-check `/ro/compozitii` on Vercel after the 2020 roster deploy and confirm 2020 government stops show imported chamber data.
 - Extend the historical roster strategy to 2016-2020 after 2020-2024 is visually verified.
 - Add composition alignment imports for governments/coalitions so seat maps can distinguish government support vs opposition by period.

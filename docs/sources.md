@@ -124,6 +124,19 @@ Observed bill page structure:
 
 ## Historical Rosters
 
+- Wikipedia elected-list references for validation and planning only:
+  - 2020:
+    `https://ro.wikipedia.org/wiki/Lista_parlamentarilor_ale%C8%99i_la_alegerile_din_Rom%C3%A2nia_din_2020`
+  - 2016:
+    `https://ro.wikipedia.org/wiki/Lista_parlamentarilor_ale%C8%99i_la_alegerile_din_Rom%C3%A2nia_din_2016`
+  - 2012:
+    `https://ro.wikipedia.org/wiki/Lista_parlamentarilor_ale%C8%99i_la_alegerile_din_Rom%C3%A2nia_din_2012`
+  - 2008:
+    `https://ro.wikipedia.org/wiki/Lista_parlamentarilor_ale%C8%99i_la_alegerile_din_Rom%C3%A2nia_din_2008`
+  - These pages are useful for expected elected-seat sanity checks. For example,
+    the 2020 page states 330 Deputies and 136 Senators were elected. They are
+    not official sources and should not replace Parliament pages or official
+    electoral records.
 - Deputies 2020-2024:
   - Official member profiles are available through
     `https://www.cdep.ro/ords/pls/parlam/structura2015.mp?cam=2&idl=1&idm=<id>&leg=2020&pag=1`.
@@ -148,6 +161,15 @@ Observed bill page structure:
     - UDMR:
       `https://www.senat.ro/ComponentaGrupuri.aspx?GrupID=b8faa44f-07a0-4de5-bbc6-0618a4c0a194&Zi=`
   - Unaffiliated 2020 Senate members remain a known source-discovery gap.
+
+Historical roster modelling rule:
+- A legislature-bounded roster import can include every person who served at
+  any point in the term, which is correct for Transfermarkt-style member
+  history.
+- A chamber composition for a specific day must use active mandate intervals.
+  If a mandate has no explicit end date, the UI can bound it by the legislature
+  end date, but replacements/resignations still need official dated exits
+  before older compositions are exact.
 
 Composition parser rules:
 - Store official investiture/coalition data separately from computed governing

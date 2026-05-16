@@ -8,6 +8,7 @@ import {
   type Government,
   type GovernmentRole,
   type GovernanceAlignment,
+  type Legislature,
   type Member,
   type MemberGroupMembership,
   type MemberMandate,
@@ -72,6 +73,7 @@ interface AlignmentRow {
 }
 
 interface CompositionSourceRows {
+  legislatures: Legislature[];
   members: Member[];
   mandates: MemberMandate[];
   memberships: MemberGroupMembership[];
@@ -117,6 +119,7 @@ async function tryDatabaseCompositionTimeline(
       memberRows,
       mandateRows,
       membershipRows,
+      legislatureRows,
       groupRows,
       partyRows,
       memberAlignmentRows,
@@ -130,6 +133,7 @@ async function tryDatabaseCompositionTimeline(
       session.db.select().from(schema.members),
       session.db.select().from(schema.memberMandates),
       session.db.select().from(schema.memberGroupMemberships),
+      session.db.select().from(schema.legislatures),
       session.db.select().from(schema.parliamentaryGroups),
       session.db.select().from(schema.parties),
       session.db.select().from(schema.memberGovernanceAlignments),
@@ -140,6 +144,7 @@ async function tryDatabaseCompositionTimeline(
       memberRows,
       mandateRows,
       membershipRows,
+      legislatureRows,
       groupRows,
       partyRows,
       memberAlignmentRows,
@@ -198,11 +203,12 @@ async function tryDatabaseCurrentComposition(mode: CompositionMode): Promise<Com
   const session = createDbSession();
   try {
     const today = new Date().toISOString().slice(0, 10);
-    const [memberRows, mandateRows, membershipRows, groupRows, partyRows, memberAlignmentRows, groupAlignmentRows, partyAlignmentRows] =
+    const [memberRows, mandateRows, membershipRows, legislatureRows, groupRows, partyRows, memberAlignmentRows, groupAlignmentRows, partyAlignmentRows] =
       await Promise.all([
         session.db.select().from(schema.members),
         session.db.select().from(schema.memberMandates),
         session.db.select().from(schema.memberGroupMemberships),
+        session.db.select().from(schema.legislatures),
         session.db.select().from(schema.parliamentaryGroups),
         session.db.select().from(schema.parties),
         session.db.select().from(schema.memberGovernanceAlignments),
@@ -214,6 +220,7 @@ async function tryDatabaseCurrentComposition(mode: CompositionMode): Promise<Com
       memberRows,
       mandateRows,
       membershipRows,
+      legislatureRows,
       groupRows,
       partyRows,
       memberAlignmentRows,
@@ -242,6 +249,7 @@ function demoComposition(mode: CompositionMode): CompositionPageData {
     members: demoDataset.members,
     mandates: demoDataset.mandates,
     memberships: demoDataset.groupMemberships,
+    legislatures: demoDataset.legislatures,
     groups: demoDataset.groups,
     parties: demoDataset.parties,
     memberAlignments: [],
@@ -257,6 +265,7 @@ function buildComposition(input: {
   members: Member[];
   mandates: MemberMandate[];
   memberships: MemberGroupMembership[];
+  legislatures: Legislature[];
   groups: ParliamentaryGroup[];
   parties: Party[];
   memberAlignments: AlignmentRow[];
@@ -265,12 +274,13 @@ function buildComposition(input: {
   sourceKind: "database" | "demo";
 }): CompositionPageData {
   const memberById = new Map(input.members.map((member) => [member.id, member]));
+  const legislatureById = new Map(input.legislatures.map((legislature) => [legislature.id, legislature]));
   const groupById = new Map(input.groups.map((group) => [group.id, group]));
   const partyById = new Map(input.parties.map((party) => [party.id, party]));
 
   const chambers: ChamberComposition[] = (["deputies", "senate"] as ChamberId[]).map((chamber) => {
     const seats = input.mandates
-      .filter((mandate) => mandate.chamber === chamber && activeOn(mandate.startsOn, mandate.endsOn, input.asOf))
+      .filter((mandate) => mandate.chamber === chamber && activeMandateOn(mandate, legislatureById.get(mandate.legislatureId), input.asOf))
       .flatMap((mandate) => {
         const member = memberById.get(mandate.memberId);
         if (!member) return [];
@@ -369,6 +379,15 @@ function activeOn(startsOn: string, endsOn: string | undefined | null, date: str
   return startsOn <= date && (!endsOn || endsOn >= date);
 }
 
+function activeMandateOn(mandate: MemberMandate, legislature: Legislature | undefined, date: string): boolean {
+  const boundedEndsOn = earliestDate(mandate.endsOn, legislature?.endsOn);
+  return activeOn(mandate.startsOn, boundedEndsOn, date);
+}
+
+function earliestDate(...dates: Array<string | undefined | null>): string | undefined {
+  return dates.filter((date): date is string => Boolean(date)).sort()[0];
+}
+
 function groupSortKey(group?: ParliamentaryGroup): string {
   if (!group) return "zzzz";
   return `${group.chamber}-${group.shortName}`;
@@ -384,6 +403,7 @@ function mapCompositionRows(input: {
   memberRows: Array<typeof schema.members.$inferSelect>;
   mandateRows: Array<typeof schema.memberMandates.$inferSelect>;
   membershipRows: Array<typeof schema.memberGroupMemberships.$inferSelect>;
+  legislatureRows: Array<typeof schema.legislatures.$inferSelect>;
   groupRows: Array<typeof schema.parliamentaryGroups.$inferSelect>;
   partyRows: Array<typeof schema.parties.$inferSelect>;
   memberAlignmentRows: Array<typeof schema.memberGovernanceAlignments.$inferSelect>;
@@ -391,6 +411,12 @@ function mapCompositionRows(input: {
   partyAlignmentRows: Array<typeof schema.governmentPartyAlignments.$inferSelect>;
 }): CompositionSourceRows {
   return {
+    legislatures: input.legislatureRows.map((row) => ({
+      id: row.id,
+      label: row.label,
+      startsOn: row.startsOn,
+      endsOn: row.endsOn
+    })),
     members: input.memberRows.map((row) => ({
       id: row.id,
       personId: row.personId ?? undefined,

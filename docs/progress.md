@@ -539,3 +539,13 @@ Verification:
 - `npm run test` passed after persistence/TLS adjustments.
 - `npm run build` passed after the timeline/importer changes.
 - Database verification for `leg-2020-2024` returned 354 Deputies mandates and 123 Senate mandates.
+
+## 2026-05-16 — Composition Overlap Fix
+
+- Fixed impossible chamber counts on later government periods after importing 2020 rosters.
+- Root cause: many historical mandates have no explicit `endsOn`, so 2020-2024 mandates were treated as still active during 2024-2028 governments.
+- Composition seat maps now bound open-ended mandates by their legislature end date.
+- DB verification after the fix:
+  - Bolojan / Ciolacu II period: 331 Deputies and 133-134 Senators, not 2020+2024 stacked totals.
+  - 2020-period stops still need finer temporal exits/replacements before they can be treated as exact chamber-at-day counts.
+- Added Wikipedia elected-list pages for 2020, 2016, 2012, and 2008 as validation/reference material, not official source-of-truth imports.
