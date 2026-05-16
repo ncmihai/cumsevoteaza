@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseChamberNominalVote } from "./parsers/chamber-vote";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "./parsers/deputies-roster";
-import { uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
+import { legislatureFromFlag, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
 import { parseSenateBill } from "./parsers/senate-bill";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "./parsers/senate-roster";
 import { parseSenateVote } from "./parsers/senate-vote";
@@ -20,6 +20,12 @@ import {
   runBackfill2024,
   runDailySync
 } from "./sync";
+
+type RosterGroupRef = {
+  group?: ParsedRoster["groups"][number];
+  url: string;
+  expectedCount?: number;
+};
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -71,6 +77,7 @@ async function main() {
   if (command === "senate:roster") {
     const parsed = await importSenateRoster();
     await writeImport("senate-roster", parsed, JSON.stringify(parsed, null, 2));
+    logRosterSummary(parsed);
     if (hasFlag("persist")) {
       console.log(JSON.stringify(await persistRoster(parsed), null, 2));
     }
@@ -80,6 +87,7 @@ async function main() {
   if (command === "deputies:roster") {
     const parsed = await importDeputiesRoster();
     await writeImport("deputies-roster", parsed, JSON.stringify(parsed, null, 2));
+    logRosterSummary(parsed);
     if (hasFlag("persist")) {
       console.log(JSON.stringify(await persistRoster(parsed), null, 2));
     }
@@ -150,19 +158,25 @@ async function main() {
 }
 
 async function importSenateRoster(): Promise<ParsedRoster> {
+  const legislature = rosterLegislature();
+  const groupUrls = listFlag("group-urls");
   const indexUrl = flag("url") ?? "https://www.senat.ro/EnumGrupuri.aspx";
-  const indexHtml = await loadHtml(indexUrl);
-  const index = parseSenateRosterIndex(indexHtml, indexUrl);
+  const index = groupUrls
+    ? undefined
+    : parseSenateRosterIndex(await loadHtml(indexUrl), indexUrl);
   const limitValue = Number(flag("limit") ?? "0");
-  const groupsToFetch = limitValue > 0 ? index.groups.slice(0, limitValue) : index.groups;
+  const groupRefs: RosterGroupRef[] = groupUrls
+    ? groupUrls.map((url) => ({ url }))
+    : (index?.groups ?? []);
+  const groupsToFetch = limitValue > 0 ? groupRefs.slice(0, limitValue) : groupRefs;
   const groupParts = [];
   const profiles: ParsedMemberProfile[] = [];
   const concurrency = Number(flag("concurrency") ?? "6");
 
   for (const groupRef of groupsToFetch) {
-    console.log(`Fetching Senate group ${groupRef.group.shortName}`);
+    console.log(`Fetching Senate group ${groupRef.group?.shortName ?? groupRef.url}`);
     const html = await fetchWithFailureSnapshot(groupRef.url, "senate-roster-group");
-    const group = parseSenateRosterGroup(html, groupRef.url, groupRef.group);
+    const group = parseSenateRosterGroup(html, groupRef.url, groupRef.group, { legislature });
     group.expectedCount = groupRef.expectedCount ?? group.expectedCount;
     if (groupRef.expectedCount && group.members.length > groupRef.expectedCount) {
       group.members = group.members.slice(0, groupRef.expectedCount);
@@ -172,26 +186,31 @@ async function importSenateRoster(): Promise<ParsedRoster> {
     profiles.push(
       ...(await mapLimit(membersToFetch, concurrency, async (memberRef) => {
         const profileHtml = await fetchOptional(memberRef.profileUrl, "senate-member-profile");
-        return profileHtml ? parseSenateMemberProfile(profileHtml, memberRef.profileUrl) : undefined;
+        return profileHtml ? parseSenateMemberProfile(profileHtml, memberRef.profileUrl, { legislature }) : undefined;
       }))
     );
   }
 
   return {
     chamber: "senate",
+    legislature,
     sourceSnapshots: uniqueBy(
-      [index.sourceSnapshot, ...groupParts.map((group) => group.sourceSnapshot), ...profiles.map((profile) => profile.sourceSnapshot)],
+      [
+        ...(index ? [index.sourceSnapshot] : []),
+        ...groupParts.map((group) => group.sourceSnapshot),
+        ...profiles.map((profile) => profile.sourceSnapshot)
+      ],
       (source) => source.id
     ),
     parties: uniqueBy(
       [
-        ...index.groups.flatMap((group) => (group.party ? [group.party] : [])),
+        ...(index?.groups ?? []).flatMap((group) => (group.party ? [group.party] : [])),
         ...groupParts.flatMap((group) => (group.party ? [group.party] : [])),
         ...profiles.flatMap((profile) => profile.parties ?? [])
       ],
       (party) => party.id
     ),
-    groups: uniqueBy([...index.groups.map((group) => group.group), ...groupParts.map((group) => group.group)], (group) => group.id),
+    groups: uniqueBy([...(index?.groups ?? []).map((group) => group.group), ...groupParts.map((group) => group.group)], (group) => group.id),
     members: uniqueBy(
       [...groupParts.flatMap((group) => group.members.map((member) => member.member)), ...profiles.map((profile) => profile.member)],
       (member) => member.id
@@ -225,19 +244,31 @@ async function importSenateRoster(): Promise<ParsedRoster> {
 }
 
 async function importDeputiesRoster(): Promise<ParsedRoster> {
-  const indexUrl = flag("url") ?? "https://cdep.ro/ords/pls/dic/site2015.home?idl=1";
-  const indexHtml = await loadHtml(indexUrl);
-  const index = parseDeputiesRosterIndex(indexHtml, indexUrl);
+  const legislature = rosterLegislature();
+  const memberIdFrom = numberFlag("member-id-from");
+  const memberIdTo = numberFlag("member-id-to");
+  if (memberIdFrom && memberIdTo) {
+    return importDeputiesRosterByMemberIds(legislature, memberIdFrom, memberIdTo);
+  }
+
+  const groupUrls = listFlag("group-urls");
+  const indexUrl = flag("url") ?? defaultDeputiesRosterUrl(legislature.label);
+  const index = groupUrls
+    ? undefined
+    : parseDeputiesRosterIndex(await loadHtml(indexUrl), indexUrl);
   const limitValue = Number(flag("limit") ?? "0");
-  const groupsToFetch = limitValue > 0 ? index.groups.slice(0, limitValue) : index.groups;
+  const groupRefs: RosterGroupRef[] = groupUrls
+    ? groupUrls.map((url) => ({ url }))
+    : (index?.groups ?? []);
+  const groupsToFetch = limitValue > 0 ? groupRefs.slice(0, limitValue) : groupRefs;
   const groupParts = [];
   const profiles: ParsedMemberProfile[] = [];
   const concurrency = Number(flag("concurrency") ?? "6");
 
   for (const groupRef of groupsToFetch) {
-    console.log(`Fetching Deputies group ${groupRef.group.shortName}`);
+    console.log(`Fetching Deputies group ${groupRef.group?.shortName ?? groupRef.url}`);
     const html = await fetchWithFailureSnapshot(groupRef.url, "deputies-roster-group");
-    const group = parseDeputiesRosterGroup(html, groupRef.url, groupRef.group);
+    const group = parseDeputiesRosterGroup(html, groupRef.url, groupRef.group, { legislature });
     group.expectedCount = groupRef.expectedCount ?? group.expectedCount;
     if (groupRef.expectedCount && group.members.length > groupRef.expectedCount) {
       group.members = group.members.slice(0, groupRef.expectedCount);
@@ -247,20 +278,25 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
     profiles.push(
       ...(await mapLimit(membersToFetch, concurrency, async (memberRef) => {
         const profileHtml = await fetchOptional(memberRef.profileUrl, "deputies-member-profile");
-        return profileHtml ? parseDeputiesMemberProfile(profileHtml, memberRef.profileUrl) : undefined;
+        return profileHtml ? parseDeputiesMemberProfile(profileHtml, memberRef.profileUrl, { legislature }) : undefined;
       }))
     );
   }
 
   return {
     chamber: "deputies",
+    legislature,
     sourceSnapshots: uniqueBy(
-      [index.sourceSnapshot, ...groupParts.map((group) => group.sourceSnapshot), ...profiles.map((profile) => profile.sourceSnapshot)],
+      [
+        ...(index ? [index.sourceSnapshot] : []),
+        ...groupParts.map((group) => group.sourceSnapshot),
+        ...profiles.map((profile) => profile.sourceSnapshot)
+      ],
       (source) => source.id
     ),
     parties: uniqueBy(
       [
-        ...index.groups.flatMap((group) => (group.party ? [group.party] : [])),
+        ...(index?.groups ?? []).flatMap((group) => (group.party ? [group.party] : [])),
         ...groupParts.flatMap((group) => (group.party ? [group.party] : [])),
         ...profiles.flatMap((profile) => profile.parties ?? [])
       ],
@@ -268,7 +304,7 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
     ),
     groups: uniqueBy(
       [
-        ...index.groups.map((group) => group.group),
+        ...(index?.groups ?? []).map((group) => group.group),
         ...groupParts.map((group) => group.group),
         ...profiles.flatMap((profile) => profile.groups ?? [])
       ],
@@ -306,6 +342,37 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
   };
 }
 
+async function importDeputiesRosterByMemberIds(
+  legislature: ParsedRoster["legislature"],
+  from: number,
+  to: number
+): Promise<ParsedRoster> {
+  const concurrency = Number(flag("concurrency") ?? "8");
+  const ids = Array.from({ length: Math.max(0, to - from + 1) }, (_, index) => from + index);
+  const profiles = await mapLimit(ids, concurrency, async (officialId) => {
+    const url = defaultDeputiesMemberProfileUrl(legislature.label, officialId);
+    const profileHtml = await fetchOptional(url, "deputies-member-profile");
+    if (!profileHtml) return undefined;
+    const profile = parseDeputiesMemberProfile(profileHtml, url, { legislature });
+    return looksLikeParsedDeputiesMember(profile) ? profile : undefined;
+  });
+
+  return {
+    chamber: "deputies",
+    legislature,
+    sourceSnapshots: uniqueBy(profiles.map((profile) => profile.sourceSnapshot), (source) => source.id),
+    parties: uniqueBy(profiles.flatMap((profile) => profile.parties ?? []), (party) => party.id),
+    groups: uniqueBy(profiles.flatMap((profile) => profile.groups ?? []), (group) => group.id),
+    members: uniqueBy(profiles.map((profile) => profile.member), (member) => member.id),
+    mandates: uniqueBy(profiles.flatMap((profile) => (profile.mandate ? [profile.mandate] : [])), (mandate) => mandate.id),
+    groupMemberships: uniqueBy(profiles.flatMap((profile) => profile.groupMemberships), (membership) => membership.id),
+    partyAffiliations: uniqueBy(profiles.flatMap((profile) => profile.partyAffiliations), (affiliation) => affiliation.id),
+    committeeMemberships: uniqueBy(profiles.flatMap((profile) => profile.committeeMemberships), (membership) => membership.id),
+    roles: uniqueBy(profiles.flatMap((profile) => profile.roles), (role) => role.id),
+    groupCounts: []
+  };
+}
+
 function flag(name: string): string | undefined {
   const prefix = `--${name}=`;
   return process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
@@ -313,6 +380,56 @@ function flag(name: string): string | undefined {
 
 function hasFlag(name: string): boolean {
   return process.argv.includes(`--${name}`);
+}
+
+function logRosterSummary(parsed: ParsedRoster) {
+  console.log(
+    JSON.stringify(
+      {
+        chamber: parsed.chamber,
+        legislature: parsed.legislature.label,
+        sources: parsed.sourceSnapshots.length,
+        groups: parsed.groups.length,
+        members: parsed.members.length,
+        mandates: parsed.mandates.length,
+        groupMemberships: parsed.groupMemberships.length,
+        committeeMemberships: parsed.committeeMemberships.length,
+        groupCounts: parsed.groupCounts
+      },
+      null,
+      2
+    )
+  );
+}
+
+function rosterLegislature() {
+  return legislatureFromFlag(flag("legislature") ?? flag("year"));
+}
+
+function defaultDeputiesRosterUrl(label: string): string {
+  if (label === "2020-2024") {
+    return "https://www.cdep.ro/pls/parlam/structura.gp?leg=2020";
+  }
+  return "https://cdep.ro/ords/pls/dic/site2015.home?idl=1";
+}
+
+function defaultDeputiesMemberProfileUrl(label: string, officialId: number): string {
+  const leg = label.slice(0, 4);
+  return `https://www.cdep.ro/ords/pls/parlam/structura2015.mp?cam=2&idl=1&idm=${officialId}&leg=${leg}&pag=1`;
+}
+
+function looksLikeParsedDeputiesMember(profile: ParsedMemberProfile): boolean {
+  if (!profile.member.displayName || !profile.mandate) return false;
+  return ![
+    "activitate-parlamentara",
+    "activitate-publica",
+    "biografie",
+    "camera-deputatilor",
+    "curriculum-vitae",
+    "declaratia-de-avere",
+    "declaratia-de-interese",
+    "votul-electronic"
+  ].includes(profile.member.slug);
 }
 
 async function loadHtml(url: string): Promise<string> {

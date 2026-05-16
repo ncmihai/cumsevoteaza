@@ -53,8 +53,8 @@ export function CompositionSeatMap({ locale, chamber, seats }: CompositionSeatMa
         </div>
       </div>
 
-      <div className="relative mx-auto mt-4 aspect-[2/1] min-h-[250px] w-full max-w-5xl overflow-visible">
-        <div className="absolute left-1/2 top-[77%] -translate-x-1/2 text-center">
+      <div className="relative isolate mx-auto mt-4 aspect-[2/1] min-h-[250px] w-full max-w-5xl overflow-visible">
+        <div className="pointer-events-none absolute left-1/2 top-[77%] z-0 -translate-x-1/2 text-center">
           <div className="text-5xl font-semibold leading-none tracking-normal text-slate-950 md:text-6xl">{seats.length}</div>
           <div className="mt-1 text-xs font-semibold uppercase text-slate-500">{labels.seats}</div>
         </div>
@@ -67,7 +67,7 @@ export function CompositionSeatMap({ locale, chamber, seats }: CompositionSeatMa
               href={`/${locale}/members/${seat.member.slug}`}
               title={`${seat.member.displayName} · ${groupLabel} · ${alignmentLabel}`}
               className={[
-                "group/seat absolute block rounded-full border border-white shadow-sm outline-offset-2 transition hover:scale-125 focus-visible:scale-125",
+                "group/seat absolute z-10 block rounded-full border border-white shadow-sm outline-offset-2 transition hover:z-[200] hover:scale-125 focus-visible:z-[200] focus-visible:scale-125",
                 alignmentRing[seat.alignment]
               ].join(" ")}
               style={{
@@ -79,7 +79,7 @@ export function CompositionSeatMap({ locale, chamber, seats }: CompositionSeatMa
                 transform: "translate(-50%, -50%)"
               }}
             >
-              <span className="pointer-events-none absolute left-1/2 top-0 z-20 hidden min-w-max -translate-x-1/2 -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md group-hover/seat:block group-focus-visible/seat:block">
+              <span className="pointer-events-none absolute left-1/2 top-0 z-[300] hidden min-w-max -translate-x-1/2 -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md group-hover/seat:block group-focus-visible/seat:block">
                 {seat.member.displayName}
                 <span className="mt-0.5 block font-normal text-slate-600">
                   {groupLabel} · {alignmentLabel}

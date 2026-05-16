@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import type {
+  Legislature,
   Member,
   MemberCommitteeMembership,
   MemberGroupMembership,
@@ -25,12 +26,19 @@ import {
 } from "./roster";
 
 const chamber = "deputies" as const;
-const cdepBaseUrl = "https://cdep.ro";
+const deputiesGroupSelector = "a[href*='structura2015.gp'][href*='idg='], a[href*='structura.gp'][href*='idg=']";
+const deputiesProfileSelector = "a[href*='structura2015.mp'][href*='idm='], a[href*='structura.mp'][href*='idm=']";
+const deputiesPartySelector = "a[href*='structura2015.fp'], a[href*='structura.fp']";
+const deputiesCommitteeSelector = "a[href*='structura2015.co'], a[href*='structura.co']";
+
+interface RosterParserOptions {
+  legislature?: Legislature;
+}
 
 export function parseDeputiesRosterIndex(html: string, sourceUrl: string): ParsedRosterIndex {
   const $ = cheerio.load(html);
   const sourceSnapshot = snapshotFor("deputies-roster-index", sourceUrl, html, "parsed");
-  const groups = $("a[href*='structura2015.gp'][href*='idg=']")
+  const groups = $(deputiesGroupSelector)
     .toArray()
     .map((node) => {
       const link = $(node);
@@ -53,7 +61,13 @@ export function parseDeputiesRosterIndex(html: string, sourceUrl: string): Parse
   return { sourceSnapshot, groups };
 }
 
-export function parseDeputiesRosterGroup(html: string, sourceUrl: string, fallbackGroup?: ParliamentaryGroup): ParsedRosterGroup {
+export function parseDeputiesRosterGroup(
+  html: string,
+  sourceUrl: string,
+  fallbackGroup?: ParliamentaryGroup,
+  options: RosterParserOptions = {}
+): ParsedRosterGroup {
+  const legislature = options.legislature ?? legislature2024;
   const $ = cheerio.load(html);
   const sourceSnapshot = snapshotFor("deputies-roster-group", sourceUrl, html, "parsed");
   const heading = cleanText($("h1,h2,h3").filter((_, node) => /Grupul parlamentar|neafilia/i.test($(node).text())).first().text());
@@ -71,13 +85,13 @@ export function parseDeputiesRosterGroup(html: string, sourceUrl: string, fallba
     const roleLabel = /^\d+\.?$/.test(firstCell) ? cleanText($(cells[1]).text()) : firstCell;
     const explicitRole = roleFromGroupRow(roleLabel);
     if (explicitRole) pendingRole = explicitRole;
-    const element = row.find("a[href*='structura2015.mp']").first();
+    const element = row.find(deputiesProfileSelector).first();
     if (!element.length) return;
     const text = cleanText(element.text());
     const href = element.attr("href");
     const officialId = href?.match(/idm=(\d+)/i)?.[1];
     if (!href || !officialId || seen.has(officialId)) return;
-    if (element.closest("b").length === 0) return;
+    if (sourceUrl.includes("structura2015.gp") && element.closest("b").length === 0) return;
     seen.add(officialId);
 
     const displayName = cleanText(text);
@@ -85,7 +99,7 @@ export function parseDeputiesRosterGroup(html: string, sourceUrl: string, fallba
     if (/activitate|cv|biografie|declaratii|interpelari|initiative/i.test(normalize(displayName))) return;
     const member = buildMember(officialId, displayName);
     const rowText = cleanText(row.text());
-    const startsOn = parseRomanianDate(rowText) ?? legislature2024.startsOn;
+    const startsOn = parseRomanianDate(rowText) ?? legislature.startsOn;
     const currentRole = explicitRole ?? pendingRole;
     pendingRole = undefined;
     const membership: MemberGroupMembership = {
@@ -114,7 +128,7 @@ export function parseDeputiesRosterGroup(html: string, sourceUrl: string, fallba
           sourceSnapshotId: sourceSnapshot.id
         }
       : undefined;
-    members.push({ member, profileUrl: new URL(href, cdepBaseUrl).toString(), membership, partyAffiliation, role });
+    members.push({ member, profileUrl: new URL(href, sourceUrl).toString(), membership, partyAffiliation, role });
   });
 
   return {
@@ -133,19 +147,31 @@ function roleFromGroupRow(rowText: string): string | undefined {
   return undefined;
 }
 
-export function parseDeputiesMemberProfile(html: string, sourceUrl: string): ParsedMemberProfile {
+export function parseDeputiesMemberProfile(
+  html: string,
+  sourceUrl: string,
+  options: RosterParserOptions = {}
+): ParsedMemberProfile {
+  const legislature = options.legislature ?? legislature2024;
   const $ = cheerio.load(html);
   const sourceSnapshot = snapshotFor("deputies-member-profile", sourceUrl, html, "parsed");
   const officialId = sourceUrl.match(/idm=(\d+)/i)?.[1] ?? slugify(sourceUrl);
-  const name = cleanText($("h1").first().text()) || cleanText($("title").text()).replace(/^.* - /, "");
+  const headingName = cleanText(
+    $("h1")
+      .filter((_, node) => !/activitate parlamentara|mandate parlamentar|informatii personale/i.test(normalize($(node).text())))
+      .first()
+      .text()
+  );
+  const titleName = cleanText($("title").text()).replace(/^.* - /, "");
+  const name = titleName || headingName;
   const member = buildMember(officialId, name);
   const bodyText = cleanText($("body").text());
-  const mandateStart = parseRomanianDate(bodyText.match(/data validării:\s*([^-.]+)/i)?.[1] ?? "") ?? legislature2024.startsOn;
+  const mandateStart = parseRomanianDate(bodyText.match(/data validării:\s*([^-.]+)/i)?.[1] ?? "") ?? legislature.startsOn;
   const constituency = cleanText(bodyText.match(/circumscriptia electorala nr\.\d+\s*([^<\n]+)/i)?.[1] ?? "");
   const mandate: MemberMandate = {
-    id: `mandate-${member.id}-2024-2028-deputies`,
+    id: `mandate-${member.id}-${legislature.label}-deputies`,
     memberId: member.id,
-    legislatureId: legislature2024.id,
+    legislatureId: legislature.id,
     chamber,
     startsOn: mandateStart,
     constituency: constituency || undefined,
@@ -159,16 +185,16 @@ export function parseDeputiesMemberProfile(html: string, sourceUrl: string): Par
     parties: parseDeputiesParties($),
     groups: parseDeputiesGroups($),
     mandate,
-    partyAffiliations: parseDeputiesPartyAffiliations($, member.id, sourceSnapshot.id),
-    groupMemberships: parseDeputiesGroupMemberships($, member.id, sourceSnapshot.id),
-    committeeMemberships: parseDeputiesCommittees($, member.id, sourceSnapshot.id),
+    partyAffiliations: parseDeputiesPartyAffiliations($, member.id, sourceSnapshot.id, legislature),
+    groupMemberships: parseDeputiesGroupMemberships($, member.id, sourceSnapshot.id, legislature),
+    committeeMemberships: parseDeputiesCommittees($, member.id, sourceSnapshot.id, legislature),
     roles: []
   };
 }
 
 function parseDeputiesParties($: cheerio.CheerioAPI): Party[] {
   const parties = new Map<string, Party>();
-  $("a[href*='structura2015.fp']").each((_, node) => {
+  $(deputiesPartySelector).each((_, node) => {
     const party = partyFromText(cleanText($(node).parent().text()));
     if (party) parties.set(party.id, party);
   });
@@ -177,7 +203,7 @@ function parseDeputiesParties($: cheerio.CheerioAPI): Party[] {
 
 function parseDeputiesGroups($: cheerio.CheerioAPI): ParliamentaryGroup[] {
   const groups = new Map<string, ParliamentaryGroup>();
-  $("a[href*='structura2015.gp'][href*='idg=']").each((_, node) => {
+  $(deputiesGroupSelector).each((_, node) => {
     const link = $(node);
     const name = cleanText(link.text());
     if (!/Grupul parlamentar|neafilia/i.test(name)) return;
@@ -213,15 +239,16 @@ function buildMember(officialId: string, displayName: string): Member {
 function parseDeputiesPartyAffiliations(
   $: cheerio.CheerioAPI,
   memberIdValue: string,
-  sourceSnapshotId: string
+  sourceSnapshotId: string,
+  legislature: Legislature
 ): MemberPartyAffiliation[] {
-  return $("a[href*='structura2015.fp']")
+  return $(deputiesPartySelector)
     .toArray()
     .map((node) => {
       const line = cleanText($(node).parent().text());
       const party = partyFromText(line);
       if (!party) return undefined;
-      const startsOn = parseRomanianDate(line) ?? legislature2024.startsOn;
+      const startsOn = parseRomanianDate(line) ?? legislature.startsOn;
       const affiliation: MemberPartyAffiliation = {
         id: `party-affiliation-${memberIdValue}-${party.id}-${startsOn}`,
         memberId: memberIdValue,
@@ -238,9 +265,10 @@ function parseDeputiesPartyAffiliations(
 function parseDeputiesGroupMemberships(
   $: cheerio.CheerioAPI,
   memberIdValue: string,
-  sourceSnapshotId: string
+  sourceSnapshotId: string,
+  legislature: Legislature
 ): MemberGroupMembership[] {
-  return $("a[href*='structura2015.gp'][href*='idg=']")
+  return $(deputiesGroupSelector)
     .toArray()
     .map((node) => {
       const link = $(node);
@@ -248,7 +276,7 @@ function parseDeputiesGroupMemberships(
       const name = cleanText(link.text());
       if (!/Grupul parlamentar|neafilia/i.test(name)) return undefined;
       const group = buildGroup(name, partyFromText(name), link.attr("href")?.match(/idg=([^&]+)/i)?.[1] ?? name);
-      const startsOn = parseRomanianDate(line) ?? legislature2024.startsOn;
+      const startsOn = parseRomanianDate(line) ?? legislature.startsOn;
       const membership: MemberGroupMembership = {
         id: `group-membership-${memberIdValue}-${group.id}-${startsOn}`,
         memberId: memberIdValue,
@@ -265,7 +293,8 @@ function parseDeputiesGroupMemberships(
 function parseDeputiesCommittees(
   $: cheerio.CheerioAPI,
   memberIdValue: string,
-  sourceSnapshotId: string
+  sourceSnapshotId: string,
+  legislature: Legislature
 ): MemberCommitteeMembership[] {
   const committees: MemberCommitteeMembership[] = [];
   $("h4").each((_, headingNode) => {
@@ -273,12 +302,12 @@ function parseDeputiesCommittees(
     if (!heading.includes("comisii")) return;
     let sibling = $(headingNode).next();
     while (sibling.length && !/^h[1-4]$/i.test(sibling[0]?.tagName ?? "")) {
-      sibling.find("a[href*='structura2015.co']").each((__, linkNode) => {
+      sibling.find(deputiesCommitteeSelector).each((__, linkNode) => {
         const link = $(linkNode);
         const name = cleanText(link.text());
         if (!name) return;
         const line = cleanText(link.parent().text());
-        const startsOn = parseRomanianDate(line) ?? legislature2024.startsOn;
+        const startsOn = parseRomanianDate(line) ?? legislature.startsOn;
         committees.push({
           id: `committee-${memberIdValue}-${slugify(name)}-${startsOn}`,
           memberId: memberIdValue,

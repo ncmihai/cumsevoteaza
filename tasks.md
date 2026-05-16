@@ -288,6 +288,19 @@ implementation steps.
   - Government skeleton seed rerun locally with stable counts, confirming idempotent upserts.
   - Local `/ro/compozitii` smoke rendered 69 timeline events, Bolojan first, manual skeleton badges, and current roster seat maps.
   - Neon government skeleton seed completed with stable counts.
+- Historical roster start:
+  - Roster importers now accept `--legislature=2020` / `--year=2020`.
+  - Deputies historical profile-ID import path added:
+    `npm run ingest:deputies:roster -- --legislature=2020 --member-id-from=1 --member-id-to=450`.
+  - 2020-2024 Deputies persisted to the configured database:
+    354 members, 354 mandates, 430 group memberships, 1000 committee memberships.
+  - 2020-2024 Senate main groups persisted from verified official group pages:
+    PSD, PNL, USR, AUR, UDMR; 123 members, 123 mandates, 385 committee memberships.
+  - Senate 2020 unaffiliated members are not complete yet; keep this as a source-discovery gap.
+  - People backfill refreshed after historical rosters:
+    613 members read, 574 people upserted, 613 members linked.
+  - `Compoziții` timeline stops now build chamber compositions for the stop date when data exists, instead of only showing today's composition.
+  - Seat-map hover labels now render above graph seats/center text.
 
 ## Import Proof
 
@@ -319,7 +332,11 @@ implementation steps.
 
 ## Next Actions
 
-- Expand member profile importers for current legislature rosters.
+- Find an official, reliable source path for 2020 Senate unaffiliated members.
+- Smoke-check `/ro/compozitii` on Vercel after the 2020 roster deploy and confirm 2020 government stops show imported chamber data.
+- Extend the historical roster strategy to 2016-2020 after 2020-2024 is visually verified.
+- Add composition alignment imports for governments/coalitions so seat maps can distinguish government support vs opposition by period.
+- Expand member profile importers for earlier legislatures.
 - Replace member and party pages with DB read models after roster import exists.
 - Add source snapshot inspection pages or admin-only views.
 - Redeploy Vercel after Neon env vars are saved, then smoke-check the live URL.

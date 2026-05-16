@@ -506,3 +506,36 @@ batches until the queue is clean, then move to March 2025 discovery.
   - `npm run build` passed
   - local `/ro`, `/ro/votes?year=2025&month=12`, `/ro/bills?q=PL-x`, and directory APIs returned successful responses
   - `hot` API returns a controlled disabled response until `ANALYTICS_SALT` is configured
+
+## 2026-05-16 — Historical Roster Start: 2020-2024
+
+- Made roster parsing legislature-aware so 2020-2024 mandates do not overwrite 2024-2028 mandates.
+- Added historical Deputies profile-ID backfill support:
+  - `npm run ingest:deputies:roster -- --legislature=2020 --member-id-from=1 --member-id-to=450`
+  - Direct official profile pages expose mandate, group, party, and committee history even when a historical group index is unreliable.
+- Fixed CDEP profile name parsing: the parser now prefers the official page title over generic section headings like `Activitate publică`.
+- Added deterministic member slug collision handling in persistence. When two different chamber records share a name, the second slug gets a member-id suffix instead of failing the import.
+- Added a scoped TLS fallback for official pages with an incomplete certificate chain; the importer retries with certificate verification disabled only after the normal fetch fails on certificate validation.
+- Imported 2020-2024 Deputies into the configured database:
+  - 354 members
+  - 354 mandates
+  - 430 group memberships
+  - 1000 committee memberships
+- Imported 2020-2024 Senate main parliamentary groups from verified official group URLs:
+  - PSD, PNL, USR, AUR, UDMR
+  - 123 members
+  - 123 mandates
+  - 385 committee memberships
+  - unaffiliated Senate members still need a separate official discovery path.
+- Refreshed person linkage after the historical import:
+  - 613 members read
+  - 574 people upserted
+  - 613 members linked
+- Updated `Compoziții` timeline data so each stop can render the composition for that stop's own date when historical roster data exists.
+- Fixed chamber/vote seat-map hover labels by raising hovered seats and tooltips above the graph center and neighboring seats.
+
+Verification:
+- `npm run typecheck` passed after persistence/TLS adjustments.
+- `npm run test` passed after persistence/TLS adjustments.
+- `npm run build` passed after the timeline/importer changes.
+- Database verification for `leg-2020-2024` returned 354 Deputies mandates and 123 Senate mandates.

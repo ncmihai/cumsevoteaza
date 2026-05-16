@@ -71,6 +71,17 @@ interface AlignmentRow {
   endsOn?: string | null;
 }
 
+interface CompositionSourceRows {
+  members: Member[];
+  mandates: MemberMandate[];
+  memberships: MemberGroupMembership[];
+  groups: ParliamentaryGroup[];
+  parties: Party[];
+  memberAlignments: AlignmentRow[];
+  groupAlignments: AlignmentRow[];
+  partyAlignments: AlignmentRow[];
+}
+
 export async function getCurrentCompositionData(mode: CompositionMode): Promise<CompositionPageData> {
   const dbData = await tryDatabaseCurrentComposition(mode);
   if (dbData) return dbData;
@@ -98,12 +109,43 @@ async function tryDatabaseCompositionTimeline(
 
   const session = createDbSession();
   try {
-    const [governmentRows, peopleRows, roleRows, eventRows] = await Promise.all([
+    const [
+      governmentRows,
+      peopleRows,
+      roleRows,
+      eventRows,
+      memberRows,
+      mandateRows,
+      membershipRows,
+      groupRows,
+      partyRows,
+      memberAlignmentRows,
+      groupAlignmentRows,
+      partyAlignmentRows
+    ] = await Promise.all([
       session.db.select().from(schema.governments),
       session.db.select().from(schema.people),
       session.db.select().from(schema.governmentRoles),
-      session.db.select().from(schema.compositionEvents)
+      session.db.select().from(schema.compositionEvents),
+      session.db.select().from(schema.members),
+      session.db.select().from(schema.memberMandates),
+      session.db.select().from(schema.memberGroupMemberships),
+      session.db.select().from(schema.parliamentaryGroups),
+      session.db.select().from(schema.parties),
+      session.db.select().from(schema.memberGovernanceAlignments),
+      session.db.select().from(schema.governmentGroupAlignments),
+      session.db.select().from(schema.governmentPartyAlignments)
     ]);
+    const compositionRows = mapCompositionRows({
+      memberRows,
+      mandateRows,
+      membershipRows,
+      groupRows,
+      partyRows,
+      memberAlignmentRows,
+      groupAlignmentRows,
+      partyAlignmentRows
+    });
     const people = peopleRows.map(mapPerson);
     const peopleById = new Map(people.map((person) => [person.id, person]));
     const roles = roleRows.map(mapGovernmentRole);
@@ -124,6 +166,12 @@ async function tryDatabaseCompositionTimeline(
         if (!government) return [];
         const primeMinister = government.primeMinisterPersonId ? peopleById.get(government.primeMinisterPersonId) : undefined;
         const primeMinisterRole = roles.find((role) => role.governmentId === government.id && role.personId === government.primeMinisterPersonId);
+        const stopComposition = buildComposition({
+          mode,
+          asOf: event.occurredOn,
+          ...compositionRows,
+          sourceKind: "database"
+        });
         return [
           {
             id: event.id,
@@ -132,7 +180,7 @@ async function tryDatabaseCompositionTimeline(
             primeMinisterRole,
             event,
             sourceStatus: government.sourceSnapshotId || event.sourceSnapshotId ? "verified" : "manual",
-            chambers: isActiveGovernment(government, currentComposition.asOf) ? currentComposition.chambers : []
+            chambers: hasCompositionSeats(stopComposition) ? stopComposition.chambers : []
           }
         ];
       })
@@ -162,82 +210,21 @@ async function tryDatabaseCurrentComposition(mode: CompositionMode): Promise<Com
         session.db.select().from(schema.governmentPartyAlignments)
       ]);
 
-    const members = memberRows.map((row) => ({
-      id: row.id,
-      personId: row.personId ?? undefined,
-      slug: row.slug,
-      firstName: row.firstName,
-      lastName: row.lastName,
-      displayName: row.displayName,
-      sourceIds: row.sourceIds
-    }));
-    const mandates = mandateRows.map((row) => ({
-      id: row.id,
-      memberId: row.memberId,
-      legislatureId: row.legislatureId,
-      chamber: row.chamber,
-      startsOn: row.startsOn,
-      endsOn: row.endsOn ?? undefined,
-      constituency: row.constituency ?? undefined,
-      status: row.status as MemberMandate["status"],
-      sourceSnapshotId: row.sourceSnapshotId ?? undefined
-    }));
-    const memberships = membershipRows.map((row) => ({
-      id: row.id,
-      memberId: row.memberId,
-      groupId: row.groupId,
-      startsOn: row.startsOn,
-      endsOn: row.endsOn ?? undefined,
-      sourceSnapshotId: row.sourceSnapshotId ?? undefined
-    }));
-    const groups = groupRows.map((row) => ({
-      id: row.id,
-      partyId: row.partyId ?? undefined,
-      chamber: row.chamber,
-      shortName: row.shortName,
-      name: row.name,
-      color: row.color
-    }));
-    const parties = partyRows.map((row) => ({
-      id: row.id,
-      slug: row.slug,
-      shortName: row.shortName,
-      name: row.name,
-      color: row.color
-    }));
-    const memberAlignments = memberAlignmentRows.map((row) => ({
-      targetId: row.memberId,
-      alignment: row.alignment,
-      basis: row.basis,
-      startsOn: row.startsOn,
-      endsOn: row.endsOn
-    }));
-    const groupAlignments = groupAlignmentRows.map((row) => ({
-      targetId: row.groupId,
-      alignment: row.alignment,
-      basis: row.basis,
-      startsOn: row.startsOn,
-      endsOn: row.endsOn
-    }));
-    const partyAlignments = partyAlignmentRows.map((row) => ({
-      targetId: row.partyId,
-      alignment: row.alignment,
-      basis: row.basis,
-      startsOn: row.startsOn,
-      endsOn: row.endsOn
-    }));
+    const compositionRows = mapCompositionRows({
+      memberRows,
+      mandateRows,
+      membershipRows,
+      groupRows,
+      partyRows,
+      memberAlignmentRows,
+      groupAlignmentRows,
+      partyAlignmentRows
+    });
 
     return buildComposition({
       mode,
       asOf: today,
-      members,
-      mandates,
-      memberships,
-      groups,
-      parties,
-      memberAlignments,
-      groupAlignments,
-      partyAlignments,
+      ...compositionRows,
       sourceKind: "database"
     });
   } catch {
@@ -339,6 +326,10 @@ function buildComposition(input: {
   };
 }
 
+function hasCompositionSeats(composition: CompositionPageData): boolean {
+  return composition.chambers.some((chamber) => chamber.seats.length > 0);
+}
+
 function resolveAlignment(input: {
   mode: CompositionMode;
   asOf: string;
@@ -387,6 +378,84 @@ function mostCommonAlignment(values: GovernanceAlignment[]): GovernanceAlignment
   const counts = new Map<GovernanceAlignment, number>();
   for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "unknown";
+}
+
+function mapCompositionRows(input: {
+  memberRows: Array<typeof schema.members.$inferSelect>;
+  mandateRows: Array<typeof schema.memberMandates.$inferSelect>;
+  membershipRows: Array<typeof schema.memberGroupMemberships.$inferSelect>;
+  groupRows: Array<typeof schema.parliamentaryGroups.$inferSelect>;
+  partyRows: Array<typeof schema.parties.$inferSelect>;
+  memberAlignmentRows: Array<typeof schema.memberGovernanceAlignments.$inferSelect>;
+  groupAlignmentRows: Array<typeof schema.governmentGroupAlignments.$inferSelect>;
+  partyAlignmentRows: Array<typeof schema.governmentPartyAlignments.$inferSelect>;
+}): CompositionSourceRows {
+  return {
+    members: input.memberRows.map((row) => ({
+      id: row.id,
+      personId: row.personId ?? undefined,
+      slug: row.slug,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      displayName: row.displayName,
+      sourceIds: row.sourceIds
+    })),
+    mandates: input.mandateRows.map((row) => ({
+      id: row.id,
+      memberId: row.memberId,
+      legislatureId: row.legislatureId,
+      chamber: row.chamber,
+      startsOn: row.startsOn,
+      endsOn: row.endsOn ?? undefined,
+      constituency: row.constituency ?? undefined,
+      status: row.status as MemberMandate["status"],
+      sourceSnapshotId: row.sourceSnapshotId ?? undefined
+    })),
+    memberships: input.membershipRows.map((row) => ({
+      id: row.id,
+      memberId: row.memberId,
+      groupId: row.groupId,
+      startsOn: row.startsOn,
+      endsOn: row.endsOn ?? undefined,
+      sourceSnapshotId: row.sourceSnapshotId ?? undefined
+    })),
+    groups: input.groupRows.map((row) => ({
+      id: row.id,
+      partyId: row.partyId ?? undefined,
+      chamber: row.chamber,
+      shortName: row.shortName,
+      name: row.name,
+      color: row.color
+    })),
+    parties: input.partyRows.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      shortName: row.shortName,
+      name: row.name,
+      color: row.color
+    })),
+    memberAlignments: input.memberAlignmentRows.map((row) => ({
+      targetId: row.memberId,
+      alignment: row.alignment,
+      basis: row.basis,
+      startsOn: row.startsOn,
+      endsOn: row.endsOn
+    })),
+    groupAlignments: input.groupAlignmentRows.map((row) => ({
+      targetId: row.groupId,
+      alignment: row.alignment,
+      basis: row.basis,
+      startsOn: row.startsOn,
+      endsOn: row.endsOn
+    })),
+    partyAlignments: input.partyAlignmentRows.map((row) => ({
+      targetId: row.partyId,
+      alignment: row.alignment,
+      basis: row.basis,
+      startsOn: row.startsOn,
+      endsOn: row.endsOn
+    }))
+  };
 }
 
 function mapPerson(row: typeof schema.people.$inferSelect): Person {

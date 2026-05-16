@@ -1,5 +1,6 @@
 import type {
   ChamberId,
+  Legislature,
   Member,
   MemberCommitteeMembership,
   MemberGroupMembership,
@@ -14,6 +15,7 @@ import { cleanText, slugify } from "./utils";
 
 export interface ParsedRoster {
   chamber: ChamberId;
+  legislature: Legislature;
   sourceSnapshots: SourceSnapshot[];
   parties: Party[];
   groups: ParliamentaryGroup[];
@@ -62,12 +64,38 @@ export interface ParsedMemberProfile {
   roles: MemberRole[];
 }
 
-export const legislature2024 = {
+export const legislature2024: Legislature = {
   id: "leg-2024-2028",
   label: "2024-2028",
-  startsOn: "2024-12-01",
-  endsOn: "2028-12-01"
+  startsOn: "2024-12-21",
+  endsOn: "2028-12-20"
 };
+
+export const legislature2020: Legislature = {
+  id: "leg-2020-2024",
+  label: "2020-2024",
+  startsOn: "2020-12-21",
+  endsOn: "2024-12-20"
+};
+
+export const legislatureCatalog: Record<string, Legislature> = {
+  "2020": legislature2020,
+  "2020-2024": legislature2020,
+  "leg-2020-2024": legislature2020,
+  "2024": legislature2024,
+  "2024-2028": legislature2024,
+  "leg-2024-2028": legislature2024
+};
+
+export function legislatureFromFlag(value: string | undefined): Legislature {
+  if (!value) return legislature2024;
+  const normalized = value.trim().toLowerCase();
+  const legislature = legislatureCatalog[normalized];
+  if (!legislature) {
+    throw new Error(`Unsupported legislature "${value}". Supported values: 2020, 2024.`);
+  }
+  return legislature;
+}
 
 export const partyCatalog: Record<string, Party> = {
   psd: { id: "party-psd", slug: "psd", shortName: "PSD", name: "Partidul Social Democrat", color: "#d71920" },
@@ -163,6 +191,7 @@ export function mergeRoster(parts: ParsedRoster[]): ParsedRoster {
   }
   return {
     chamber: first.chamber,
+    legislature: first.legislature,
     sourceSnapshots: uniqueBy(parts.flatMap((part) => part.sourceSnapshots), (item) => item.id),
     parties: uniqueBy(parts.flatMap((part) => part.parties), (item) => item.id),
     groups: uniqueBy(parts.flatMap((part) => part.groups), (item) => item.id),

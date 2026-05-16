@@ -122,6 +122,33 @@ Observed bill page structure:
 - `gov.ro` can support current cabinet display, but historical composition
   should prefer official acts and Parliament records when available.
 
+## Historical Rosters
+
+- Deputies 2020-2024:
+  - Official member profiles are available through
+    `https://www.cdep.ro/ords/pls/parlam/structura2015.mp?cam=2&idl=1&idm=<id>&leg=2020&pag=1`.
+  - A controlled ID scan from `1` to `450` parsed 354 valid Deputies profiles.
+  - Generic section pages such as `Activitate publică` can be returned for
+    unused IDs and must be filtered before persistence.
+  - The CDEP TLS chain can fail Node's default certificate verification. The
+    importer keeps the normal verified fetch first, then uses a scoped
+    certificate-validation fallback only for certificate failures.
+- Senate 2020-2024:
+  - The current `EnumGrupuri.aspx` endpoint does not expose an obvious
+    historical index for all 2020 groups.
+  - Verified official group detail URLs imported the main 2020 groups:
+    - PSD:
+      `https://www.senat.ro/ComponentaGrupuri.aspx?GrupID=603B5FC4-8093-4EE7-A5EA-7779310901F0&Zi=`
+    - PNL:
+      `https://www.senat.ro/ComponentaGrupuri.aspx?GrupID=21eba8de-ecfd-4cc2-8db2-811825d75333&Zi=`
+    - USR:
+      `https://www.senat.ro/ComponentaGrupuri.aspx?GrupID=d50ad932-b344-4cf9-9d31-7dcb13137c81&Zi=`
+    - AUR:
+      `https://www.senat.ro/ComponentaGrupuri.aspx?GrupID=7E800D5F-E9DE-4645-918B-9CD7B29091C7&Zi=`
+    - UDMR:
+      `https://www.senat.ro/ComponentaGrupuri.aspx?GrupID=b8faa44f-07a0-4de5-bbc6-0618a4c0a194&Zi=`
+  - Unaffiliated 2020 Senate members remain a known source-discovery gap.
+
 Composition parser rules:
 - Store official investiture/coalition data separately from computed governing
   support derived from voting behavior.

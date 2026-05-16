@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "../parsers/deputies-roster";
+import { legislature2020 } from "../parsers/roster";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "../parsers/senate-roster";
 
 const fixtures = path.join(__dirname, "../fixtures");
@@ -37,6 +38,16 @@ describe("roster parsers", () => {
     expect(profile.partyAffiliations[0]?.partyId).toBe("party-psd");
     expect(profile.groupMemberships[0]?.groupId).toBe("group-deputies-psd");
     expect(profile.committeeMemberships[0]?.committeeName).toContain("Comisia pentru cultură");
+  });
+
+  it("keeps historical roster mandates in their own legislature", () => {
+    const profile = parseDeputiesMemberProfile("<html><body><h1>Deputat Istoric</h1></body></html>", "https://www.cdep.ro/ords/pls/parlam/structura2015.mp?idm=294&leg=2020", {
+      legislature: legislature2020
+    });
+
+    expect(profile.mandate?.id).toBe("mandate-member-deputies-294-2020-2024-deputies");
+    expect(profile.mandate?.legislatureId).toBe("leg-2020-2024");
+    expect(profile.mandate?.startsOn).toBe("2020-12-21");
   });
 });
 

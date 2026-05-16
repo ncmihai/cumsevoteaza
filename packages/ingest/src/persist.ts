@@ -146,7 +146,7 @@ export async function persistChamberVote(parsed: ParsedChamberVote) {
 export async function persistRoster(parsed: ParsedRoster) {
   const session = createDbSession();
   try {
-    await upsertDefaultLegislature(session.db);
+    await upsertLegislature(session.db, parsed.legislature);
     await Promise.all(parsed.sourceSnapshots.map((source) => upsertSourceSnapshot(session.db, source)));
     await Promise.all(parsed.parties.map((party) => upsertParty(session.db, party)));
     await Promise.all(parsed.groups.map((group) => upsertGroup(session.db, group)));
@@ -176,12 +176,16 @@ export async function persistRoster(parsed: ParsedRoster) {
 }
 
 async function upsertDefaultLegislature(db: Db) {
+  await upsertLegislature(db, defaultLegislature);
+}
+
+async function upsertLegislature(db: Db, legislature: typeof defaultLegislature) {
   await db
     .insert(schema.legislatures)
-    .values(defaultLegislature)
+    .values(legislature)
     .onConflictDoUpdate({
       target: schema.legislatures.id,
-      set: defaultLegislature
+      set: legislature
     });
 }
 
@@ -244,14 +248,18 @@ async function upsertParty(db: Db, party: Party) {
 }
 
 async function upsertMember(db: Db, member: Member) {
+  const slugOwner = await db.select({ id: schema.members.id }).from(schema.members).where(eq(schema.members.slug, member.slug)).limit(1);
+  const slug = slugOwner[0] && slugOwner[0].id !== member.id ? `${member.slug}-${member.id.replace(/^member-/, "")}` : member.slug;
+  const values = { ...member, slug };
+
   await db
     .insert(schema.members)
-    .values(member)
+    .values(values)
     .onConflictDoUpdate({
       target: schema.members.id,
       set: {
         personId: member.personId,
-        slug: member.slug,
+        slug,
         firstName: member.firstName,
         lastName: member.lastName,
         displayName: member.displayName,

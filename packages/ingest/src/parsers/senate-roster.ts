@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import type {
+  Legislature,
   Member,
   MemberCommitteeMembership,
   MemberGroupMembership,
@@ -24,6 +25,10 @@ import {
 } from "./roster";
 
 const chamber = "senate" as const;
+
+interface RosterParserOptions {
+  legislature?: Legislature;
+}
 
 export function parseSenateRosterIndex(html: string, sourceUrl: string): ParsedRosterIndex {
   const $ = cheerio.load(html);
@@ -50,7 +55,13 @@ export function parseSenateRosterIndex(html: string, sourceUrl: string): ParsedR
   return { sourceSnapshot, groups };
 }
 
-export function parseSenateRosterGroup(html: string, sourceUrl: string, fallbackGroup?: ParliamentaryGroup): ParsedRosterGroup {
+export function parseSenateRosterGroup(
+  html: string,
+  sourceUrl: string,
+  fallbackGroup?: ParliamentaryGroup,
+  options: RosterParserOptions = {}
+): ParsedRosterGroup {
+  const legislature = options.legislature ?? legislature2024;
   const $ = cheerio.load(html);
   const sourceSnapshot = snapshotFor("senate-roster-group", sourceUrl, html, "parsed");
   const heading = cleanText($("h2").first().text()) || cleanText($("title").text()).replace(/^.* - /, "");
@@ -69,7 +80,7 @@ export function parseSenateRosterGroup(html: string, sourceUrl: string, fallback
     const displayName = titleCase(rawName);
     const member = buildMember(officialId, displayName);
     const nearby = cleanText(link.parent().nextAll().slice(0, 2).text()) || cleanText(link.parent().parent().text());
-    const startsOn = parseRomanianDate(nearby) ?? legislature2024.startsOn;
+    const startsOn = parseRomanianDate(nearby) ?? legislature.startsOn;
     const roleTitle = roleFromText(nearby);
 
     const membership: MemberGroupMembership = {
@@ -111,20 +122,22 @@ export function parseSenateRosterGroup(html: string, sourceUrl: string, fallback
   };
 }
 
-export function parseSenateMemberProfile(html: string, sourceUrl: string): ParsedMemberProfile {
+export function parseSenateMemberProfile(html: string, sourceUrl: string, options: RosterParserOptions = {}): ParsedMemberProfile {
+  const legislature = options.legislature ?? legislature2024;
   const $ = cheerio.load(html);
   const sourceSnapshot = snapshotFor("senate-member-profile", sourceUrl, html, "parsed");
   const officialId = sourceUrl.match(/ParlamentarID=([0-9a-f-]+)/i)?.[1] ?? slugify(sourceUrl);
   const name = titleCase(cleanText($("h1").first().text()));
   const member = buildMember(officialId, name);
   const bodyText = cleanText($("body").text());
-  const mandateStart = parseRomanianDate(bodyText.match(/validat[^,.;]+(?:data de )?(\d{1,2}[./]\d{1,2}[./]\d{4})/i)?.[0] ?? "") ?? legislature2024.startsOn;
+  const mandateStart =
+    parseRomanianDate(bodyText.match(/validat[^,.;]+(?:data de )?(\d{1,2}[./]\d{1,2}[./]\d{4})/i)?.[0] ?? "") ?? legislature.startsOn;
   const constituency = cleanText(bodyText.match(/Circumscripţia electorală nr\.\d+\s+([^,\n]+)/i)?.[1] ?? "");
   const party = partyFromText(cleanText($("body").text().match(/Formaţiunea politică:\s*([^#]+?)Grupul parlamentar:/i)?.[1] ?? ""));
   const mandate: MemberMandate = {
-    id: `mandate-${member.id}-2024-2028-senate`,
+    id: `mandate-${member.id}-${legislature.label}-senate`,
     memberId: member.id,
-    legislatureId: legislature2024.id,
+    legislatureId: legislature.id,
     chamber,
     startsOn: mandateStart,
     constituency: constituency || undefined,
@@ -151,7 +164,7 @@ export function parseSenateMemberProfile(html: string, sourceUrl: string): Parse
     mandate,
     partyAffiliations,
     groupMemberships: [],
-    committeeMemberships: parseSenateCommittees($, member.id, sourceSnapshot.id),
+    committeeMemberships: parseSenateCommittees($, member.id, sourceSnapshot.id, legislature),
     roles: []
   };
 }
@@ -191,7 +204,8 @@ function roleFromText(value: string): string | undefined {
 function parseSenateCommittees(
   $: cheerio.CheerioAPI,
   memberIdValue: string,
-  sourceSnapshotId: string
+  sourceSnapshotId: string,
+  legislature: Legislature
 ): MemberCommitteeMembership[] {
   const committees: MemberCommitteeMembership[] = [];
   const headings = new Set(["Comisii permanente:", "Comisii comune:", "Comisii speciale:", "Comisii de anchetă:"]);
@@ -203,7 +217,7 @@ function parseSenateCommittees(
     const line = cleanText(link.parent().text());
     const previousHeading = cleanText(link.parent().prevAll("h5,h4,h3").first().text());
     if (previousHeading && !headings.has(previousHeading)) return;
-    const startsOn = parseRomanianDate(line) ?? legislature2024.startsOn;
+    const startsOn = parseRomanianDate(line) ?? legislature.startsOn;
     const role = cleanText(line.replace(label, "").replace(/,?\s*de la data de.*$/i, "")) || undefined;
     committees.push({
       id: `committee-${memberIdValue}-${slugify(label)}-${startsOn}`,

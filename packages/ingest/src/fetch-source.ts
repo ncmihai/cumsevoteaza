@@ -28,7 +28,7 @@ export async function fetchOfficialSource(url: string, attempts = 2): Promise<st
       } catch (error) {
         lastError = error;
         if (isCertificateError(error)) {
-          return fetchWithCurl(candidateUrl);
+          return fetchWithInsecureTls(candidateUrl);
         }
         if (attempt < attempts) {
           await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -51,6 +51,28 @@ async function fetchWithCurl(url: string): Promise<string> {
     url
   ]);
   return stdout;
+}
+
+async function fetchWithInsecureTls(url: string): Promise<string> {
+  const previous = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "user-agent": "cumsevoteaza-ingest/0.1 (+private research)"
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+    return await response.text();
+  } finally {
+    if (previous === undefined) {
+      delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    } else {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = previous;
+    }
+  }
 }
 
 function isCertificateError(error: unknown): boolean {
