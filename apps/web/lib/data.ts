@@ -591,6 +591,7 @@ function mapParty(row: typeof schema.parties.$inferSelect): Party {
 function mapMember(row: typeof schema.members.$inferSelect): Member {
   return {
     id: row.id,
+    personId: row.personId ?? undefined,
     slug: row.slug,
     firstName: row.firstName,
     lastName: row.lastName,

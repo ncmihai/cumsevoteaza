@@ -246,6 +246,7 @@ async function upsertMember(db: Db, member: Member) {
     .onConflictDoUpdate({
       target: schema.members.id,
       set: {
+        personId: member.personId,
         slug: member.slug,
         firstName: member.firstName,
         lastName: member.lastName,
@@ -263,6 +264,7 @@ async function upsertMembers(db: Db, members: Member[]) {
     .onConflictDoUpdate({
       target: schema.members.id,
       set: {
+        personId: sql`excluded.person_id`,
         slug: sql`excluded.slug`,
         firstName: sql`excluded.first_name`,
         lastName: sql`excluded.last_name`,
@@ -270,6 +272,93 @@ async function upsertMembers(db: Db, members: Member[]) {
         sourceIds: sql`excluded.source_ids`
       }
     });
+}
+
+export async function backfillPeopleFromMembers() {
+  const session = createDbSession();
+  try {
+    const memberRows = await session.db.select().from(schema.members);
+    const peopleById = new Map<
+      string,
+      {
+        id: string;
+        slug: string;
+        displayName: string;
+        normalizedName: string;
+        sourceIds: Record<string, string>;
+      }
+    >();
+
+    for (const member of memberRows) {
+      const normalizedName = normalizePersonName(member.displayName);
+      if (!normalizedName) continue;
+      const id = `person-${normalizedName}`;
+      const existing = peopleById.get(id);
+      peopleById.set(id, {
+        id,
+        slug: id.replace(/^person-/, ""),
+        displayName: existing?.displayName ?? member.displayName,
+        normalizedName,
+        sourceIds: {
+          ...(existing?.sourceIds ?? {}),
+          ...personSourceIds(member.id, member.sourceIds)
+        }
+      });
+    }
+
+    const people = [...peopleById.values()];
+    if (people.length > 0) {
+      await session.db
+        .insert(schema.people)
+        .values(people)
+        .onConflictDoUpdate({
+          target: schema.people.id,
+          set: {
+            slug: sql`excluded.slug`,
+            displayName: sql`excluded.display_name`,
+            normalizedName: sql`excluded.normalized_name`,
+            sourceIds: sql`excluded.source_ids`
+          }
+        });
+    }
+
+    let linkedMembers = 0;
+    for (const member of memberRows) {
+      const normalizedName = normalizePersonName(member.displayName);
+      if (!normalizedName) continue;
+      const personId = `person-${normalizedName}`;
+      await session.db
+        .update(schema.members)
+        .set({ personId })
+        .where(eq(schema.members.id, member.id));
+      linkedMembers += 1;
+    }
+
+    return {
+      membersRead: memberRows.length,
+      peopleUpserted: people.length,
+      membersLinked: linkedMembers
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+function normalizePersonName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function personSourceIds(memberId: string, sourceIds: Record<string, string>): Record<string, string> {
+  const ids: Record<string, string> = { [`member:${memberId}`]: memberId };
+  for (const [key, value] of Object.entries(sourceIds)) {
+    ids[`member:${memberId}:${key}`] = value;
+  }
+  return ids;
 }
 
 async function upsertMemberMandate(db: Db, mandate: MemberMandate) {

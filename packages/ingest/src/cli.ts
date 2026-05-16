@@ -9,7 +9,7 @@ import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterInde
 import { parseSenateVote } from "./parsers/senate-vote";
 import { fetchOfficialSource } from "./fetch-source";
 import { canonicalizeOfficialUrl } from "./official-urls";
-import { persistChamberVote, persistRoster, persistSenateBill, persistSenateVote } from "./persist";
+import { backfillPeopleFromMembers, persistChamberVote, persistRoster, persistSenateBill, persistSenateVote } from "./persist";
 import { snapshotFor } from "./parsers/utils";
 import {
   discoverDeputiesSources,
@@ -102,6 +102,11 @@ async function main() {
         )
       );
     }
+    return;
+  }
+
+  if (command === "people:backfill") {
+    console.log(JSON.stringify(await backfillPeopleFromMembers(), null, 2));
     return;
   }
 

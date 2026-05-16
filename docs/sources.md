@@ -99,6 +99,35 @@ Observed bill page structure:
   gracefully. Retesting through the ORDS endpoint succeeded and the first
   repaired batch persisted 6 Deputies nominal votes.
 
+## Government And Composition
+
+- Constitutional frame:
+  `https://www.cdep.ro/pls/legis/legis_pck.htp_act_text?idt=1253`
+  - The President designates a candidate for Prime Minister.
+  - The candidate asks Parliament for confidence on the program and full
+    Government list.
+  - The Government starts exercising the mandate after the oath.
+  - The Government is politically accountable before Parliament.
+- Portal Legislativ is the preferred source for decrees and official acts
+  around designation, appointment, reshuffles, and minister changes. Example:
+  `https://legislatie.just.ro/Public/DetaliiDocument/172817`
+- CDEP/Senate joint sitting records are preferred for investiture votes,
+  confidence votes, and no-confidence motions when nominal or result data is
+  available.
+- `gov.ro` can support current cabinet display, but historical composition
+  should prefer official acts and Parliament records when available.
+
+Composition parser rules:
+- Store official investiture/coalition data separately from computed governing
+  support derived from voting behavior.
+- Store a dated event whenever a government, minister, party/group alignment,
+  mandate, or chamber composition changes.
+- Do not infer opposition/governing status from party names alone. Unknown or
+  unsupported alignments stay `unknown`.
+- If a person appears across multiple source systems or legislatures, connect
+  the records through a canonical `people` row while preserving the original
+  chamber-specific `members` records and source IDs.
+
 ## Reliability Rules
 
 - Store raw source URL, fetched timestamp, content hash, parser version, and

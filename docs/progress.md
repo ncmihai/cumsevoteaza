@@ -151,6 +151,8 @@ Append-only implementation history.
 - Added group and vote-choice highlight controls while keeping the nominal vote table as the audit layer.
 - Verified the map visually on desktop and a `390x844` mobile viewport.
 - Fixed a local hydration mismatch by rounding generated seat coordinates before rendering.
+- Added visible hover/focus seat labels so every chamber-map circle can expose
+  the member name, group, and vote choice before a future photo layer exists.
 
 ## 2026-05-16 — 2024-Present Directories And Parliament Model
 
@@ -178,6 +180,43 @@ Append-only implementation history.
   - Deputies source discovery
   - pending discovery imports
   - bounded daily sync
+
+## 2026-05-16 — Composition History Foundation
+
+- Put broad vote/project backfill expansion on hold to prioritize historical
+  member and composition modeling.
+- Added a canonical `people` table and a nullable `members.person_id` link so
+  the same person can be connected across multiple source-specific member
+  records, legislatures, chambers, and government roles.
+- Added government/composition schema foundations:
+  - `governments`
+  - `government_roles`
+  - `government_party_alignments`
+  - `government_group_alignments`
+  - `member_governance_alignments`
+  - `composition_events`
+- Added neutral alignment enums for official investiture/coalition views and
+  computed governing-support views, without ideological or editorial scoring.
+- Generated Drizzle migration `0004_redundant_kate_bishop.sql`.
+- Added `ingest:people:backfill`, an idempotent command that creates canonical
+  people rows from existing member records and links `members.person_id`.
+- Applied the migration to local Docker Postgres with an explicit local
+  `DATABASE_URL` override because the root `.env` points to Neon.
+- Ran the local people backfill:
+  - 464 members read
+  - 464 people upserted
+  - 464 members linked
+- Applied the same migration to Neon and ran the people backfill there:
+  - 468 members read
+  - 468 people upserted
+  - 468 members linked
+- Added DB-first `/[locale]/compozitii` with:
+  - current Chamber of Deputies and Senate seat maps
+  - group breakdown panels
+  - member hover/focus labels on every seat
+  - official investiture vs computed voting-support mode switch
+- Verified `/ro/compozitii` and `/ro/compozitii?mode=computed` locally against
+  Docker Postgres.
   - staged 2024-present backfill
 - Added root and ingest package commands:
   - `ingest:discover:senate`

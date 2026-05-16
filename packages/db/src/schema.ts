@@ -24,6 +24,41 @@ export const sourceStatusEnum = pgEnum("source_status", ["parsed", "partial", "f
 export const ingestionRunStatusEnum = pgEnum("ingestion_run_status", ["running", "completed", "partial", "failed"]);
 export const sourceDiscoveryStatusEnum = pgEnum("source_discovery_status", ["pending", "imported", "partial", "failed", "skipped"]);
 export const sourceDiscoveryKindEnum = pgEnum("source_discovery_kind", ["bill", "vote"]);
+export const governanceAlignmentEnum = pgEnum("governance_alignment", [
+  "government",
+  "governing_support",
+  "opposition",
+  "mixed",
+  "unaffiliated",
+  "unknown"
+]);
+export const alignmentBasisEnum = pgEnum("alignment_basis", [
+  "official_investiture",
+  "official_coalition",
+  "parliamentary_group_declaration",
+  "computed_vote_support",
+  "manual_curation",
+  "unknown"
+]);
+export const compositionEventTypeEnum = pgEnum("composition_event_type", [
+  "legislature_start",
+  "legislature_end",
+  "government_designated",
+  "government_invested",
+  "government_ended",
+  "minister_appointed",
+  "minister_ended",
+  "reshuffle",
+  "no_confidence_motion",
+  "confidence_vote",
+  "coalition_change",
+  "group_change",
+  "member_mandate_start",
+  "member_mandate_end",
+  "committee_change",
+  "role_change",
+  "other"
+]);
 
 export const legislatures = pgTable("legislatures", {
   id: text("id").primaryKey(),
@@ -51,8 +86,21 @@ export const parliamentaryGroups = pgTable("parliamentary_groups", {
   color: varchar("color", { length: 16 }).notNull()
 });
 
+export const people = pgTable("people", {
+  id: text("id").primaryKey(),
+  slug: text("slug").notNull(),
+  displayName: text("display_name").notNull(),
+  normalizedName: text("normalized_name").notNull(),
+  birthDate: date("birth_date"),
+  sourceIds: jsonb("source_ids").$type<Record<string, string>>().notNull().default({})
+}, (table) => ({
+  slugIdx: uniqueIndex("people_slug_idx").on(table.slug),
+  normalizedNameIdx: index("people_normalized_name_idx").on(table.normalizedName)
+}));
+
 export const members = pgTable("members", {
   id: text("id").primaryKey(),
+  personId: text("person_id").references(() => people.id),
   slug: text("slug").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
@@ -105,6 +153,65 @@ export const sourceDiscoveries = pgTable("source_discoveries", {
   sourceUrlIdx: uniqueIndex("source_discoveries_source_url_idx").on(table.sourceUrl)
 }));
 
+export const governments = pgTable("governments", {
+  id: text("id").primaryKey(),
+  slug: text("slug").notNull(),
+  name: text("name").notNull(),
+  legislatureId: text("legislature_id").references(() => legislatures.id),
+  primeMinisterPersonId: text("prime_minister_person_id").references(() => people.id),
+  startsOn: date("starts_on").notNull(),
+  endsOn: date("ends_on"),
+  basis: alignmentBasisEnum("basis").notNull().default("official_investiture"),
+  investitureVoteId: text("investiture_vote_id"),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
+}, (table) => ({
+  slugIdx: uniqueIndex("governments_slug_idx").on(table.slug),
+  periodIdx: index("governments_period_idx").on(table.startsOn, table.endsOn),
+  legislatureIdx: index("governments_legislature_idx").on(table.legislatureId)
+}));
+
+export const governmentRoles = pgTable("government_roles", {
+  id: text("id").primaryKey(),
+  governmentId: text("government_id").notNull().references(() => governments.id),
+  personId: text("person_id").notNull().references(() => people.id),
+  title: text("title").notNull(),
+  ministry: text("ministry"),
+  startsOn: date("starts_on").notNull(),
+  endsOn: date("ends_on"),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
+}, (table) => ({
+  governmentIdx: index("government_roles_government_idx").on(table.governmentId),
+  personPeriodIdx: index("government_roles_person_period_idx").on(table.personId, table.startsOn, table.endsOn)
+}));
+
+export const governmentPartyAlignments = pgTable("government_party_alignments", {
+  id: text("id").primaryKey(),
+  governmentId: text("government_id").notNull().references(() => governments.id),
+  partyId: text("party_id").notNull().references(() => parties.id),
+  alignment: governanceAlignmentEnum("alignment").notNull().default("unknown"),
+  basis: alignmentBasisEnum("basis").notNull().default("unknown"),
+  startsOn: date("starts_on").notNull(),
+  endsOn: date("ends_on"),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
+}, (table) => ({
+  partyPeriodIdx: index("government_party_alignments_party_period_idx").on(table.partyId, table.startsOn, table.endsOn),
+  governmentIdx: index("government_party_alignments_government_idx").on(table.governmentId)
+}));
+
+export const governmentGroupAlignments = pgTable("government_group_alignments", {
+  id: text("id").primaryKey(),
+  governmentId: text("government_id").notNull().references(() => governments.id),
+  groupId: text("group_id").notNull().references(() => parliamentaryGroups.id),
+  alignment: governanceAlignmentEnum("alignment").notNull().default("unknown"),
+  basis: alignmentBasisEnum("basis").notNull().default("unknown"),
+  startsOn: date("starts_on").notNull(),
+  endsOn: date("ends_on"),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
+}, (table) => ({
+  groupPeriodIdx: index("government_group_alignments_group_period_idx").on(table.groupId, table.startsOn, table.endsOn),
+  governmentIdx: index("government_group_alignments_government_idx").on(table.governmentId)
+}));
+
 export const memberMandates = pgTable("member_mandates", {
   id: text("id").primaryKey(),
   memberId: text("member_id").notNull().references(() => members.id),
@@ -134,6 +241,41 @@ export const memberPartyAffiliations = pgTable("member_party_affiliations", {
   endsOn: date("ends_on"),
   sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
 });
+
+export const memberGovernanceAlignments = pgTable("member_governance_alignments", {
+  id: text("id").primaryKey(),
+  memberId: text("member_id").notNull().references(() => members.id),
+  governmentId: text("government_id").references(() => governments.id),
+  alignment: governanceAlignmentEnum("alignment").notNull().default("unknown"),
+  basis: alignmentBasisEnum("basis").notNull().default("unknown"),
+  startsOn: date("starts_on").notNull(),
+  endsOn: date("ends_on"),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
+}, (table) => ({
+  memberPeriodIdx: index("member_governance_alignments_member_period_idx").on(table.memberId, table.startsOn, table.endsOn),
+  governmentIdx: index("member_governance_alignments_government_idx").on(table.governmentId)
+}));
+
+export const compositionEvents = pgTable("composition_events", {
+  id: text("id").primaryKey(),
+  eventType: compositionEventTypeEnum("event_type").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  occurredOn: date("occurred_on").notNull(),
+  endsOn: date("ends_on"),
+  legislatureId: text("legislature_id").references(() => legislatures.id),
+  governmentId: text("government_id").references(() => governments.id),
+  chamber: chamberEnum("chamber"),
+  memberId: text("member_id").references(() => members.id),
+  personId: text("person_id").references(() => people.id),
+  partyId: text("party_id").references(() => parties.id),
+  groupId: text("group_id").references(() => parliamentaryGroups.id),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
+}, (table) => ({
+  dateIdx: index("composition_events_date_idx").on(table.occurredOn, table.eventType),
+  governmentIdx: index("composition_events_government_idx").on(table.governmentId),
+  legislatureIdx: index("composition_events_legislature_idx").on(table.legislatureId)
+}));
 
 export const memberCommitteeMemberships = pgTable("member_committee_memberships", {
   id: text("id").primaryKey(),

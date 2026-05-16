@@ -107,7 +107,7 @@ export function VoteExplorer({ locale, chamber, groups, members, individualVotes
           ))}
         </div>
 
-        <div className="relative mx-auto aspect-[2/1] min-h-[250px] w-full max-w-5xl overflow-hidden">
+        <div className="relative mx-auto aspect-[2/1] min-h-[250px] w-full max-w-5xl overflow-visible">
           <div className="absolute left-1/2 top-[77%] -translate-x-1/2 text-center">
             <div className="text-5xl font-semibold leading-none tracking-normal text-slate-950 md:text-6xl">{individualVotes.length}</div>
             <div className="mt-1 text-xs font-semibold uppercase text-slate-500">{labels.seats}</div>
@@ -125,7 +125,7 @@ export function VoteExplorer({ locale, chamber, groups, members, individualVotes
                 href={seat.member ? `/${locale}/members/${seat.member.slug}` : `/${locale}/votes/${seat.vote.voteId}`}
                 title={`${memberLabel} · ${groupLabel} · ${voteLabel}`}
                 className={[
-                  "absolute block rounded-full border border-white shadow-sm outline-offset-2 transition",
+                  "group/seat absolute block rounded-full border border-white shadow-sm outline-offset-2 transition",
                   muted ? "opacity-20" : "opacity-100 hover:scale-125 focus:scale-125"
                 ].join(" ")}
                 style={{
@@ -139,6 +139,12 @@ export function VoteExplorer({ locale, chamber, groups, members, individualVotes
               >
                 <span className="absolute bottom-0 right-0 grid h-[62%] w-[62%] translate-x-1/5 translate-y-1/5 place-items-center rounded-full border border-white bg-white">
                   <VoteMark choice={seat.vote.choice} className="h-[80%] w-[80%]" />
+                </span>
+                <span className="pointer-events-none absolute left-1/2 top-0 z-20 hidden min-w-max -translate-x-1/2 -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md group-hover/seat:block group-focus-visible/seat:block">
+                  {memberLabel}
+                  <span className="mt-0.5 block font-normal text-slate-600">
+                    {groupLabel} · {voteLabel}
+                  </span>
                 </span>
                 <span className="sr-only">
                   {memberLabel} {groupLabel} {voteLabel}

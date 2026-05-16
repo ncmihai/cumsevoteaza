@@ -12,6 +12,41 @@ export type VoteChoice =
 
 export type SourceStatus = "parsed" | "partial" | "failed";
 
+export type GovernanceAlignment =
+  | "government"
+  | "governing_support"
+  | "opposition"
+  | "mixed"
+  | "unaffiliated"
+  | "unknown";
+
+export type AlignmentBasis =
+  | "official_investiture"
+  | "official_coalition"
+  | "parliamentary_group_declaration"
+  | "computed_vote_support"
+  | "manual_curation"
+  | "unknown";
+
+export type CompositionEventType =
+  | "legislature_start"
+  | "legislature_end"
+  | "government_designated"
+  | "government_invested"
+  | "government_ended"
+  | "minister_appointed"
+  | "minister_ended"
+  | "reshuffle"
+  | "no_confidence_motion"
+  | "confidence_vote"
+  | "coalition_change"
+  | "group_change"
+  | "member_mandate_start"
+  | "member_mandate_end"
+  | "committee_change"
+  | "role_change"
+  | "other";
+
 export interface SourceSnapshot {
   id: string;
   sourceUrl: string;
@@ -47,13 +82,97 @@ export interface ParliamentaryGroup {
   color: string;
 }
 
+export interface Person {
+  id: string;
+  slug: string;
+  displayName: string;
+  normalizedName: string;
+  birthDate?: string;
+  sourceIds: Record<string, string>;
+}
+
 export interface Member {
   id: string;
+  personId?: string;
   slug: string;
   firstName: string;
   lastName: string;
   displayName: string;
   sourceIds: Record<string, string>;
+}
+
+export interface Government {
+  id: string;
+  slug: string;
+  name: string;
+  legislatureId?: string;
+  primeMinisterPersonId?: string;
+  startsOn: string;
+  endsOn?: string;
+  basis: AlignmentBasis;
+  investitureVoteId?: string;
+  sourceSnapshotId?: string;
+}
+
+export interface GovernmentRole {
+  id: string;
+  governmentId: string;
+  personId: string;
+  title: string;
+  ministry?: string;
+  startsOn: string;
+  endsOn?: string;
+  sourceSnapshotId?: string;
+}
+
+export interface GovernmentPartyAlignment {
+  id: string;
+  governmentId: string;
+  partyId: string;
+  alignment: GovernanceAlignment;
+  basis: AlignmentBasis;
+  startsOn: string;
+  endsOn?: string;
+  sourceSnapshotId?: string;
+}
+
+export interface GovernmentGroupAlignment {
+  id: string;
+  governmentId: string;
+  groupId: string;
+  alignment: GovernanceAlignment;
+  basis: AlignmentBasis;
+  startsOn: string;
+  endsOn?: string;
+  sourceSnapshotId?: string;
+}
+
+export interface MemberGovernanceAlignment {
+  id: string;
+  memberId: string;
+  governmentId?: string;
+  alignment: GovernanceAlignment;
+  basis: AlignmentBasis;
+  startsOn: string;
+  endsOn?: string;
+  sourceSnapshotId?: string;
+}
+
+export interface CompositionEvent {
+  id: string;
+  eventType: CompositionEventType;
+  title: string;
+  description?: string;
+  occurredOn: string;
+  endsOn?: string;
+  legislatureId?: string;
+  governmentId?: string;
+  chamber?: ChamberId;
+  memberId?: string;
+  personId?: string;
+  partyId?: string;
+  groupId?: string;
+  sourceSnapshotId?: string;
 }
 
 export interface MemberMandate {
@@ -198,7 +317,14 @@ export interface NormalizedDataset {
   legislatures: Legislature[];
   parties: Party[];
   groups: ParliamentaryGroup[];
+  people?: Person[];
   members: Member[];
+  governments?: Government[];
+  governmentRoles?: GovernmentRole[];
+  governmentPartyAlignments?: GovernmentPartyAlignment[];
+  governmentGroupAlignments?: GovernmentGroupAlignment[];
+  memberGovernanceAlignments?: MemberGovernanceAlignment[];
+  compositionEvents?: CompositionEvent[];
   mandates: MemberMandate[];
   groupMemberships: MemberGroupMembership[];
   partyAffiliations: MemberPartyAffiliation[];

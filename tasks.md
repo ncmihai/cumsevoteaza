@@ -152,6 +152,28 @@ implementation steps.
 - [ ] Add automated UI tests for directory filters, pagination/load-more, loading states, and landing-page dynamic panels.
 - [ ] Set `ANALYTICS_SALT` in Vercel so production can record anonymous views, searches, and hot reactions.
 
+## Active Milestone — Historical Members + Compoziții Foundation
+
+- [x] Pause broad `Voturi` / `Proiecte` expansion until the composition model is ready.
+- [x] Add canonical `people` identity table for cross-legislature and cross-chamber person matching.
+- [x] Link `members` to `people` with nullable `person_id` so existing imports remain valid.
+- [x] Add government/cabinet tables for PM, ministers, and other official government roles.
+- [x] Add party, group, and member governance-alignment tables with separate source/basis fields.
+- [x] Add dated `composition_events` for legislature, government, coalition, group, member, committee, and role changes.
+- [x] Add migration `0004_redundant_kate_bishop.sql`.
+- [x] Add visible hover/focus labels to chamber seats with member name, group, and vote choice.
+- [x] Apply composition migration locally.
+- [x] Build first `people` backfill to create canonical person records from the current 2024-present roster.
+- [x] Add first `Compoziții` read model for current legislature/chamber composition.
+- [x] Add `/[locale]/compozitii` page with current Chamber/Senate seat maps and official/computed mode switch.
+- [x] Apply composition migration to Neon.
+- [x] Run the `people` backfill against Neon after migration.
+- [ ] Add current composition seat map that is not tied to a vote and uses alignment mode:
+  - official investiture / coalition
+  - computed governing support
+- [ ] Add historical-roster import plan for post-1989 legislatures.
+- [ ] Add member photo fields only after official source URLs are identified and stored.
+
 ## Verification
 
 - `npm run test` — passed.
@@ -243,6 +265,14 @@ implementation steps.
   - `/ro`, `/ro/votes?year=2025&month=12`, and `/ro/bills?q=PL-x` returned `200` locally.
   - `/api/directory/votes?limit=3&year=2025` and `/api/directory/bills?limit=3&q=PL-x` returned paginated JSON locally.
   - `/api/reactions/hot` returns a controlled disabled response until `ANALYTICS_SALT` is configured.
+- Composition foundation checks:
+  - Drizzle migration generated for people, governments, alignments, and composition events.
+  - Vote seat map hover/focus labels added for member name, group, and vote choice.
+  - Local Docker Postgres migration applied with explicit local `DATABASE_URL`.
+  - Local people backfill linked 464 members to 464 people.
+  - `/ro/compozitii` and `/ro/compozitii?mode=computed` returned `200` locally and rendered DB-backed chamber counts.
+  - Neon migration applied successfully.
+  - Neon people backfill linked 468 members to 468 people.
 
 ## Import Proof
 
@@ -264,9 +294,13 @@ implementation steps.
 - Language: Romanian default, English secondary.
 - Access: private deploy with env-password gate.
 - Data range: `2024-2028` first.
+- Long-term data range: post-1989, after the current-legislature composition model is proven.
 - Ingestion: manual CLI commands first.
 - Metrics: factual only in v1.
 - Individual profiles: parliamentary-career history only, Transfermarkt-style dense table.
+- Compoziții model: neutral factual composition history, with official
+  investiture/coalition data stored separately from computed governing-support
+  views.
 
 ## Next Actions
 
