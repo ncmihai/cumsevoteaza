@@ -38,6 +38,8 @@ Observed bill page structure:
   vote details, Chamber nominal vote pages, and Chamber bill detail pages. The
   importer stores these links as resumable discoveries instead of trying to
   infer missing lifecycle data.
+- Senate bill pages include in-page tab anchors such as `#profile` and `#buzz`.
+  These are not independent official sources and must be ignored by discovery.
 
 ## Chamber of Deputies
 

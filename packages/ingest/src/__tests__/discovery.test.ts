@@ -43,6 +43,19 @@ describe("official source discovery", () => {
     );
   });
 
+  it("ignores same-page Senate bill anchors", () => {
+    const html = `
+      <a href="#">OK</a>
+      <a href="#profile">Listă documente</a>
+      <a href="/legis/lista.aspx?an_cls=2025&nr_cls=PLX2#buzz">Fișă act</a>
+      <a href="/legis/lista.aspx?an_cls=2025&nr_cls=L316">L316/2025</a>
+    `;
+
+    const discoveries = discoverOfficialLinks(html, "https://www.senat.ro/legis/lista.aspx?an_cls=2025&nr_cls=PLX2", "senate");
+
+    expect(discoveries).toEqual([expect.objectContaining({ chamber: "senate", kind: "bill", officialId: "L316/2025" })]);
+  });
+
   it("detects Chamber bill and nominal vote links from official-style pages", () => {
     const html = `
       <table>

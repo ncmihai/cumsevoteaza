@@ -263,3 +263,23 @@ Append-only implementation history.
   - `npm run build` passed outside the sandbox.
   - `npm run ingest:import:pending -- --max-imports=1` imported `1` queued
     source with no partials or failures.
+
+## 2026-05-16 — Bounded Import Pass After Senate Lifecycle Update
+
+- Ran a bounded daily-style pass against Neon:
+  - `npm run ingest:sync:daily -- --years=2025 --max-imports=10 --discovery-limit=1`
+  - Result: `10` imported, `1` failed, `0` partial, `0` skipped, no top-level
+    errors.
+- The pass confirmed Senate lifecycle discovery can feed real vote work:
+  - Imported one Senate vote detail discovered from a bill timeline.
+- The failed item was a Chamber nominal vote fetch from
+  `cdep.ro/pls/steno/evot2015.Nominal`; this matches the already documented
+  CDEP fetch instability.
+- Found and fixed a generic discovery issue where same-page Senate bill anchors
+  such as `#profile` were being treated as separate bill discoveries.
+- Marked existing same-page Senate hash-anchor discoveries in Neon as `skipped`
+  so they no longer count as imported bill sources.
+- Verified after the fix:
+  - Focused ingest parser/discovery tests passed.
+  - `npm run typecheck` passed.
+  - `npm run build` passed outside the sandbox.

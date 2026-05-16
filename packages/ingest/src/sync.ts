@@ -261,8 +261,9 @@ export function discoverOfficialLinks(
 
   $("a[href]").each((_, node) => {
     const href = $(node).attr("href");
-    if (!href || href.startsWith("javascript:")) return;
+    if (!href || href.startsWith("javascript:") || href.trim().startsWith("#")) return;
     const absoluteUrl = new URL(href.replace(/\\/g, "/"), sourceUrl).toString();
+    if (isSameDocumentAnchor(absoluteUrl, sourceUrl)) return;
     const text = cleanText($(node).text());
     const rowText = cleanText($(node).closest("tr").text()) || text;
     const kind = kindFromUrl(absoluteUrl);
@@ -280,6 +281,12 @@ export function discoverOfficialLinks(
   });
 
   return uniqueBy(discoveries, (discovery) => discovery.sourceUrl);
+}
+
+function isSameDocumentAnchor(candidateUrl: string, sourceUrl: string): boolean {
+  const candidate = new URL(candidateUrl);
+  const source = new URL(sourceUrl);
+  return Boolean(candidate.hash) && candidate.origin === source.origin && candidate.pathname === source.pathname && candidate.search === source.search;
 }
 
 export function parseDeputiesYearlyList(html: string, sourceUrl: string, sourceSnapshotId?: string): DeputiesYearlyList {

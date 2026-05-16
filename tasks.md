@@ -175,6 +175,8 @@ implementation steps.
   - Live Deputies yearly-list request from the current runtime returns `404`; importer now records a failed `deputies-yearly-list` source snapshot instead of silently treating it as empty.
   - Senate lifecycle parser tests passed; Senate bill imports now enqueue nested official vote/bill links found in dated timeline rows.
   - Pending-import smoke imported `1` queued official source with `0` partials and `0` failures.
+  - Bounded daily-style pass for 2025 completed with `10` imports, `1` failed CDEP nominal vote fetch, and no partials or top-level errors.
+  - Same-page Senate hash-anchor discovery artifacts were marked `skipped` in Neon and the importer now ignores those links.
 
 ## Import Proof
 
