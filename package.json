@@ -1,0 +1,28 @@
+{
+  "name": "cumsevoteaza",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/web",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm --workspace @cumsevoteaza/web run dev",
+    "build": "npm --workspace @cumsevoteaza/web run build",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm --workspace @cumsevoteaza/db run generate",
+    "db:migrate": "npm --workspace @cumsevoteaza/db run migrate",
+    "db:studio": "npm --workspace @cumsevoteaza/db run studio",
+    "ingest:senate:bill": "npm --workspace @cumsevoteaza/ingest run senate:bill --",
+    "ingest:senate:vote": "npm --workspace @cumsevoteaza/ingest run senate:vote --",
+    "ingest:chamber:vote": "npm --workspace @cumsevoteaza/ingest run chamber:vote --"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,213 @@
+export type Locale = "ro" | "en";
+
+export type ChamberId = "senate" | "deputies";
+
+export type VoteChoice =
+  | "for"
+  | "against"
+  | "abstention"
+  | "present_not_voting"
+  | "absent"
+  | "unknown";
+
+export type SourceStatus = "parsed" | "partial" | "failed";
+
+export interface SourceSnapshot {
+  id: string;
+  sourceUrl: string;
+  fetchedAt: string;
+  contentHash: string;
+  parser: string;
+  parserVersion: string;
+  status: SourceStatus;
+  notes?: string;
+}
+
+export interface Legislature {
+  id: string;
+  label: string;
+  startsOn: string;
+  endsOn: string;
+}
+
+export interface Party {
+  id: string;
+  slug: string;
+  shortName: string;
+  name: string;
+  color: string;
+}
+
+export interface ParliamentaryGroup {
+  id: string;
+  partyId?: string;
+  chamber: ChamberId;
+  shortName: string;
+  name: string;
+  color: string;
+}
+
+export interface Member {
+  id: string;
+  slug: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  sourceIds: Record<string, string>;
+}
+
+export interface MemberMandate {
+  id: string;
+  memberId: string;
+  legislatureId: string;
+  chamber: ChamberId;
+  startsOn: string;
+  endsOn?: string;
+  constituency?: string;
+  status: "active" | "ended" | "unknown";
+}
+
+export interface MemberGroupMembership {
+  id: string;
+  memberId: string;
+  groupId: string;
+  startsOn: string;
+  endsOn?: string;
+  sourceSnapshotId?: string;
+}
+
+export interface MemberPartyAffiliation {
+  id: string;
+  memberId: string;
+  partyId: string;
+  startsOn: string;
+  endsOn?: string;
+  sourceSnapshotId?: string;
+}
+
+export interface MemberCommitteeMembership {
+  id: string;
+  memberId: string;
+  committeeName: string;
+  chamber: ChamberId;
+  startsOn: string;
+  endsOn?: string;
+  role?: string;
+}
+
+export interface MemberRole {
+  id: string;
+  memberId: string;
+  title: string;
+  chamber: ChamberId;
+  startsOn: string;
+  endsOn?: string;
+}
+
+export interface Bill {
+  id: string;
+  slug: string;
+  title: string;
+  identifiers: Record<string, string>;
+  chamberOfOrigin: ChamberId | "unknown";
+  status: string;
+  sourceSnapshotIds: string[];
+}
+
+export interface BillEvent {
+  id: string;
+  billId: string;
+  occurredOn: string;
+  chamber: ChamberId | "joint" | "unknown";
+  label: string;
+  sourceUrl?: string;
+}
+
+export interface BillSponsor {
+  id: string;
+  billId: string;
+  sponsorType: "member" | "government" | "group" | "unknown";
+  memberId?: string;
+  name: string;
+}
+
+export interface DocumentSource {
+  id: string;
+  billId: string;
+  label: string;
+  url: string;
+}
+
+export interface VoteTotals {
+  present: number;
+  for: number;
+  against: number;
+  abstention: number;
+  presentNotVoting: number;
+  absent?: number;
+}
+
+export interface Vote {
+  id: string;
+  billId?: string;
+  chamber: ChamberId;
+  title: string;
+  heldOn: string;
+  voteType: string;
+  totals: VoteTotals;
+  sourceSnapshotId: string;
+}
+
+export interface GroupVoteTotal {
+  id: string;
+  voteId: string;
+  groupId: string;
+  for: number;
+  against: number;
+  abstention: number;
+  presentNotVoting: number;
+}
+
+export interface IndividualVote {
+  id: string;
+  voteId: string;
+  memberId: string;
+  groupId?: string;
+  choice: VoteChoice;
+  voteMethod?: string;
+}
+
+export interface MemberHistoryRow {
+  id: string;
+  startsOn: string;
+  endsOn?: string;
+  chamber: ChamberId;
+  type: "mandate" | "group" | "party" | "committee" | "role";
+  label: string;
+  details: string;
+  votesFor: number;
+  votesAgainst: number;
+  abstentions: number;
+  proposals: number;
+}
+
+export interface NormalizedDataset {
+  legislatures: Legislature[];
+  parties: Party[];
+  groups: ParliamentaryGroup[];
+  members: Member[];
+  mandates: MemberMandate[];
+  groupMemberships: MemberGroupMembership[];
+  partyAffiliations: MemberPartyAffiliation[];
+  committeeMemberships: MemberCommitteeMembership[];
+  roles: MemberRole[];
+  bills: Bill[];
+  billEvents: BillEvent[];
+  billSponsors: BillSponsor[];
+  documents: DocumentSource[];
+  votes: Vote[];
+  groupVoteTotals: GroupVoteTotal[];
+  individualVotes: IndividualVote[];
+  sourceSnapshots: SourceSnapshot[];
+  memberHistory: Record<string, MemberHistoryRow[]>;
+}
