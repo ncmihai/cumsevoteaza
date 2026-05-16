@@ -105,3 +105,17 @@ Append-only implementation history.
 - Added `docs/deployment.md` with Vercel project settings, env vars, and the deployment repo target `ncmihai/cumvoteaza`.
 - Added a local Git remote named `vercel` pointing at `https://github.com/ncmihai/cumvoteaza.git`.
 - Pushed deploy-ready `main` to `ncmihai/cumvoteaza` at commit `9566e5d`.
+
+## 2026-05-16 — Neon Database Connected
+
+- Added the Neon `DATABASE_URL` only to ignored local env files.
+- Confirmed tracked env example files do not contain the real database URL or private password.
+- Applied the Drizzle schema migration to Neon.
+- Persisted the first official-source proof dataset into Neon:
+  - Senate bill `bill-l316-2025`
+  - Senate vote `vote-senate-l316-2025-10-27-final`
+  - 121 members
+  - 121 nominal votes
+  - 8 group totals
+  - 2 source snapshots
+- Verified hosted vote totals: 121 present, 116 for, 0 against, 5 abstentions, 0 present-not-voting.

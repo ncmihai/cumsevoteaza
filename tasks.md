@@ -48,8 +48,11 @@ implementation steps.
 - [x] Add deployment Git remote for `ncmihai/cumvoteaza`.
 - [x] Push deploy-ready branch to the Vercel repo.
 - [ ] Connect Vercel project to `ncmihai/cumvoteaza`.
-- [ ] Set `CUMSEVOTEAZA_SITE_PASSWORD` in Vercel.
-- [ ] Add Neon `DATABASE_URL` when the hosted database is ready.
+- [x] Set `CUMSEVOTEAZA_SITE_PASSWORD` in Vercel.
+- [x] Add Neon `DATABASE_URL` locally and in Vercel.
+- [x] Apply Drizzle migration to Neon.
+- [x] Persist first Senate bill and vote proof dataset into Neon.
+- [x] Verify Neon row counts and vote totals.
 
 ## Verification
 
@@ -67,6 +70,11 @@ implementation steps.
   - Database row counts: 1 bill, 1 vote, 121 members, 121 nominal votes, 8 group totals, 2 source snapshots.
   - Vote totals verified: 121 present, 116 for, 0 against, 5 abstentions, 0 present-not-voting.
   - Bill events verified: one dated official event, `2025-09-04` registration at the Senate.
+- Neon smoke test passed:
+  - Drizzle migration applied successfully.
+  - Senate bill `bill-l316-2025` persisted with 1 dated event and 28 documents.
+  - Senate vote `vote-senate-l316-2025-10-27-final` persisted with 121 members, 121 nominal votes, 8 group totals, and 2 source snapshots.
+  - Vote totals verified: 121 present, 116 for, 0 against, 5 abstentions, 0 present-not-voting.
 - Browser smoke checks:
   - `/ro`
   - `/en`
@@ -102,3 +110,4 @@ implementation steps.
 - Replace member and party pages with DB read models after roster import exists.
 - Add source snapshot inspection pages or admin-only views.
 - Push deployment-ready code to `ncmihai/cumvoteaza` after final checks pass.
+- Redeploy Vercel after Neon env vars are saved, then smoke-check the live URL.
