@@ -142,3 +142,12 @@ Append-only implementation history.
 - Applied the roster migration to Neon and imported the verified roster dataset.
 - Verified Neon sample slugs `andra-bica` and `popa-stefan-ovidiu`.
 - Browser-smoked local DB-backed member directory, real member profile, and party page.
+
+## 2026-05-16 — Chamber Vote Map
+
+- Replaced the simple vote-colored grid on vote detail pages with a semicircle chamber map.
+- Seats now use parliamentary group color as the base layer and a vote mark for `for`, `against`, `abstention`, `present_not_voting`, `absent`, and `unknown`.
+- DB-backed vote pages now materialize missing chamber members from roster mandates/group memberships as absent seats when no nominal vote row exists.
+- Added group and vote-choice highlight controls while keeping the nominal vote table as the audit layer.
+- Verified the map visually on desktop and a `390x844` mobile viewport.
+- Fixed a local hydration mismatch by rounding generated seat coordinates before rendering.

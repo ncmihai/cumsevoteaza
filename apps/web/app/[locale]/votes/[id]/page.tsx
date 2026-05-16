@@ -13,7 +13,7 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
   const messages = messagesFor(locale);
   const data = await getVotePageData(id);
   if (!data) notFound();
-  const { vote, bill, source, groups, members, groupTotals, individualVotes, sourceKind } = data;
+  const { vote, bill, source, groups, members, groupTotals, individualVotes, seatVotes, sourceKind } = data;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -44,14 +44,15 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
       <div className="mt-6">
         <VoteExplorer
           locale={locale}
+          chamber={vote.chamber}
           groups={groups}
           members={members}
-          individualVotes={individualVotes}
+          individualVotes={seatVotes}
           groupTotals={groupTotals}
         />
       </div>
 
-      <section className="mt-6 overflow-x-auto border border-slate-300 bg-white">
+      <section className="mt-6 max-w-[calc(100vw-2rem)] overflow-x-auto border border-slate-300 bg-white">
         <table className="min-w-[760px] w-full text-sm">
           <thead className="bg-slate-100 text-left text-xs uppercase text-slate-600">
             <tr>

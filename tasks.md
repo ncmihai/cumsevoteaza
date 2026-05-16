@@ -71,6 +71,15 @@ implementation steps.
 - [x] Import verified rosters into Neon.
 - [x] Smoke-check DB-backed member directory, member profile, and party page locally.
 
+## Active Milestone — Chamber Vote Map
+
+- [x] Add reusable semicircle chamber seat map for vote pages.
+- [x] Encode party/group as seat color and vote choice as the seat mark.
+- [x] Include absent/unknown chamber members when DB roster data is available.
+- [x] Add group and vote-choice highlighting controls.
+- [x] Keep nominal vote table as the audit layer below the visual map.
+- [x] Verify desktop and mobile rendering locally.
+
 ## Verification
 
 - `npm run test` — passed.
@@ -103,6 +112,10 @@ implementation steps.
   - `/en`
   - `/ro/votes/vote-senate-l316-2025-10-27-final`
   - `/ro/members/andra-bica`
+- Chamber vote map visual checks:
+  - Desktop vote page renders party-colored semicircle seats with vote marks.
+  - Mobile `390x844` viewport keeps controls and the chamber map inside the panel.
+  - Hydration mismatch from generated seat coordinates fixed by rounding map positions.
 
 ## Import Proof
 

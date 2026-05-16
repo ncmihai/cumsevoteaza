@@ -29,6 +29,7 @@ export interface VotePageData {
   members: Member[];
   groupTotals: GroupVoteTotal[];
   individualVotes: IndividualVote[];
+  seatVotes: IndividualVote[];
   sourceKind: "database" | "demo";
 }
 
@@ -92,6 +93,7 @@ export async function getVotePageData(id: string): Promise<VotePageData | undefi
     members: demoDataset.members,
     groupTotals: demoDataset.groupVoteTotals.filter((item) => item.voteId === vote.id),
     individualVotes: demoDataset.individualVotes.filter((item) => item.voteId === vote.id),
+    seatVotes: demoDataset.individualVotes.filter((item) => item.voteId === vote.id),
     sourceKind: "demo"
   };
 }
@@ -188,6 +190,8 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
       .limit(1);
     const groupRows = await session.db.select().from(schema.parliamentaryGroups);
     const memberRows = await session.db.select().from(schema.members);
+    const mandateRows = await session.db.select().from(schema.memberMandates);
+    const membershipRows = await session.db.select().from(schema.memberGroupMemberships);
     const groupTotalRows = await session.db
       .select()
       .from(schema.groupVoteTotals)
@@ -196,6 +200,7 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
       .select()
       .from(schema.individualVotes)
       .where(eq(schema.individualVotes.voteId, voteRow.id));
+    const individualVotes = individualVoteRows.map(mapIndividualVote);
 
     return {
       vote: mapVote(voteRow),
@@ -204,7 +209,13 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
       groups: groupRows.map(mapGroup),
       members: memberRows.map(mapMember),
       groupTotals: groupTotalRows.map(mapGroupVoteTotal),
-      individualVotes: individualVoteRows.map(mapIndividualVote),
+      individualVotes,
+      seatVotes: buildVoteSeatRows({
+        vote: mapVote(voteRow),
+        individualVotes,
+        mandates: mandateRows.map(mapMemberMandate),
+        memberships: membershipRows.map(mapMemberGroupMembership)
+      }),
       sourceKind: "database"
     };
   } catch {
@@ -569,6 +580,56 @@ function mapDocument(row: typeof schema.documents.$inferSelect): DocumentSource 
     label: row.label,
     url: row.url
   };
+}
+
+function buildVoteSeatRows(input: {
+  vote: Vote;
+  individualVotes: IndividualVote[];
+  mandates: MemberMandate[];
+  memberships: MemberGroupMembership[];
+}): IndividualVote[] {
+  const votedByMember = new Map(input.individualVotes.map((vote) => [vote.memberId, vote]));
+  const chamberMemberIds = new Set(
+    input.mandates
+      .filter((mandate) => mandate.chamber === input.vote.chamber && mandate.status !== "ended")
+      .map((mandate) => mandate.memberId)
+  );
+
+  for (const vote of input.individualVotes) {
+    chamberMemberIds.add(vote.memberId);
+  }
+
+  const currentMembershipByMember = new Map<string, MemberGroupMembership | undefined>();
+  for (const memberId of chamberMemberIds) {
+    currentMembershipByMember.set(
+      memberId,
+      latestMembership(input.memberships.filter((membership) => membership.memberId === memberId))
+    );
+  }
+
+  return [...chamberMemberIds]
+    .sort((a, b) => {
+      const groupA = votedByMember.get(a)?.groupId ?? currentMembershipByMember.get(a)?.groupId ?? "";
+      const groupB = votedByMember.get(b)?.groupId ?? currentMembershipByMember.get(b)?.groupId ?? "";
+      return groupA.localeCompare(groupB, "ro") || a.localeCompare(b, "ro");
+    })
+    .map((memberId) => {
+      const existing = votedByMember.get(memberId);
+      const membership = currentMembershipByMember.get(memberId);
+      if (existing) {
+        return {
+          ...existing,
+          groupId: existing.groupId ?? membership?.groupId
+        };
+      }
+      return {
+        id: `${input.vote.id}-${memberId}-absent`,
+        voteId: input.vote.id,
+        memberId,
+        groupId: membership?.groupId,
+        choice: "absent"
+      };
+    });
 }
 
 function latestMembership(memberships: MemberGroupMembership[]): MemberGroupMembership | undefined {
