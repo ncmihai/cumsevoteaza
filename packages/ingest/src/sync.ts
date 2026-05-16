@@ -25,6 +25,11 @@ export interface SourceDiscoveryInput {
   sourceSnapshotId?: string;
 }
 
+interface DeputiesYearlyList {
+  expectedCount?: number;
+  discoveries: SourceDiscoveryInput[];
+}
+
 export interface SyncOptions {
   years?: number[];
   maxImports?: number;
@@ -42,6 +47,7 @@ export interface SyncSummary {
   partial: number;
   failed: number;
   skipped: number;
+  expected?: number;
   errors: string[];
 }
 
@@ -64,7 +70,7 @@ export async function discoverSenateSources(options: SyncOptions = {}): Promise<
 }
 
 export async function discoverDeputiesSources(options: SyncOptions = {}): Promise<SyncSummary> {
-  return discoverSources("deputies", deputiesSeedUrls(options.years ?? defaultYears), options);
+  return discoverDeputiesYearlyLists(options.years ?? defaultYears, options);
 }
 
 export async function runDailySync(options: SyncOptions = {}): Promise<SyncSummary> {
@@ -144,6 +150,39 @@ async function discoverSources(chamber: ChamberId, seedUrls: string[], options: 
           await upsertSourceDiscovery(session.db, discovery);
         }
         summary.discovered += discoveries.length;
+      } catch (error) {
+        const message = errorMessage(error);
+        summary.failed += 1;
+        summary.errors.push(`${url}: ${message}`);
+      }
+    }
+    return summary;
+  } finally {
+    await session.close();
+  }
+}
+
+async function discoverDeputiesYearlyLists(years: number[], options: SyncOptions): Promise<SyncSummary> {
+  const session = createDbSession();
+  const summary: SyncSummary = { discovered: 0, imported: 0, partial: 0, failed: 0, skipped: 0, expected: 0, errors: [] };
+  try {
+    const seedUrls = deputiesSeedUrls(years);
+    const limit = options.discoveryLimit ?? seedUrls.length;
+    for (const url of seedUrls.slice(0, limit)) {
+      try {
+        const html = await fetchOfficialSource(url, 3);
+        const parsed = parseDeputiesYearlyList(html, url);
+        const status = parsed.expectedCount || parsed.discoveries.length > 0 ? "parsed" : "failed";
+        const notes = status === "failed" ? "No Deputies yearly-list rows detected; official endpoint may be unavailable from this runtime." : undefined;
+        const snapshot = snapshotFor("deputies-yearly-list", url, html, status, notes);
+        await upsertSourceSnapshot(session.db, snapshot);
+        const discoveries = parsed.discoveries.map((discovery) => ({ ...discovery, sourceSnapshotId: snapshot.id }));
+        for (const discovery of parsed.discoveries) {
+          await upsertSourceDiscovery(session.db, { ...discovery, sourceSnapshotId: snapshot.id });
+        }
+        summary.discovered += discoveries.length;
+        summary.expected = (summary.expected ?? 0) + (parsed.expectedCount ?? 0);
+        if (status === "failed") summary.failed += 1;
       } catch (error) {
         const message = errorMessage(error);
         summary.failed += 1;
@@ -242,6 +281,40 @@ export function discoverOfficialLinks(
   return uniqueBy(discoveries, (discovery) => discovery.sourceUrl);
 }
 
+export function parseDeputiesYearlyList(html: string, sourceUrl: string, sourceSnapshotId?: string): DeputiesYearlyList {
+  const $ = cheerio.load(html);
+  const bodyText = cleanText($("body").text());
+  const expectedCount = Number(bodyText.match(/Num[aă]r\s+înregistr[aă]ri\s+g[aă]site:\s*(\d+)/i)?.[1] ?? "") || undefined;
+  const discoveries: SourceDiscoveryInput[] = [];
+
+  $("tr").each((_, row) => {
+    const rowText = cleanText($(row).text());
+    const identifier = findOfficialIdentifiers(rowText).find((item) => item.kind === "deputies");
+    if (!identifier) return;
+    const detailHref = $(row)
+      .find("a[href*='upl_pck2015.proiect']")
+      .toArray()
+      .map((node) => $(node).attr("href"))
+      .find(Boolean);
+    if (!detailHref) return;
+
+    discoveries.push({
+      chamber: "deputies",
+      kind: "bill",
+      sourceUrl: new URL(detailHref.replace(/\\/g, "/"), sourceUrl).toString(),
+      officialId: identifier.value,
+      title: deputiesTitleFromRow(rowText, identifier.value),
+      discoveredOn: dateFromText(rowText),
+      sourceSnapshotId
+    });
+  });
+
+  return {
+    expectedCount,
+    discoveries: uniqueBy(discoveries, (discovery) => discovery.sourceUrl)
+  };
+}
+
 function kindFromUrl(url: string): DiscoveryKind | undefined {
   if (/senat\.ro\/Legis\/Lista\.aspx\?cod=\d+/i.test(url)) return "bill";
   if (/senat\.ro\/legis\/lista\.aspx/i.test(url) && /[?&]nr_cls=(?:BP|B|L|PLX)\d+/i.test(url) && /[?&]an_cls=\d{4}/i.test(url)) {
@@ -306,6 +379,13 @@ async function discoverGeneratedSenateBills(
 
 function deputiesSeedUrls(years: number[]): string[] {
   return years.map((year) => `https://www.cdep.ro/pls/proiecte/upl_pck2015.lista?anp=${year}`);
+}
+
+function deputiesTitleFromRow(rowText: string, identifier: string): string | undefined {
+  const withoutIndex = rowText.replace(/^\d+\.\s*/, "");
+  const afterIdentifier = withoutIndex.slice(withoutIndex.indexOf(identifier) + identifier.length);
+  const title = cleanText(afterIdentifier.replace(/\b(?:Lege|la comisii|la Senat|pe ordinea de zi|procedura legislativa încetata)\b.*$/i, ""));
+  return title.length > 8 ? title.slice(0, 500) : undefined;
 }
 
 function officialIdFromText(text: string, sourceUrl: string): string | undefined {
@@ -467,6 +547,7 @@ function addSummary(target: SyncSummary, next: SyncSummary) {
   target.partial += next.partial;
   target.failed += next.failed;
   target.skipped += next.skipped;
+  target.expected = (target.expected ?? 0) + (next.expected ?? 0);
   target.errors.push(...next.errors);
 }
 

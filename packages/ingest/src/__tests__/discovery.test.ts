@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { discoverOfficialLinks } from "../sync";
+import { discoverOfficialLinks, parseDeputiesYearlyList } from "../sync";
 
 describe("official source discovery", () => {
   it("detects Senate bill and vote links from official-style pages", () => {
@@ -62,5 +62,43 @@ describe("official source discovery", () => {
         expect.objectContaining({ chamber: "deputies", kind: "vote" })
       ])
     );
+  });
+
+  it("parses Deputies yearly list rows as project discoveries", () => {
+    const html = `
+      <p>Număr înregistrări găsite: 2</p>
+      <table>
+        <tr>
+          <td>1.</td>
+          <td><a href="/pls/proiecte/upl_pck2015.proiect?idp=22001">PL-x 1/01.02.2025</a></td>
+          <td>Proiectul Legii bugetului de stat pe anul 2025</td>
+          <td>Lege 9/2025 10.02.2025</td>
+        </tr>
+        <tr>
+          <td>2.</td>
+          <td><a href="/pls/proiecte/upl_pck2015.proiect?idp=22002">Pl-x 2/01.02.2025</a></td>
+          <td>Proiectul Legii bugetului asigurărilor sociale de stat pe anul 2025</td>
+          <td>Lege 10/2025 10.02.2025</td>
+        </tr>
+      </table>
+    `;
+
+    const parsed = parseDeputiesYearlyList(html, "https://www.cdep.ro/pls/proiecte/upl_pck2015.lista?anp=2025", "source-list");
+
+    expect(parsed.expectedCount).toBe(2);
+    expect(parsed.discoveries).toEqual([
+      expect.objectContaining({
+        chamber: "deputies",
+        kind: "bill",
+        officialId: "PL-x 1/2025",
+        sourceUrl: "https://www.cdep.ro/pls/proiecte/upl_pck2015.proiect?idp=22001"
+      }),
+      expect.objectContaining({
+        chamber: "deputies",
+        kind: "bill",
+        officialId: "PL-x 2/2025",
+        sourceUrl: "https://www.cdep.ro/pls/proiecte/upl_pck2015.proiect?idp=22002"
+      })
+    ]);
   });
 });

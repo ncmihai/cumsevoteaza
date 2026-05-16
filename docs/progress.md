@@ -233,3 +233,14 @@ Append-only implementation history.
 - Updated discovery to classify Senate generated/search URLs for `B`, `BP`, `L`, and `PLX`.
 - Added `--senate-prefixes=B,BP,L,PLX` for controlled generated Senate discovery.
 - Verified a tiny Neon smoke for 2025 `B1-B2`, `BP1-BP2`, and `PLX1-PLX2`: discovered `6`.
+
+## 2026-05-16 — Deputies Yearly Backbone Parser
+
+- Added a dedicated parser for the official Deputies yearly project list
+  `upl_pck2015.lista?anp=<year>`.
+- Parser records the official expected count when present and extracts
+  `upl_pck2015.proiect?idp=<id>` project detail links as `source_discoveries`.
+- Added fixture-style tests for the yearly list parser.
+- Live request from the current runtime to the CDEP yearly list returns `404`;
+  importer now stores this as a failed `deputies-yearly-list` source snapshot so
+  the issue is inspectable instead of being mistaken for an empty year.

@@ -56,6 +56,11 @@ Observed bill page structure:
   when they are exposed by list or timeline pages.
 - Chamber displayed identifiers normalize to `PL-x <number>/<year>`, even when
   cross-linked Senate pages write them as compact `PLX<number>/<year>`.
+- The intended Chamber project backbone is the official yearly list
+  `upl_pck2015.lista?anp=<year>`, which exposes an official total such as 592
+  records for 2025 in indexed copies. Direct requests from the current local
+  runtime return `404`, so importer attempts store failed yearly-list snapshots
+  for inspection instead of treating the source as empty.
 - Direct fetches can be slower or flaky. Importers must retry, store failures,
   and keep the official URL as source metadata.
 - 2026-05-16: first importer attempt against
