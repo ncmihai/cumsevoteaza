@@ -29,10 +29,10 @@ export default async function LocaleLayout({
               cumsevoteaza
             </Link>
             <nav className="flex items-center gap-1 text-sm text-slate-700">
-              <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${locale}/votes/vote-senate-l316-2025-10-27-final`}>
+              <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${locale}/votes`}>
                 {messages.nav.votes}
               </Link>
-              <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${locale}/bills/l316-2025`}>
+              <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${locale}/bills`}>
                 {messages.nav.bills}
               </Link>
               <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${locale}/members`}>

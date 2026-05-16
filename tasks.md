@@ -80,6 +80,15 @@ implementation steps.
 - [x] Keep nominal vote table as the audit layer below the visual map.
 - [x] Verify desktop and mobile rendering locally.
 
+## Active Milestone — 2024-Present Directories + Parliament Model
+
+- [x] Clean early proof-import group artifacts from the 2024-present vote data.
+- [x] Add `/[locale]/votes` page listing the latest 30 voted projects.
+- [x] Add `/[locale]/bills` page listing the latest 30 submitted projects.
+- [x] Update navigation so `Voturi` and `Proiecte` go to directory pages.
+- [x] Document how the Romanian Parliament works using official sources plus Wikipedia as overview context.
+- [x] Add reusable role/committee/procedure descriptions for future UI explainers.
+
 ## Verification
 
 - `npm run test` — passed.
@@ -116,6 +125,11 @@ implementation steps.
   - Desktop vote page renders party-colored semicircle seats with vote marks.
   - Mobile `390x844` viewport keeps controls and the chamber map inside the panel.
   - Hydration mismatch from generated seat coordinates fixed by rounding map positions.
+- Directory smoke checks:
+  - `/ro/votes` returned `200` and renders the latest imported voted projects list.
+  - `/ro/bills` returned `200` and renders the latest imported submitted projects list.
+  - `/ro/votes/vote-senate-l316-2025-10-27-final` returned `200` after artifact cleanup.
+  - Cleaned vote page no longer renders `PIR` or `Fără grup`; it renders `PACE` and canonical `Neafiliați`.
 
 ## Import Proof
 

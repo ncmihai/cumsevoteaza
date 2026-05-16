@@ -33,6 +33,30 @@ export interface VotePageData {
   sourceKind: "database" | "demo";
 }
 
+export interface VoteDirectoryItem {
+  vote: Vote;
+  bill?: Bill;
+  source?: SourceSnapshot;
+}
+
+export interface VoteDirectoryData {
+  items: VoteDirectoryItem[];
+  sourceKind: "database" | "demo";
+}
+
+export interface BillDirectoryItem {
+  bill: Bill;
+  submittedOn?: string;
+  latestEventOn?: string;
+  source?: SourceSnapshot;
+  voteCount: number;
+}
+
+export interface BillDirectoryData {
+  items: BillDirectoryItem[];
+  sourceKind: "database" | "demo";
+}
+
 export interface BillPageData {
   bill: Bill;
   events: BillEvent[];
@@ -76,6 +100,41 @@ export interface PartyPageData {
   groupTotals: GroupVoteTotal[];
   votes: Vote[];
   sourceKind: "database" | "demo";
+}
+
+export async function getVoteDirectoryData(limit = 30): Promise<VoteDirectoryData> {
+  const dbData = await tryDatabaseVoteDirectory(limit);
+  if (dbData) return dbData;
+
+  return {
+    items: [...demoDataset.votes]
+      .sort((a, b) => b.heldOn.localeCompare(a.heldOn))
+      .slice(0, limit)
+      .map((vote) => ({
+        vote,
+        bill: demoDataset.bills.find((bill) => bill.id === vote.billId),
+        source: demoDataset.sourceSnapshots.find((source) => source.id === vote.sourceSnapshotId)
+      })),
+    sourceKind: "demo"
+  };
+}
+
+export async function getBillDirectoryData(limit = 30): Promise<BillDirectoryData> {
+  const dbData = await tryDatabaseBillDirectory(limit);
+  if (dbData) return dbData;
+
+  return {
+    items: demoDataset.bills
+      .map((bill) => directoryBillItem({
+        bill,
+        events: demoDataset.billEvents.filter((event) => event.billId === bill.id),
+        votes: demoDataset.votes.filter((vote) => vote.billId === bill.id),
+        sources: demoDataset.sourceSnapshots
+      }))
+      .sort((a, b) => (b.submittedOn ?? b.latestEventOn ?? "").localeCompare(a.submittedOn ?? a.latestEventOn ?? ""))
+      .slice(0, limit),
+    sourceKind: "demo"
+  };
 }
 
 export async function getVotePageData(id: string): Promise<VotePageData | undefined> {
@@ -216,6 +275,71 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
         mandates: mandateRows.map(mapMemberMandate),
         memberships: membershipRows.map(mapMemberGroupMembership)
       }),
+      sourceKind: "database"
+    };
+  } catch {
+    return undefined;
+  } finally {
+    await session.close();
+  }
+}
+
+async function tryDatabaseVoteDirectory(limit: number): Promise<VoteDirectoryData | undefined> {
+  if (!process.env.DATABASE_URL) return undefined;
+
+  const session = createDbSession();
+  try {
+    const voteRows = await session.db.select().from(schema.votes);
+    const billRows = await session.db.select().from(schema.bills);
+    const sourceRows = await session.db.select().from(schema.sourceSnapshots);
+    const bills = billRows.map(mapBill);
+    const sources = sourceRows.map(mapSource);
+
+    return {
+      items: voteRows
+        .map(mapVote)
+        .sort((a, b) => b.heldOn.localeCompare(a.heldOn))
+        .slice(0, limit)
+        .map((vote) => ({
+          vote,
+          bill: bills.find((bill) => bill.id === vote.billId),
+          source: sources.find((source) => source.id === vote.sourceSnapshotId)
+        })),
+      sourceKind: "database"
+    };
+  } catch {
+    return undefined;
+  } finally {
+    await session.close();
+  }
+}
+
+async function tryDatabaseBillDirectory(limit: number): Promise<BillDirectoryData | undefined> {
+  if (!process.env.DATABASE_URL) return undefined;
+
+  const session = createDbSession();
+  try {
+    const billRows = await session.db.select().from(schema.bills);
+    const eventRows = await session.db.select().from(schema.billEvents);
+    const voteRows = await session.db.select().from(schema.votes);
+    const sourceRows = await session.db.select().from(schema.sourceSnapshots);
+    const events = eventRows.map(mapBillEvent);
+    const votes = voteRows.map(mapVote);
+    const sources = sourceRows.map(mapSource);
+
+    return {
+      items: billRows
+        .map(mapBill)
+        .map((bill) =>
+          directoryBillItem({
+            bill,
+            events: events.filter((event) => event.billId === bill.id),
+            votes: votes.filter((vote) => vote.billId === bill.id),
+            sources
+          })
+        )
+        .sort((a, b) => (b.submittedOn ?? b.latestEventOn ?? "").localeCompare(a.submittedOn ?? a.latestEventOn ?? ""))
+        .slice(0, limit),
       sourceKind: "database"
     };
   } catch {
@@ -579,6 +703,26 @@ function mapDocument(row: typeof schema.documents.$inferSelect): DocumentSource 
     billId: row.billId,
     label: row.label,
     url: row.url
+  };
+}
+
+function directoryBillItem(input: {
+  bill: Bill;
+  events: BillEvent[];
+  votes: Vote[];
+  sources: SourceSnapshot[];
+}): BillDirectoryItem {
+  const sortedEvents = [...input.events].sort((a, b) => a.occurredOn.localeCompare(b.occurredOn));
+  const submittedOn = sortedEvents[0]?.occurredOn;
+  const latestEventOn = sortedEvents.at(-1)?.occurredOn;
+  const sourceId = input.bill.sourceSnapshotIds[0];
+
+  return {
+    bill: input.bill,
+    submittedOn,
+    latestEventOn,
+    source: input.sources.find((source) => source.id === sourceId),
+    voteCount: input.votes.length
   };
 }
 

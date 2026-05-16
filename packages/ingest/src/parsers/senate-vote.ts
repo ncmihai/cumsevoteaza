@@ -187,8 +187,10 @@ function groupFor(groupName: string): ParliamentaryGroup {
 }
 
 function groupShortName(name: string): string {
+  const key = normalizeKey(name);
   if (/neafilia/i.test(name)) return "Neafiliați";
-  if (/fara apartenenta/i.test(name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""))) return "Fără grup";
+  if (/fara apartenenta/i.test(name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""))) return "Neafiliați";
+  if (key === "pir" || key.includes("intairomania") || key.includes("pace")) return "PACE";
   return cleanText(name).split(" ").at(-1) === "parlamentare" ? cleanText(name) : cleanText(name);
 }
 
@@ -199,7 +201,7 @@ function groupColor(shortName: string): string {
   if (key.includes("usr")) return "#1d71b8";
   if (key.includes("aur")) return "#111827";
   if (key.includes("udmr")) return "#159447";
-  if (key.includes("pir")) return "#7c3aed";
+  if (key.includes("pace")) return "#7c3aed";
   return "#64748b";
 }
 

@@ -151,3 +151,17 @@ Append-only implementation history.
 - Added group and vote-choice highlight controls while keeping the nominal vote table as the audit layer.
 - Verified the map visually on desktop and a `390x844` mobile viewport.
 - Fixed a local hydration mismatch by rounding generated seat coordinates before rendering.
+
+## 2026-05-16 — 2024-Present Directories And Parliament Model
+
+- Added `/[locale]/votes` as a DB-first directory for the latest 30 imported voted projects.
+- Added `/[locale]/bills` as a DB-first directory for the latest 30 imported submitted projects.
+- Updated top navigation so `Voturi` and `Proiecte` open the directory pages instead of a single proof item.
+- Cleaned early Senate proof-import group artifacts in the live database:
+  - remapped `group-senate-pir` references to `group-senate-pace`
+  - remapped old `fara-grup`/`neafiliati` references to `group-senate-unaffiliated`
+  - merged duplicated unaffiliated group vote totals
+  - deleted unreferenced old group rows
+- Updated the Senate vote parser so future imports map 2024-present `PIR`/`PACE` style labels to canonical `PACE` and old no-group labels to canonical unaffiliated.
+- Added `docs/parliament-how-it-works.md` with a factual working model of chambers, legislative flow, committees, groups, roles, plenary votes, and product copy rules.
+- Smoke-checked `/ro/votes`, `/ro/bills`, and the cleaned Senate vote page locally.

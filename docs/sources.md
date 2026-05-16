@@ -53,3 +53,6 @@ Observed bill page structure:
 - Parser tests use saved fixtures so UI and parsing behavior do not depend on
   live network availability.
 - Empty or inconsistent official values are stored as `unknown`, not guessed.
+- Parliament structure/procedure explanations are tracked in
+  `docs/parliament-how-it-works.md`; official procedure, group, committee, and
+  constitutional pages take priority over Wikipedia overview text.
