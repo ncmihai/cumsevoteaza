@@ -335,6 +335,20 @@ implementation steps.
     339 Deputies mandates for `leg-2008-2012`, 378 Deputies mandates for
     `leg-2004-2008`, `party-usl` absent, and no unscoped Deputies IDs spanning
     multiple legislatures.
+  - Confirmed the Wikipedia Deputies/Senate index pages link legislature pages
+    back to 1990; use these as discovery/sanity-check maps, not canonical data.
+  - Added 2000-2004, 1996-2000, 1992-1996, and 1990-1992 legislature support.
+  - Added parser support for older parties observed in official CDEP rows:
+    PDSR, PSDR, FSN, FDSN, PNȚCD, PUNR, PDAR, PER, MER, PSM, PAC, and PL '93.
+  - Added CDR and USD to coalition/alliance guards so they do not create party rows.
+  - Hardened member slug upserts so duplicate display-name slugs retry with the deterministic member-id suffix.
+  - Extended historical Deputies imports through 1990 using official CDEP profile URLs:
+    2000-2004 has 393 Deputies mandates;
+    1996-2000 has 367 Deputies mandates;
+    1992-1996 has 381 Deputies mandates;
+    1990-1992 has 448 Deputies mandates.
+  - People backfill after the full Deputies historical import:
+    4029 members read, 2706 people upserted, 4029 members linked.
 
 ## Import Proof
 
@@ -372,7 +386,7 @@ implementation steps.
 - Add dated mandate end/replacement parsing so 2020-era compositions show exact seats-at-date, while member profiles can still show everyone who served during the term.
 - Treat historical member imports as person-linked source records, not one globally stable chamber ID; CDEP `idm` can be reused by legislature.
 - Smoke-check `/ro/compozitii` on Vercel after the 2020 roster deploy and confirm 2020 government stops show imported chamber data.
-- Extend the historical roster strategy to 2000-2004 after 2004-2008 is visually verified.
+- Deputies are now imported from official CDEP profile pages for every legislature from 1990-present; next roster gap is historical Senate.
 - Add composition alignment imports for governments/coalitions so seat maps can distinguish government support vs opposition by period.
 - Expand member profile importers for earlier legislatures.
 - Replace member and party pages with DB read models after roster import exists.

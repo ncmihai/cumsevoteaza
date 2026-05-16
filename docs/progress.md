@@ -678,3 +678,81 @@ Verification:
   - historical party rows present include PD, PRM, and PUR.
   - `party-usl` is not present.
   - no unscoped Deputies member ID spans multiple legislatures.
+
+## 2026-05-16 — Deputies Historical Rosters: 2000-2004 to 1990-1992
+
+- Confirmed the Wikipedia chamber index pages link legislature pages for both
+  Deputies and Senate back to 1990. These pages are useful as discovery and
+  sanity-check maps, while official Parliament pages remain the import source.
+- Verified official CDEP profile pages for:
+  - `leg=2000`
+  - `leg=1996`
+  - `leg=1992`
+  - `leg=1990`
+- Added 2000-2004, 1996-2000, 1992-1996, and 1990-1992 to the roster
+  legislature catalog.
+- Added parser support for older real parties observed in official CDEP rows:
+  - PDSR
+  - PSDR
+  - FSN
+  - FDSN
+  - PNȚCD
+  - PUNR
+  - PDAR
+  - PER
+  - MER
+  - PSM
+  - PAC
+  - PL '93
+- Kept coalition/alliance labels such as CDR and USD out of `parties`; those
+  should be modelled later as coalition/alignment records.
+- Hardened member slug upserts. If a concurrent or historical import introduces
+  the same display-name slug, persistence retries with the deterministic
+  member-id suffix instead of failing.
+- Dry scans:
+  - 2000-2004: 393 valid Deputies profiles from IDs 1-750.
+  - 1996-2000: 367 valid Deputies profiles from IDs 1-750.
+  - 1992-1996: 381 valid Deputies profiles from IDs 1-750.
+  - 1990-1992: 448 valid Deputies profiles from IDs 1-750.
+- Imported 2000-2004 Deputies from official CDEP profile pages:
+  - 393 members
+  - 393 mandates
+  - 8 groups
+  - 9 parties
+  - 450 group memberships
+  - 522 party affiliations
+  - 595 committee memberships
+- Imported 1996-2000 Deputies from official CDEP profile pages:
+  - 367 members
+  - 367 mandates
+  - 10 groups
+  - 10 parties
+  - 439 group memberships
+  - 317 party affiliations
+  - 565 committee memberships
+- Imported 1992-1996 Deputies from official CDEP profile pages:
+  - 381 members
+  - 381 mandates
+  - 12 groups
+  - 11 parties
+  - 439 group memberships
+  - 301 party affiliations
+  - 540 committee memberships
+- Imported 1990-1992 Deputies from official CDEP profile pages:
+  - 448 members
+  - 448 mandates
+  - 8 groups
+  - 12 parties
+  - 448 group memberships
+  - 394 party affiliations
+  - 651 committee memberships
+- Refreshed people linkage after the full Deputies historical import:
+  - 4029 members read
+  - 2706 people upserted
+  - 4029 members linked
+- Database verification:
+  - Deputies mandates now exist for every legislature from 1990-1992 through
+    2024-2028.
+  - older party rows present include FSN, FDSN, PDSR, PSDR, PNȚCD, PUNR, PDAR,
+    PER, MER, PSM, and PL '93.
+  - no unscoped Deputies member ID spans multiple legislatures.

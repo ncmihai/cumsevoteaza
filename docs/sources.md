@@ -141,6 +141,9 @@ Observed bill page structure:
     `https://ro.wikipedia.org/wiki/Lista_parlamentarilor_ale%C8%99i_la_alegerile_din_Rom%C3%A2nia_din_2012`
   - 2008:
     `https://ro.wikipedia.org/wiki/Lista_parlamentarilor_ale%C8%99i_la_alegerile_din_Rom%C3%A2nia_din_2008`
+  - The chamber index pages link legislature pages back to 1990:
+    1990-1992, 1992-1996, 1996-2000, 2000-2004, 2004-2008,
+    2008-2012, 2012-2016, 2016-2020, 2020-2024, and 2024-2028.
   - These pages are useful for expected elected-seat sanity checks. For example,
     the 2020 page states 330 Deputies and 136 Senators were elected. They are
     not official sources and should not replace Parliament pages or official
@@ -149,6 +152,10 @@ Observed bill page structure:
   - Official member profiles are available through
     `https://www.cdep.ro/ords/pls/parlam/structura2015.mp?cam=2&idl=1&idm=<id>&leg=<year>&pag=1`.
   - Verified `leg` values so far:
+    - `1990`
+    - `1992`
+    - `1996`
+    - `2000`
     - `2004`
     - `2008`
     - `2020`
@@ -168,20 +175,30 @@ Observed bill page structure:
     for 2008-2012.
   - A controlled ID scan from `1` to `650` parsed 378 valid Deputies profiles
     for 2004-2008.
+  - A controlled ID scan from `1` to `750` parsed 393 valid Deputies profiles
+    for 2000-2004.
+  - A controlled ID scan from `1` to `750` parsed 367 valid Deputies profiles
+    for 1996-2000.
+  - A controlled ID scan from `1` to `750` parsed 381 valid Deputies profiles
+    for 1992-1996.
+  - A controlled ID scan from `1` to `750` parsed 448 valid Deputies profiles
+    for 1990-1992.
   - Generic section pages such as `Activitate publică` can be returned for
     unused IDs and must be filtered before persistence.
   - The CDEP TLS chain can fail Node's default certificate verification. The
     importer keeps the normal verified fetch first, then uses a scoped
     certificate-validation fallback only for certificate failures.
   - Historical party/group parsing currently recognizes older parties such as
-    ALDE, PMP, PDL, PD, PRM, PUR, PP-DD, PC, UNPR, and PRO România. Only
-    parties actually observed in parsed official rows are persisted by the
-    roster import.
+    ALDE, PMP, PDL, PD, PRM, PUR, PDSR, PSDR, FSN, FDSN, PNȚCD, PUNR,
+    PDAR, PER, MER, PSM, PAC, PL '93, PP-DD, PC, UNPR, and PRO România.
+    Only parties actually observed in parsed official rows are persisted by
+    the roster import.
   - USL is intentionally not modelled as a party. It should be represented as a
     coalition/alignment period involving PSD and PNL when the composition
     alignment importer is added.
   - Other alliance labels such as PSD+PC and DA PNL-PD are also blocked from
     creating party rows until coalition/alliance modelling is introduced.
+  - CDR and USD are also treated as coalition/alliance labels, not parties.
 - Senate 2020-2024:
   - The current `EnumGrupuri.aspx` endpoint does not expose an obvious
     historical index for all 2020 groups.

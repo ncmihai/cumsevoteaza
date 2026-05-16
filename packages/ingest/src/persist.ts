@@ -250,11 +250,20 @@ async function upsertParty(db: Db, party: Party) {
 async function upsertMember(db: Db, member: Member) {
   const slugOwner = await db.select({ id: schema.members.id }).from(schema.members).where(eq(schema.members.slug, member.slug)).limit(1);
   const slug = slugOwner[0] && slugOwner[0].id !== member.id ? `${member.slug}-${member.id.replace(/^member-/, "")}` : member.slug;
-  const values = { ...member, slug };
+  try {
+    await upsertMemberWithSlug(db, member, slug);
+  } catch (error) {
+    if (!isMemberSlugUniqueViolation(error) || slug !== member.slug) {
+      throw error;
+    }
+    await upsertMemberWithSlug(db, member, `${member.slug}-${member.id.replace(/^member-/, "")}`);
+  }
+}
 
+async function upsertMemberWithSlug(db: Db, member: Member, slug: string) {
   await db
     .insert(schema.members)
-    .values(values)
+    .values({ ...member, slug })
     .onConflictDoUpdate({
       target: schema.members.id,
       set: {
@@ -266,6 +275,17 @@ async function upsertMember(db: Db, member: Member) {
         sourceIds: member.sourceIds
       }
     });
+}
+
+function isMemberSlugUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    "constraint_name" in error &&
+    error.code === "23505" &&
+    error.constraint_name === "members_slug_idx"
+  );
 }
 
 async function upsertMembers(db: Db, members: Member[]) {

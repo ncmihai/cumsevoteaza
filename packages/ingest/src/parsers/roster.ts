@@ -106,7 +106,47 @@ export const legislature2004: Legislature = {
   endsOn: "2008-12-14"
 };
 
+export const legislature2000: Legislature = {
+  id: "leg-2000-2004",
+  label: "2000-2004",
+  startsOn: "2000-12-11",
+  endsOn: "2004-12-16"
+};
+
+export const legislature1996: Legislature = {
+  id: "leg-1996-2000",
+  label: "1996-2000",
+  startsOn: "1996-11-22",
+  endsOn: "2000-12-10"
+};
+
+export const legislature1992: Legislature = {
+  id: "leg-1992-1996",
+  label: "1992-1996",
+  startsOn: "1992-10-16",
+  endsOn: "1996-11-21"
+};
+
+export const legislature1990: Legislature = {
+  id: "leg-1990-1992",
+  label: "1990-1992",
+  startsOn: "1990-06-18",
+  endsOn: "1992-10-15"
+};
+
 export const legislatureCatalog: Record<string, Legislature> = {
+  "1990": legislature1990,
+  "1990-1992": legislature1990,
+  "leg-1990-1992": legislature1990,
+  "1992": legislature1992,
+  "1992-1996": legislature1992,
+  "leg-1992-1996": legislature1992,
+  "1996": legislature1996,
+  "1996-2000": legislature1996,
+  "leg-1996-2000": legislature1996,
+  "2000": legislature2000,
+  "2000-2004": legislature2000,
+  "leg-2000-2004": legislature2000,
   "2004": legislature2004,
   "2004-2008": legislature2004,
   "leg-2004-2008": legislature2004,
@@ -132,7 +172,7 @@ export function legislatureFromFlag(value: string | undefined): Legislature {
   const normalized = value.trim().toLowerCase();
   const legislature = legislatureCatalog[normalized];
   if (!legislature) {
-    throw new Error(`Unsupported legislature "${value}". Supported values: 2004, 2008, 2012, 2016, 2020, 2024.`);
+    throw new Error(`Unsupported legislature "${value}". Supported values: 1990, 1992, 1996, 2000, 2004, 2008, 2012, 2016, 2020, 2024.`);
   }
   return legislature;
 }
@@ -149,6 +189,18 @@ export const partyCatalog: Record<string, Party> = {
   pd: { id: "party-pd", slug: "pd", shortName: "PD", name: "Partidul Democrat", color: "#f97316" },
   prm: { id: "party-prm", slug: "prm", shortName: "PRM", name: "Partidul România Mare", color: "#7f1d1d" },
   pur: { id: "party-pur", slug: "pur", shortName: "PUR", name: "Partidul Umanist din România", color: "#0f766e" },
+  pdsr: { id: "party-pdsr", slug: "pdsr", shortName: "PDSR", name: "Partidul Democrației Sociale din România", color: "#d71920" },
+  psdr: { id: "party-psdr", slug: "psdr", shortName: "PSDR", name: "Partidul Social Democrat Român", color: "#c2410c" },
+  fsn: { id: "party-fsn", slug: "fsn", shortName: "FSN", name: "Frontul Salvării Naționale", color: "#2563eb" },
+  fdsn: { id: "party-fdsn", slug: "fdsn", shortName: "FDSN", name: "Frontul Democrat al Salvării Naționale", color: "#d71920" },
+  pntcd: { id: "party-pntcd", slug: "pntcd", shortName: "PNȚCD", name: "Partidul Național Țărănesc Creștin Democrat", color: "#facc15" },
+  punr: { id: "party-punr", slug: "punr", shortName: "PUNR", name: "Partidul Unității Naționale Române", color: "#1d4ed8" },
+  pdar: { id: "party-pdar", slug: "pdar", shortName: "PDAR", name: "Partidul Democrat Agrar din România", color: "#65a30d" },
+  per: { id: "party-per", slug: "per", shortName: "PER", name: "Partidul Ecologist Român", color: "#16a34a" },
+  mer: { id: "party-mer", slug: "mer", shortName: "MER", name: "Mișcarea Ecologistă din România", color: "#15803d" },
+  psm: { id: "party-psm", slug: "psm", shortName: "PSM", name: "Partidul Socialist al Muncii", color: "#991b1b" },
+  pac: { id: "party-pac", slug: "pac", shortName: "PAC", name: "Partidul Alianța Civică", color: "#0f766e" },
+  "pl-93": { id: "party-pl-93", slug: "pl-93", shortName: "PL '93", name: "Partidul Liberal 1993", color: "#f59e0b" },
   "pp-dd": { id: "party-pp-dd", slug: "pp-dd", shortName: "PP-DD", name: "Partidul Poporului - Dan Diaconescu", color: "#7c3aed" },
   pc: { id: "party-pc", slug: "pc", shortName: "PC", name: "Partidul Conservator", color: "#0f766e" },
   unpr: { id: "party-unpr", slug: "unpr", shortName: "UNPR", name: "Uniunea Națională pentru Progresul României", color: "#0ea5e9" },
@@ -170,6 +222,18 @@ export function partyFromText(value: string): Party | undefined {
   const text = normalize(value);
   if (isCoalitionText(text)) return undefined;
   if (text.includes("alianta liberalilor") || /\balde\b/.test(text)) return partyCatalog.alde;
+  if (text.includes("democratiei sociale din romania") || /\bpdsr\b/.test(text)) return partyCatalog.pdsr;
+  if (text.includes("social democrat roman") || /\bpsdr\b/.test(text)) return partyCatalog.psdr;
+  if (text.includes("frontul salvarii nationale") || /\bfsn\b/.test(text)) return partyCatalog.fsn;
+  if (text.includes("frontul democrat al salvarii nationale") || /\bfdsn\b/.test(text)) return partyCatalog.fdsn;
+  if (text.includes("national taranesc crestin democrat") || /\bpntcd\b/.test(text)) return partyCatalog.pntcd;
+  if (text.includes("unitatii nationale romane") || /\bpunr\b/.test(text)) return partyCatalog.punr;
+  if (text.includes("democrat agrar") || /\bpdar\b/.test(text)) return partyCatalog.pdar;
+  if (text.includes("partidul ecologist roman") || /\bper\b/.test(text)) return partyCatalog.per;
+  if (text.includes("miscarea ecologista") || /\bmer\b/.test(text)) return partyCatalog.mer;
+  if (text.includes("socialist al muncii") || /\bpsm\b/.test(text)) return partyCatalog.psm;
+  if (text.includes("partidul alianta civica") || /\bpac\b/.test(text)) return partyCatalog.pac;
+  if (text.includes("liberal 1993") || /\bpl\s*'?93\b/.test(text)) return partyCatalog["pl-93"];
   if (text.includes("miscarea populara") || /\bpmp\b/.test(text)) return partyCatalog.pmp;
   if (text.includes("democrat liberal") || /\bpdl\b/.test(text)) return partyCatalog.pdl;
   if (text.includes("partidul democrat") || /\bpd\b/.test(text)) return partyCatalog.pd;
@@ -200,6 +264,8 @@ function isCoalitionText(text: string): boolean {
     text.includes("psd-pc") ||
     text.includes("alianta politica psd") ||
     text.includes("dreptate si adevar") ||
+    text.includes("conventia democrata") ||
+    text.includes("uniunea social democrata") ||
     /\bpnl-pd\b/.test(text)
   );
 }
