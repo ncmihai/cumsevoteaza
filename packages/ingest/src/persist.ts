@@ -5,7 +5,10 @@ import type {
   Bill,
   BillEvent,
   BillSponsor,
+  CompositionEvent,
   DocumentSource,
+  Government,
+  GovernmentRole,
   GroupVoteTotal,
   IndividualVote,
   Member,
@@ -16,6 +19,7 @@ import type {
   MemberRole,
   ParliamentaryGroup,
   Party,
+  Person,
   SourceSnapshot,
   Vote
 } from "@cumsevoteaza/parliament-model";
@@ -342,6 +346,149 @@ export async function backfillPeopleFromMembers() {
   } finally {
     await session.close();
   }
+}
+
+export async function persistGovernmentSkeleton(input: {
+  people: Person[];
+  governments: Government[];
+  roles: GovernmentRole[];
+  events: CompositionEvent[];
+}) {
+  const session = createDbSession();
+  try {
+    await Promise.all(input.people.map((person) => upsertPerson(session.db, person)));
+    await Promise.all(input.governments.map((government) => upsertGovernment(session.db, government)));
+    await Promise.all(input.roles.map((role) => upsertGovernmentRole(session.db, role)));
+    await Promise.all(input.events.map((event) => upsertCompositionEvent(session.db, event)));
+    return {
+      people: input.people.length,
+      governments: input.governments.length,
+      roles: input.roles.length,
+      events: input.events.length
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+async function upsertPerson(db: Db, person: Person) {
+  await db
+    .insert(schema.people)
+    .values({
+      id: person.id,
+      slug: person.slug,
+      displayName: person.displayName,
+      normalizedName: person.normalizedName,
+      birthDate: person.birthDate,
+      sourceIds: person.sourceIds
+    })
+    .onConflictDoUpdate({
+      target: schema.people.id,
+      set: {
+        slug: person.slug,
+        displayName: person.displayName,
+        normalizedName: person.normalizedName,
+        birthDate: person.birthDate,
+        sourceIds: person.sourceIds
+      }
+    });
+}
+
+async function upsertGovernment(db: Db, government: Government) {
+  await db
+    .insert(schema.governments)
+    .values({
+      id: government.id,
+      slug: government.slug,
+      name: government.name,
+      legislatureId: government.legislatureId,
+      primeMinisterPersonId: government.primeMinisterPersonId,
+      startsOn: government.startsOn,
+      endsOn: government.endsOn,
+      basis: government.basis,
+      investitureVoteId: government.investitureVoteId,
+      sourceSnapshotId: government.sourceSnapshotId
+    })
+    .onConflictDoUpdate({
+      target: schema.governments.id,
+      set: {
+        slug: government.slug,
+        name: government.name,
+        legislatureId: government.legislatureId,
+        primeMinisterPersonId: government.primeMinisterPersonId,
+        startsOn: government.startsOn,
+        endsOn: government.endsOn,
+        basis: government.basis,
+        investitureVoteId: government.investitureVoteId,
+        sourceSnapshotId: government.sourceSnapshotId
+      }
+    });
+}
+
+async function upsertGovernmentRole(db: Db, role: GovernmentRole) {
+  await db
+    .insert(schema.governmentRoles)
+    .values({
+      id: role.id,
+      governmentId: role.governmentId,
+      personId: role.personId,
+      title: role.title,
+      ministry: role.ministry,
+      startsOn: role.startsOn,
+      endsOn: role.endsOn,
+      sourceSnapshotId: role.sourceSnapshotId
+    })
+    .onConflictDoUpdate({
+      target: schema.governmentRoles.id,
+      set: {
+        governmentId: role.governmentId,
+        personId: role.personId,
+        title: role.title,
+        ministry: role.ministry,
+        startsOn: role.startsOn,
+        endsOn: role.endsOn,
+        sourceSnapshotId: role.sourceSnapshotId
+      }
+    });
+}
+
+async function upsertCompositionEvent(db: Db, event: CompositionEvent) {
+  await db
+    .insert(schema.compositionEvents)
+    .values({
+      id: event.id,
+      eventType: event.eventType,
+      title: event.title,
+      description: event.description,
+      occurredOn: event.occurredOn,
+      endsOn: event.endsOn,
+      legislatureId: event.legislatureId,
+      governmentId: event.governmentId,
+      chamber: event.chamber,
+      memberId: event.memberId,
+      personId: event.personId,
+      partyId: event.partyId,
+      groupId: event.groupId,
+      sourceSnapshotId: event.sourceSnapshotId
+    })
+    .onConflictDoUpdate({
+      target: schema.compositionEvents.id,
+      set: {
+        eventType: event.eventType,
+        title: event.title,
+        description: event.description,
+        occurredOn: event.occurredOn,
+        endsOn: event.endsOn,
+        legislatureId: event.legislatureId,
+        governmentId: event.governmentId,
+        chamber: event.chamber,
+        memberId: event.memberId,
+        personId: event.personId,
+        partyId: event.partyId,
+        groupId: event.groupId,
+        sourceSnapshotId: event.sourceSnapshotId
+      }
+    });
 }
 
 function normalizePersonName(name: string): string {

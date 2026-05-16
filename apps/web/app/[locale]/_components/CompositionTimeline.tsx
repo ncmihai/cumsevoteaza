@@ -1,0 +1,284 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CompositionEvent, Locale } from "@cumsevoteaza/parliament-model";
+import type { CompositionMode, CompositionTimelineStop } from "@/lib/composition-data";
+import { CompositionSeatMap } from "./CompositionSeatMap";
+
+interface CompositionTimelineProps {
+  locale: Locale;
+  mode: CompositionMode;
+  stops: CompositionTimelineStop[];
+}
+
+export function CompositionTimeline({ locale, mode, stops }: CompositionTimelineProps) {
+  const labels = timelineLabels[locale];
+  const [activeId, setActiveId] = useState(stops[0]?.id ?? "");
+  const itemRefs = useRef(new Map<string, HTMLElement>());
+  const activeStop = useMemo(() => stops.find((stop) => stop.id === activeId) ?? stops[0], [activeId, stops]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        const id = visible?.target.getAttribute("data-stop-id");
+        if (id) setActiveId(id);
+      },
+      { rootMargin: "-25% 0px -45% 0px", threshold: [0.2, 0.45, 0.7] }
+    );
+    const nodes = [...itemRefs.current.values()];
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [stops]);
+
+  if (stops.length === 0) {
+    return (
+      <section className="border border-slate-300 bg-white p-6 text-sm text-slate-600">
+        {labels.emptyTimeline}
+      </section>
+    );
+  }
+
+  return (
+    <section className="grid gap-5 lg:grid-cols-[minmax(320px,440px)_minmax(0,1fr)]">
+      <div className="grid gap-4 lg:hidden">
+        {stops.map((stop) => (
+          <MobileStop key={stop.id} locale={locale} mode={mode} stop={stop} />
+        ))}
+      </div>
+
+      <ol className="hidden gap-4 lg:grid">
+        {stops.map((stop) => (
+          <li
+            key={stop.id}
+            data-stop-id={stop.id}
+            ref={(node) => {
+              if (node) itemRefs.current.set(stop.id, node);
+              else itemRefs.current.delete(stop.id);
+            }}
+            className="min-h-[52vh]"
+          >
+            <TimelineCard locale={locale} stop={stop} active={stop.id === activeStop?.id} compact={false} />
+          </li>
+        ))}
+      </ol>
+
+      <div className="hidden lg:block">
+        <div className="sticky top-6 grid gap-4">
+          {activeStop ? <PinnedStage locale={locale} mode={mode} stop={activeStop} /> : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PinnedStage({ locale, mode, stop }: { locale: Locale; mode: CompositionMode; stop: CompositionTimelineStop }) {
+  const labels = timelineLabels[locale];
+  return (
+    <div className="grid gap-4">
+      <section className="border border-slate-300 bg-white p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase text-slate-500">{labels.stage}</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-normal text-slate-950">{stop.government.name}</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              {labels.pm}: {stop.primeMinister?.displayName ?? labels.unknown}
+            </p>
+          </div>
+          <SourceBadge locale={locale} status={stop.sourceStatus} />
+        </div>
+        <div className="mt-4 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+          <Metric label={labels.period} value={periodLabel(stop.government.startsOn, stop.government.endsOn, labels.present)} />
+          <Metric label={labels.event} value={eventTypeLabel(locale, stop.event.eventType)} />
+          <Metric label={labels.mode} value={mode === "computed" ? labels.computedMode : labels.officialMode} />
+          <Metric label={labels.role} value={stop.primeMinisterRole?.title ?? labels.unknown} />
+        </div>
+        {mode === "computed" ? <p className="mt-4 border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">{labels.computedEmpty}</p> : null}
+      </section>
+
+      {stop.chambers.length > 0 ? (
+        <div className="grid gap-4">
+          {stop.chambers.map((chamber) => (
+            <CompositionSeatMap key={chamber.chamber} locale={locale} chamber={chamber.chamber} seats={chamber.seats} />
+          ))}
+        </div>
+      ) : (
+        <section className="border border-slate-300 bg-white p-5 text-sm text-slate-600">
+          <h3 className="font-semibold text-slate-950">{labels.noCompositionTitle}</h3>
+          <p className="mt-2">{labels.noCompositionBody}</p>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function MobileStop({ locale, mode, stop }: { locale: Locale; mode: CompositionMode; stop: CompositionTimelineStop }) {
+  const labels = timelineLabels[locale];
+  return (
+    <article className="border border-slate-300 bg-white p-4">
+      <TimelineCard locale={locale} stop={stop} active compact />
+      {mode === "computed" ? <p className="mt-3 border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">{labels.computedEmpty}</p> : null}
+      {stop.chambers.length > 0 ? (
+        <div className="mt-4 grid gap-4">
+          {stop.chambers.map((chamber) => (
+            <CompositionSeatMap key={chamber.chamber} locale={locale} chamber={chamber.chamber} seats={chamber.seats} />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">{labels.noCompositionBody}</p>
+      )}
+    </article>
+  );
+}
+
+function TimelineCard({ locale, stop, active, compact }: { locale: Locale; stop: CompositionTimelineStop; active: boolean; compact: boolean }) {
+  const labels = timelineLabels[locale];
+  return (
+    <article className={["border bg-white p-4 transition", active ? "border-slate-950 shadow-sm" : "border-slate-300", compact ? "" : "sticky top-6"].join(" ")}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase text-slate-500">{eventTypeLabel(locale, stop.event.eventType)}</p>
+          <h3 className="mt-2 text-xl font-semibold tracking-normal text-slate-950">{stop.government.name}</h3>
+        </div>
+        <SourceBadge locale={locale} status={stop.sourceStatus} />
+      </div>
+      <p className="mt-2 text-sm text-slate-700">
+        {labels.pm}: {stop.primeMinister?.displayName ?? labels.unknown}
+      </p>
+      <p className="mt-1 text-sm text-slate-600">{periodLabel(stop.government.startsOn, stop.government.endsOn, labels.present)}</p>
+      {stop.event.description ? <p className="mt-3 text-sm leading-6 text-slate-700">{stop.event.description}</p> : null}
+      <Link className="mt-4 inline-flex text-sm font-medium underline" href={`/${locale}/compozitii#${stop.government.slug}`}>
+        {labels.futureDetails}
+      </Link>
+    </article>
+  );
+}
+
+function SourceBadge({ locale, status }: { locale: Locale; status: CompositionTimelineStop["sourceStatus"] }) {
+  const labels = timelineLabels[locale];
+  return (
+    <span className={["shrink-0 border px-2 py-1 text-xs", status === "verified" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-amber-300 bg-amber-50 text-amber-900"].join(" ")}>
+      {status === "verified" ? labels.verified : labels.manual}
+    </span>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+      <div className="text-xs uppercase text-slate-500">{label}</div>
+      <div className="mt-1 font-medium text-slate-950">{value}</div>
+    </div>
+  );
+}
+
+function periodLabel(startsOn: string, endsOn: string | undefined, present: string): string {
+  return `${startsOn} - ${endsOn ?? present}`;
+}
+
+function eventTypeLabel(locale: Locale, eventType: CompositionEvent["eventType"]): string {
+  return timelineLabels[locale].events[eventType] ?? eventType;
+}
+
+type TimelineLabels = {
+  stage: string;
+  pm: string;
+  period: string;
+  event: string;
+  mode: string;
+  role: string;
+  present: string;
+  unknown: string;
+  officialMode: string;
+  computedMode: string;
+  verified: string;
+  manual: string;
+  futureDetails: string;
+  noCompositionTitle: string;
+  noCompositionBody: string;
+  computedEmpty: string;
+  emptyTimeline: string;
+  events: Record<CompositionEvent["eventType"], string>;
+};
+
+const timelineLabels = {
+  ro: {
+    stage: "Perioada activă",
+    pm: "Prim-ministru",
+    period: "Perioadă",
+    event: "Eveniment",
+    mode: "Mod",
+    role: "Rol",
+    present: "prezent",
+    unknown: "necunoscut",
+    officialMode: "Investitură oficială",
+    computedMode: "Susținere la vot",
+    verified: "verificat oficial",
+    manual: "skeleton manual",
+    futureDetails: "Detalii guvern",
+    noCompositionTitle: "Compoziție parlamentară neimportată",
+    noCompositionBody: "Pentru această perioadă avem skeleton-ul guvernamental, dar nu avem încă rosters parlamentare importate.",
+    computedEmpty: "Modul de susținere la vot va deveni disponibil după ce importăm suficiente voturi nominale pentru această perioadă.",
+    emptyTimeline: "Nu există încă evenimente de compoziție importate.",
+    events: {
+      legislature_start: "Început legislatură",
+      legislature_end: "Sfârșit legislatură",
+      government_designated: "Desemnare/interimat",
+      government_invested: "Investitură guvern",
+      government_ended: "Sfârșit guvern",
+      minister_appointed: "Numire ministru",
+      minister_ended: "Sfârșit mandat ministru",
+      reshuffle: "Remaniere",
+      no_confidence_motion: "Moțiune de cenzură",
+      confidence_vote: "Vot de încredere",
+      coalition_change: "Schimbare coaliție",
+      group_change: "Schimbare grup",
+      member_mandate_start: "Început mandat",
+      member_mandate_end: "Sfârșit mandat",
+      committee_change: "Schimbare comisie",
+      role_change: "Schimbare rol",
+      other: "Alt eveniment"
+    }
+  },
+  en: {
+    stage: "Active period",
+    pm: "Prime minister",
+    period: "Period",
+    event: "Event",
+    mode: "Mode",
+    role: "Role",
+    present: "present",
+    unknown: "unknown",
+    officialMode: "Official investiture",
+    computedMode: "Voting support",
+    verified: "officially verified",
+    manual: "manual skeleton",
+    futureDetails: "Government details",
+    noCompositionTitle: "Parliament composition not imported",
+    noCompositionBody: "This period has a government skeleton, but parliamentary rosters are not imported yet.",
+    computedEmpty: "Voting-support mode will become available after enough nominal votes are imported for this period.",
+    emptyTimeline: "No composition events are imported yet.",
+    events: {
+      legislature_start: "Legislature start",
+      legislature_end: "Legislature end",
+      government_designated: "Designation/interim",
+      government_invested: "Government investiture",
+      government_ended: "Government ended",
+      minister_appointed: "Minister appointed",
+      minister_ended: "Minister ended",
+      reshuffle: "Reshuffle",
+      no_confidence_motion: "No-confidence motion",
+      confidence_vote: "Confidence vote",
+      coalition_change: "Coalition change",
+      group_change: "Group change",
+      member_mandate_start: "Mandate start",
+      member_mandate_end: "Mandate end",
+      committee_change: "Committee change",
+      role_change: "Role change",
+      other: "Other event"
+    }
+  }
+} satisfies Record<Locale, TimelineLabels>;

@@ -111,6 +111,11 @@ Observed bill page structure:
 - Portal Legislativ is the preferred source for decrees and official acts
   around designation, appointment, reshuffles, and minister changes. Example:
   `https://legislatie.just.ro/Public/DetaliiDocument/172817`
+- The first post-1989 government timeline seed uses
+  `https://en.wikipedia.org/wiki/List_of_heads_of_government_of_Romania` as a
+  manual chronology backbone only. Rows imported from this seed must remain
+  marked `manual_curation` / `skeleton manual` until each government/event is
+  enriched with official source snapshots.
 - CDEP/Senate joint sitting records are preferred for investiture votes,
   confidence votes, and no-confidence motions when nominal or result data is
   available.

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { chamberLabels, type GovernanceAlignment } from "@cumsevoteaza/parliament-model";
-import { getCurrentCompositionData, type CompositionMode } from "@/lib/composition-data";
+import { type GovernanceAlignment } from "@cumsevoteaza/parliament-model";
+import { getCompositionTimelineData, type CompositionMode } from "@/lib/composition-data";
 import { messagesFor, type AppLocale } from "@/lib/i18n";
-import { CompositionSeatMap } from "../_components/CompositionSeatMap";
+import { CompositionTimeline } from "../_components/CompositionTimeline";
 
 export default async function CompositionsPage({
   params,
@@ -14,7 +14,7 @@ export default async function CompositionsPage({
   const { locale } = await params;
   const { mode: rawMode } = await searchParams;
   const mode: CompositionMode = rawMode === "computed" ? "computed" : "official";
-  const data = await getCurrentCompositionData(mode);
+  const data = await getCompositionTimelineData(mode);
   const messages = messagesFor(locale);
   const labels = compositionPageLabels[locale];
 
@@ -43,34 +43,15 @@ export default async function CompositionsPage({
           <span className="border border-slate-300 bg-white px-3 py-1.5">
             {labels.source}: {data.sourceKind === "database" ? labels.database : labels.demo}
           </span>
+          <span className="border border-slate-300 bg-white px-3 py-1.5">
+            {labels.events}: {data.stops.length}
+          </span>
         </div>
       </section>
 
-      <section className="mt-6 grid gap-5">
-        {data.chambers.map((chamber) => (
-          <div key={chamber.chamber} className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <CompositionSeatMap locale={locale} chamber={chamber.chamber} seats={chamber.seats} />
-            <aside className="border border-slate-300 bg-white">
-              <div className="border-b border-slate-300 px-4 py-3">
-                <h2 className="text-sm font-semibold text-slate-950">{chamberLabels[locale][chamber.chamber]}</h2>
-                <p className="mt-1 text-xs text-slate-500">{labels.groupBreakdown}</p>
-              </div>
-              <div className="divide-y divide-slate-200">
-                {chamber.groups.map((row) => (
-                  <div key={row.group.id} className="grid grid-cols-[minmax(0,1fr)_56px_90px] items-center gap-2 px-4 py-3 text-sm">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: row.group.color }} />
-                      <span className="truncate font-medium text-slate-950">{row.group.shortName}</span>
-                    </div>
-                    <span className="text-right tabular-nums text-slate-700">{row.seats}</span>
-                    <span className="truncate text-right text-xs text-slate-500">{labels.alignments[row.alignment]}</span>
-                  </div>
-                ))}
-              </div>
-            </aside>
-          </div>
-        ))}
-      </section>
+      <div className="mt-6">
+        <CompositionTimeline locale={locale} mode={mode} stops={data.stops} />
+      </div>
     </main>
   );
 }
@@ -107,6 +88,7 @@ const compositionPageLabels = {
     source: "Sursă date",
     database: "bază de date",
     demo: "demo",
+    events: "Evenimente",
     groupBreakdown: "Distribuție pe grupuri",
     alignments: {
       government: "Guvern",
@@ -127,6 +109,7 @@ const compositionPageLabels = {
     source: "Data source",
     database: "database",
     demo: "demo",
+    events: "Events",
     groupBreakdown: "Breakdown by group",
     alignments: {
       government: "Government",
@@ -148,6 +131,7 @@ const compositionPageLabels = {
     source: string;
     database: string;
     demo: string;
+    events: string;
     groupBreakdown: string;
     alignments: Record<GovernanceAlignment, string>;
   }

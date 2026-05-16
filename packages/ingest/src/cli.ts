@@ -8,8 +8,9 @@ import { parseSenateBill } from "./parsers/senate-bill";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "./parsers/senate-roster";
 import { parseSenateVote } from "./parsers/senate-vote";
 import { fetchOfficialSource } from "./fetch-source";
+import { governmentSkeletonData } from "./government-skeleton";
 import { canonicalizeOfficialUrl } from "./official-urls";
-import { backfillPeopleFromMembers, persistChamberVote, persistRoster, persistSenateBill, persistSenateVote } from "./persist";
+import { backfillPeopleFromMembers, persistChamberVote, persistGovernmentSkeleton, persistRoster, persistSenateBill, persistSenateVote } from "./persist";
 import { snapshotFor } from "./parsers/utils";
 import {
   discoverDeputiesSources,
@@ -107,6 +108,11 @@ async function main() {
 
   if (command === "people:backfill") {
     console.log(JSON.stringify(await backfillPeopleFromMembers(), null, 2));
+    return;
+  }
+
+  if (command === "governments:skeleton") {
+    console.log(JSON.stringify(await persistGovernmentSkeleton(governmentSkeletonData()), null, 2));
     return;
   }
 

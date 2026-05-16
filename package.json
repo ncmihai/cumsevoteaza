@@ -27,6 +27,7 @@
     "ingest:deputies:roster": "npm --workspace @cumsevoteaza/ingest run deputies:roster --",
     "ingest:roster:all": "npm --workspace @cumsevoteaza/ingest run roster:all --",
     "ingest:people:backfill": "npm --workspace @cumsevoteaza/ingest run people:backfill --",
+    "ingest:governments:skeleton": "npm --workspace @cumsevoteaza/ingest run governments:skeleton --",
     "ingest:discover:senate": "npm --workspace @cumsevoteaza/ingest run discover:senate --",
     "ingest:discover:deputies": "npm --workspace @cumsevoteaza/ingest run discover:deputies --",
     "ingest:discover:deputies-votes": "npm --workspace @cumsevoteaza/ingest run discover:deputies-votes --",

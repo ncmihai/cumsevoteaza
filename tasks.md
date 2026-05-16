@@ -168,6 +168,18 @@ implementation steps.
 - [x] Add `/[locale]/compozitii` page with current Chamber/Senate seat maps and official/computed mode switch.
 - [x] Apply composition migration to Neon.
 - [x] Run the `people` backfill against Neon after migration.
+- [x] Add `ingest:governments:skeleton` for post-1989 government timeline seeding.
+- [x] Seed government skeleton locally and in Neon:
+  - 27 PM/person rows
+  - 35 government periods
+  - 35 PM role rows
+  - 69 composition events
+- [x] Replace `/[locale]/compozitii` with scroll-driven timeline:
+  - major event stops
+  - sticky desktop stage
+  - stacked mobile cards
+  - manual/official verification badges
+  - current composition stage when roster data exists
 - [ ] Add current composition seat map that is not tied to a vote and uses alignment mode:
   - official investiture / coalition
   - computed governing support
@@ -273,6 +285,9 @@ implementation steps.
   - `/ro/compozitii` and `/ro/compozitii?mode=computed` returned `200` locally and rendered DB-backed chamber counts.
   - Neon migration applied successfully.
   - Neon people backfill linked 468 members to 468 people.
+  - Government skeleton seed rerun locally with stable counts, confirming idempotent upserts.
+  - Local `/ro/compozitii` smoke rendered 69 timeline events, Bolojan first, manual skeleton badges, and current roster seat maps.
+  - Neon government skeleton seed completed with stable counts.
 
 ## Import Proof
 

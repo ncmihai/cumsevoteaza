@@ -217,6 +217,39 @@ Append-only implementation history.
   - official investiture vs computed voting-support mode switch
 - Verified `/ro/compozitii` and `/ro/compozitii?mode=computed` locally against
   Docker Postgres.
+
+## 2026-05-16 — Compoziții Timeline Scroll Story
+
+- Added a curated post-1989 government skeleton seed command:
+  `npm run ingest:governments:skeleton`.
+- Seed data currently stores:
+  - 27 PM/person rows
+  - 35 government periods
+  - 35 Prime Minister role rows
+  - 69 composition events
+- Skeleton rows use `manual_curation` and render as `skeleton manual` until
+  official-source snapshots are attached later.
+- Replaced the simple `Compoziții` page with a scroll-driven timeline:
+  - desktop left rail with major events
+  - sticky desktop visual stage
+  - mobile stacked cards
+  - official/computed mode switch
+  - honest empty state when historical parliamentary rosters are not imported
+  - current roster seat maps when the active government includes the current
+    imported composition
+- Added `CompositionTimeline` as the client-side scroll activation layer using
+  `IntersectionObserver` and CSS transitions, without scroll hijacking or a
+  heavy animation dependency.
+- Added government skeleton tests for unique deterministic IDs, current-first
+  ordering, and manual-curation basis.
+- Verification:
+  - `npm run typecheck` passed.
+  - `npm run test` passed.
+  - `npm run build` passed.
+  - Local seed was rerun with stable counts.
+  - Neon seed completed with the same counts.
+  - Local `/ro/compozitii` rendered 69 events with Bolojan first and manual
+    skeleton badges visible.
   - staged 2024-present backfill
 - Added root and ingest package commands:
   - `ingest:discover:senate`
