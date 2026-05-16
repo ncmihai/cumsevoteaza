@@ -45,7 +45,8 @@ describe("roster parsers", () => {
       legislature: legislature2020
     });
 
-    expect(profile.mandate?.id).toBe("mandate-member-deputies-294-2020-2024-deputies");
+    expect(profile.member.id).toBe("member-deputies-2020-294");
+    expect(profile.mandate?.id).toBe("mandate-member-deputies-2020-294-2020-2024-deputies");
     expect(profile.mandate?.legislatureId).toBe("leg-2020-2024");
     expect(profile.mandate?.startsOn).toBe("2020-12-21");
   });

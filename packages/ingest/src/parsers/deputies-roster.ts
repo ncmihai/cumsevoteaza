@@ -97,7 +97,7 @@ export function parseDeputiesRosterGroup(
     const displayName = cleanText(text);
     if (!displayName) return;
     if (/activitate|cv|biografie|declaratii|interpelari|initiative/i.test(normalize(displayName))) return;
-    const member = buildMember(officialId, displayName);
+    const member = buildMember(officialId, displayName, legislature);
     const rowText = cleanText(row.text());
     const startsOn = parseRomanianDate(rowText) ?? legislature.startsOn;
     const currentRole = explicitRole ?? pendingRole;
@@ -164,7 +164,7 @@ export function parseDeputiesMemberProfile(
   );
   const titleName = cleanText($("title").text()).replace(/^.* - /, "");
   const name = titleName || headingName;
-  const member = buildMember(officialId, name);
+  const member = buildMember(officialId, name, legislature);
   const bodyText = cleanText($("body").text());
   const mandateStart = parseRomanianDate(bodyText.match(/data validării:\s*([^-.]+)/i)?.[1] ?? "") ?? legislature.startsOn;
   const constituency = cleanText(bodyText.match(/circumscriptia electorala nr\.\d+\s*([^<\n]+)/i)?.[1] ?? "");
@@ -224,15 +224,16 @@ function buildGroup(name: string, party: Party | undefined, fallback: string): P
   };
 }
 
-function buildMember(officialId: string, displayName: string): Member {
+function buildMember(officialId: string, displayName: string, legislature: Legislature = legislature2024): Member {
   const parsedName = splitDisplayName(displayName);
+  const legislatureYear = legislature.label.slice(0, 4);
   return {
-    id: memberId(chamber, officialId),
+    id: legislature.id === legislature2024.id ? memberId(chamber, officialId) : memberId(chamber, `${legislatureYear}-${officialId}`),
     slug: slugify(displayName),
     firstName: parsedName.firstName,
     lastName: parsedName.lastName,
     displayName: parsedName.displayName,
-    sourceIds: { deputies: officialId }
+    sourceIds: { deputies: officialId, [`deputies:${legislatureYear}`]: officialId }
   };
 }
 

@@ -1,4 +1,4 @@
-import { eq, or } from "drizzle-orm";
+import { eq, inArray, or } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import {
@@ -426,37 +426,42 @@ async function tryDatabaseMember(slug: string): Promise<MemberPageData | undefin
       .limit(1);
     if (!memberRow) return undefined;
 
-    const member = mapMember(memberRow);
-    const mandateRows = await session.db.select().from(schema.memberMandates).where(eq(schema.memberMandates.memberId, member.id));
+    const relatedMemberRows = memberRow.personId
+      ? await session.db.select().from(schema.members).where(eq(schema.members.personId, memberRow.personId))
+      : [memberRow];
+    const relatedMembers = relatedMemberRows.map(mapMember);
+    const memberIds = relatedMembers.map((member) => member.id);
+    const mandateRows = await session.db.select().from(schema.memberMandates).where(inArray(schema.memberMandates.memberId, memberIds));
     const membershipRows = await session.db
       .select()
       .from(schema.memberGroupMemberships)
-      .where(eq(schema.memberGroupMemberships.memberId, member.id));
+      .where(inArray(schema.memberGroupMemberships.memberId, memberIds));
     const partyAffiliationRows = await session.db
       .select()
       .from(schema.memberPartyAffiliations)
-      .where(eq(schema.memberPartyAffiliations.memberId, member.id));
+      .where(inArray(schema.memberPartyAffiliations.memberId, memberIds));
     const committeeRows = await session.db
       .select()
       .from(schema.memberCommitteeMemberships)
-      .where(eq(schema.memberCommitteeMemberships.memberId, member.id));
-    const roleRows = await session.db.select().from(schema.memberRoles).where(eq(schema.memberRoles.memberId, member.id));
+      .where(inArray(schema.memberCommitteeMemberships.memberId, memberIds));
+    const roleRows = await session.db.select().from(schema.memberRoles).where(inArray(schema.memberRoles.memberId, memberIds));
     const individualVoteRows = await session.db
       .select()
       .from(schema.individualVotes)
-      .where(eq(schema.individualVotes.memberId, member.id));
-    const billSponsorRows = await session.db.select().from(schema.billSponsors).where(eq(schema.billSponsors.memberId, member.id));
+      .where(inArray(schema.individualVotes.memberId, memberIds));
+    const billSponsorRows = await session.db.select().from(schema.billSponsors).where(inArray(schema.billSponsors.memberId, memberIds));
     const groups = (await session.db.select().from(schema.parliamentaryGroups)).map(mapGroup);
     const parties = (await session.db.select().from(schema.parties)).map(mapParty);
     const votes = individualVoteRows.map(mapIndividualVote);
     const voteRows = await session.db.select().from(schema.votes);
     const billRows = await session.db.select().from(schema.bills);
     const memberships = membershipRows.map(mapMemberGroupMembership);
-    const currentMembership = latestMembership(memberships);
+    const mandates = mandateRows.map(mapMemberMandate);
+    const mandate = latestMandate(mandates);
+    const member = relatedMembers.find((item) => item.id === mandate?.memberId) ?? mapMember(memberRow);
+    const currentMembership = latestMembership(memberships.filter((membership) => !mandate || membership.memberId === mandate.memberId));
     const group = groups.find((item) => item.id === currentMembership?.groupId);
     const party = parties.find((item) => item.id === group?.partyId);
-    const mandates = mandateRows.map(mapMemberMandate);
-    const mandate = mandates.find((item) => !item.endsOn) ?? mandates[0];
     const sourceId =
       currentMembership?.sourceSnapshotId ??
       mandate?.sourceSnapshotId ??
@@ -787,6 +792,16 @@ function latestMembership(memberships: MemberGroupMembership[]): MemberGroupMemb
     .at(0);
 }
 
+function latestMandate(mandates: MemberMandate[]): MemberMandate | undefined {
+  return [...mandates]
+    .sort((a, b) => {
+      if (!a.endsOn && b.endsOn) return -1;
+      if (a.endsOn && !b.endsOn) return 1;
+      return b.startsOn.localeCompare(a.startsOn);
+    })
+    .at(0);
+}
+
 function filterDirectoryItems(
   items: MemberDirectoryItem[],
   filters?: { chamber?: string; group?: string; q?: string }
@@ -857,7 +872,7 @@ function buildMemberHistory(input: {
         id: `history-${affiliation.id}`,
         startsOn: affiliation.startsOn,
         endsOn: affiliation.endsOn,
-        chamber: "senate" as const,
+        chamber: chamberForMemberPeriod(input.mandates, affiliation.memberId, affiliation.startsOn),
         type: "party" as const,
         label: party?.shortName ?? affiliation.partyId,
         details: party?.name ?? "Formațiune politică",
@@ -885,4 +900,14 @@ function buildMemberHistory(input: {
       ...counts
     }))
   ].sort((a, b) => b.startsOn.localeCompare(a.startsOn));
+}
+
+function chamberForMemberPeriod(mandates: MemberMandate[], memberId: string, date: string): MemberMandate["chamber"] {
+  return (
+    mandates
+      .filter((mandate) => mandate.memberId === memberId && mandate.startsOn <= date && (!mandate.endsOn || mandate.endsOn >= date))
+      .sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0]?.chamber ??
+    mandates.filter((mandate) => mandate.memberId === memberId).sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0]?.chamber ??
+    "deputies"
+  );
 }

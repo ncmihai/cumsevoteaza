@@ -125,6 +125,14 @@ Observed bill page structure:
 ## Historical Rosters
 
 - Wikipedia elected-list references for validation and planning only:
+  - Current Chamber seat distribution:
+    `https://ro.wikipedia.org/wiki/Camera_Deputa%C8%9Bilor_din_Rom%C3%A2nia`
+  - Current Senate seat distribution:
+    `https://ro.wikipedia.org/wiki/Senatul_Rom%C3%A2niei`
+  - Legislatures and member list index for Senators:
+    `https://ro.wikipedia.org/wiki/List%C4%83_de_senatori_rom%C3%A2ni`
+  - Legislatures and member list index for Deputies:
+    `https://ro.wikipedia.org/wiki/List%C4%83_de_deputa%C8%9Bi_rom%C3%A2ni`
   - 2020:
     `https://ro.wikipedia.org/wiki/Lista_parlamentarilor_ale%C8%99i_la_alegerile_din_Rom%C3%A2nia_din_2020`
   - 2016:
@@ -140,6 +148,11 @@ Observed bill page structure:
 - Deputies 2020-2024:
   - Official member profiles are available through
     `https://www.cdep.ro/ords/pls/parlam/structura2015.mp?cam=2&idl=1&idm=<id>&leg=2020&pag=1`.
+  - CDEP `idm` values are not globally stable across legislatures. They can be
+    reused by different people in different legislatures, so historical
+    Deputies member IDs must include the legislature year, e.g.
+    `member-deputies-2020-93`. Current 2024 records keep
+    `member-deputies-<idm>` for compatibility with imported nominal votes.
   - A controlled ID scan from `1` to `450` parsed 354 valid Deputies profiles.
   - Generic section pages such as `Activitate publică` can be returned for
     unused IDs and must be filtered before persistence.

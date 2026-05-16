@@ -549,3 +549,40 @@ Verification:
   - Bolojan / Ciolacu II period: 331 Deputies and 133-134 Senators, not 2020+2024 stacked totals.
   - 2020-period stops still need finer temporal exits/replacements before they can be treated as exact chamber-at-day counts.
 - Added Wikipedia elected-list pages for 2020, 2016, 2012, and 2008 as validation/reference material, not official source-of-truth imports.
+
+## 2026-05-16 — Deputies Historical ID Collision Repair
+
+- Investigated `drula-catalin` showing both USR and PSD.
+- Root cause: CDEP `idm` values are reused across legislatures. `idm=93` is
+  Cătălin Drulă in 2020, but a different PSD deputy in 2024, while the importer
+  had used `member-deputies-<idm>` as if it were globally stable.
+- Fixed Deputies roster IDs:
+  - current 2024 records keep `member-deputies-<idm>` to stay compatible with
+    imported nominal vote rows;
+  - historical records use `member-deputies-<legislature-start-year>-<idm>`,
+    starting with `member-deputies-2020-<idm>`.
+- Cleaned contaminated 2020 Deputies rows from the configured DB:
+  - removed unscoped 2020 Deputies mandates and related history rows;
+  - removed 22 orphaned bad member rows.
+- Reimported 2024 Deputies roster:
+  - 330 members
+  - 330 mandates
+  - official group counts: PSD 93, AUR 62, PNL 53, USR 40, UDMR 21, Minorități 17, UPR 16, SOS RO 15, Neafiliați 13.
+- Reimported 2020 Deputies roster with scoped IDs:
+  - 354 members
+  - 354 mandates
+  - 430 group memberships
+  - 1000 committee memberships.
+- Refreshed people linkage:
+  - 945 members read
+  - 772 people upserted
+  - 945 members linked.
+- Made member profile pages person-aware: a slug can now show all source-member
+  records connected to the same `people` row, which is the correct foundation
+  for the Transfermarkt-style parliamentary history.
+- Fixed party history row chamber display so party rows inherit the chamber from
+  the relevant mandate instead of defaulting to Senate.
+- Verification:
+  - `drula-catalin` now resolves to Cătălin Drulă, current group USR, current party USR, with 2020 and 2024 USR history rows and no PSD row.
+  - No unscoped Deputies member ID now spans multiple legislatures.
+  - `npm run typecheck`, `npm run test`, and `npm run build` passed.

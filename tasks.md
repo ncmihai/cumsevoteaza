@@ -303,6 +303,12 @@ implementation steps.
   - Seat-map hover labels now render above graph seats/center text.
   - Fixed overlap bug where open-ended 2020-2024 mandates were counted together with 2024-2028 mandates in later government periods.
   - Added 2020, 2016, 2012, and 2008 Wikipedia elected-list pages to `docs/sources.md` as validation references.
+  - Fixed CDEP historical ID collision:
+    2020 Deputies now use `member-deputies-2020-<idm>`, while 2024 Deputies keep `member-deputies-<idm>` for vote compatibility.
+  - Cleaned and reimported Deputies rosters after the ID fix:
+    2024 Deputies: 330 members; 2020 Deputies: 354 members.
+  - Member pages now aggregate all chamber/source member records connected to the same `people` row.
+  - `drula-catalin` verification now shows Cătălin Drulă as USR only, with 2020 and 2024 mandate history and no PSD row.
 
 ## Import Proof
 
@@ -336,6 +342,7 @@ implementation steps.
 
 - Find an official, reliable source path for 2020 Senate unaffiliated members.
 - Add dated mandate end/replacement parsing so 2020-era compositions show exact seats-at-date, while member profiles can still show everyone who served during the term.
+- Treat historical member imports as person-linked source records, not one globally stable chamber ID; CDEP `idm` can be reused by legislature.
 - Smoke-check `/ro/compozitii` on Vercel after the 2020 roster deploy and confirm 2020 government stops show imported chamber data.
 - Extend the historical roster strategy to 2016-2020 after 2020-2024 is visually verified.
 - Add composition alignment imports for governments/coalitions so seat maps can distinguish government support vs opposition by period.
