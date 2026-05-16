@@ -1,6 +1,7 @@
 import {
   date,
   integer,
+  index,
   jsonb,
   pgEnum,
   pgTable,
@@ -164,7 +165,9 @@ export const bills = pgTable("bills", {
   status: text("status").notNull().default("unknown"),
   sourceSnapshotIds: jsonb("source_snapshot_ids").$type<string[]>().notNull().default([])
 }, (table) => ({
-  slugIdx: uniqueIndex("bills_slug_idx").on(table.slug)
+  slugIdx: uniqueIndex("bills_slug_idx").on(table.slug),
+  chamberOriginIdx: index("bills_chamber_origin_idx").on(table.chamberOfOrigin),
+  statusIdx: index("bills_status_idx").on(table.status)
 }));
 
 export const billEvents = pgTable("bill_events", {
@@ -174,7 +177,10 @@ export const billEvents = pgTable("bill_events", {
   chamber: text("chamber").notNull().default("unknown"),
   label: text("label").notNull(),
   sourceUrl: text("source_url")
-});
+}, (table) => ({
+  billDateIdx: index("bill_events_bill_date_idx").on(table.billId, table.occurredOn),
+  occurredOnIdx: index("bill_events_occurred_on_idx").on(table.occurredOn)
+}));
 
 export const billSponsors = pgTable("bill_sponsors", {
   id: text("id").primaryKey(),
@@ -205,7 +211,12 @@ export const votes = pgTable("votes", {
   presentNotVoting: integer("present_not_voting").notNull().default(0),
   absent: integer("absent"),
   sourceSnapshotId: text("source_snapshot_id").notNull().references(() => sourceSnapshots.id)
-});
+}, (table) => ({
+  heldOnIdx: index("votes_held_on_id_idx").on(table.heldOn, table.id),
+  chamberHeldOnIdx: index("votes_chamber_held_on_idx").on(table.chamber, table.heldOn),
+  billIdx: index("votes_bill_id_idx").on(table.billId),
+  sourceSnapshotIdx: index("votes_source_snapshot_idx").on(table.sourceSnapshotId)
+}));
 
 export const groupVoteTotals = pgTable("group_vote_totals", {
   id: text("id").primaryKey(),
@@ -225,3 +236,36 @@ export const individualVotes = pgTable("individual_votes", {
   choice: voteChoiceEnum("choice").notNull(),
   voteMethod: text("vote_method")
 });
+
+export const engagementEvents = pgTable("engagement_events", {
+  id: text("id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id"),
+  queryHash: text("query_hash"),
+  queryText: text("query_text"),
+  locale: varchar("locale", { length: 8 }).notNull().default("ro"),
+  visitorHash: text("visitor_hash").notNull(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull()
+}, (table) => ({
+  eventMonthIdx: index("engagement_events_event_month_idx").on(table.eventType, table.entityType, table.occurredAt),
+  entityIdx: index("engagement_events_entity_idx").on(table.entityType, table.entityId, table.occurredAt),
+  searchIdx: index("engagement_events_search_idx").on(table.queryHash, table.occurredAt)
+}));
+
+export const contentReactions = pgTable("content_reactions", {
+  id: text("id").primaryKey(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  reaction: text("reaction").notNull(),
+  visitorHash: text("visitor_hash").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull()
+}, (table) => ({
+  uniqueVisitorReactionIdx: uniqueIndex("content_reactions_unique_visitor_idx").on(
+    table.entityType,
+    table.entityId,
+    table.reaction,
+    table.visitorHash
+  ),
+  aggregateIdx: index("content_reactions_aggregate_idx").on(table.entityType, table.entityId, table.reaction, table.createdAt)
+}));

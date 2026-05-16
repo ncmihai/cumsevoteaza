@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDate } from "@cumsevoteaza/parliament-model";
 import { getBillPageData } from "@/lib/data";
+import { getHotCount } from "@/lib/explorer-data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
+import { EngagementTracker } from "../../_components/EngagementTracker";
+import { HotButton } from "../../_components/HotButton";
 import { SourceBadge } from "../../_components/SourceBadge";
 
 export default async function BillPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
@@ -12,9 +15,11 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
   const data = await getBillPageData(id);
   if (!data) notFound();
   const { bill, events, documents, votes, source, sourceKind } = data;
+  const hotCount = await getHotCount("bill", bill.id);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
+      <EngagementTracker entityType="bill" entityId={bill.id} locale={locale} />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="text-sm font-semibold uppercase text-blue-800">{bill.identifiers.senate}</div>
@@ -22,6 +27,7 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
           <p className="mt-3 text-slate-600">{bill.status}</p>
         </div>
         <div className="flex flex-col items-start gap-2">
+          <HotButton entityType="bill" entityId={bill.id} initialCount={hotCount} />
           {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
           <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
         </div>

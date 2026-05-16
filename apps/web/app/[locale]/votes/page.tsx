@@ -1,18 +1,29 @@
-import Link from "next/link";
-import { BarChart3 } from "lucide-react";
-import { formatDate, voteChoiceLabels } from "@cumsevoteaza/parliament-model";
-import { getVoteDirectoryData } from "@/lib/data";
+import { getDirectoryFilterOptions, getVoteExplorerData, parseExplorerFilters } from "@/lib/explorer-data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
+import { SearchEngagementTracker } from "../_components/EngagementTracker";
+import { VoteDirectoryExplorer, type DirectoryLabels } from "../_components/ExplorerDirectories";
 
-export default async function VotesPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function VotesPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale: rawLocale } = await params;
+  const rawFilters = await searchParams;
   const locale: AppLocale = isLocale(rawLocale) ? rawLocale : "ro";
   const messages = messagesFor(locale);
-  const data = await getVoteDirectoryData(30);
+  const filters = parseExplorerFilters(rawFilters);
+  const [data, filterOptions] = await Promise.all([
+    getVoteExplorerData({ limit: 10, filters }),
+    getDirectoryFilterOptions()
+  ]);
   const labels = pageLabels[locale];
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
+      <SearchEngagementTracker entityType="vote" query={filters.q} locale={locale} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-sm font-semibold uppercase text-blue-800">{messages.nav.votes}</div>
@@ -22,50 +33,48 @@ export default async function VotesPage({ params }: { params: Promise<{ locale: 
         <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{data.sourceKind}</span>
       </div>
 
-      <section className="mt-6 border border-slate-300 bg-white">
-        <div className="divide-y divide-slate-200">
-          {data.items.map(({ vote, bill }) => (
-            <Link key={vote.id} href={`/${locale}/votes/${vote.id}`} className="grid gap-4 px-4 py-4 hover:bg-slate-50 md:grid-cols-[1fr_420px]">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 text-sm font-semibold uppercase text-blue-800">
-                  <BarChart3 size={16} aria-hidden="true" />
-                  {formatDate(vote.heldOn, locale)} · {vote.chamber}
-                </div>
-                <h2 className="mt-2 text-lg font-semibold text-slate-950">{vote.title}</h2>
-                {bill ? <p className="mt-1 line-clamp-2 text-sm text-slate-600">{bill.title}</p> : null}
-              </div>
-              <div className="grid grid-cols-4 gap-2 text-sm md:text-right">
-                <StatLine label={voteChoiceLabels[locale].for} value={vote.totals.for} tone="text-emerald-700" />
-                <StatLine label={voteChoiceLabels[locale].against} value={vote.totals.against} tone="text-red-700" />
-                <StatLine label={voteChoiceLabels[locale].abstention} value={vote.totals.abstention} tone="text-amber-700" />
-                <StatLine label={labels.present} value={vote.totals.present} tone="text-slate-700" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <VoteDirectoryExplorer locale={locale} initialData={data} filterOptions={filterOptions} initialFilters={filters} labels={labels} />
     </main>
-  );
-}
-
-function StatLine({ label, value, tone }: { label: string; value: number; tone: string }) {
-  return (
-    <div>
-      <div className="text-xs uppercase text-slate-500">{label}</div>
-      <div className={`mt-1 text-xl font-semibold ${tone}`}>{value}</div>
-    </div>
   );
 }
 
 const pageLabels = {
   ro: {
-    title: "Ultimele 30 de proiecte votate",
+    title: "Voturi",
     subtitle: "Voturi finale și nominale importate din surse oficiale, ordonate de la cel mai recent.",
-    present: "Prezenți"
+    present: "Prezenți",
+    submitted: "Depus",
+    latestEvent: "Ultim eveniment",
+    origin: "Origine",
+    votes: "Voturi",
+    hot: "Hot",
+    loadMore: "Încarcă mai multe",
+    loading: "Se încarcă",
+    apply: "Aplică",
+    search: "Caută titlu sau identificator",
+    year: "An",
+    month: "Lună",
+    chamber: "Cameră",
+    sourceStatus: "Sursă",
+    group: "Grup"
   },
   en: {
-    title: "Latest 30 voted projects",
+    title: "Votes",
     subtitle: "Final and nominal votes imported from official sources, ordered by most recent date.",
-    present: "Present"
+    present: "Present",
+    submitted: "Submitted",
+    latestEvent: "Latest event",
+    origin: "Origin",
+    votes: "Votes",
+    hot: "Hot",
+    loadMore: "Load more",
+    loading: "Loading",
+    apply: "Apply",
+    search: "Search title or identifier",
+    year: "Year",
+    month: "Month",
+    chamber: "Chamber",
+    sourceStatus: "Source",
+    group: "Group"
   }
-} satisfies Record<AppLocale, Record<string, string>>;
+} satisfies Record<AppLocale, DirectoryLabels>;

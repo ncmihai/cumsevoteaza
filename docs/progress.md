@@ -413,3 +413,24 @@ inspect partial/failed counts after each batch.
 
 Next broader backfill should continue February pending discoveries in capped
 batches until the queue is clean, then move to March 2025 discovery.
+
+## 2026-05-16 — Public-Ready Explorer UX
+
+- Replaced the fixed latest-30 vote and project directory pages with paginated explorers.
+- Added SQL-level directory pagination and filters for year, month, chamber, source status, text search, and group/sponsor group where supported.
+- Added API endpoints for paginated vote and project directory data.
+- Added load-more behavior with an automatic scroll trigger and skeleton loading rows.
+- Added anonymous first-party engagement infrastructure:
+  - `engagement_events` for page views and searches
+  - `content_reactions` for idempotent `hot` reactions
+  - `ANALYTICS_SALT` for hashing anonymous visitor cookies before storage
+- Replaced homepage demo cards with DB-backed panels for latest votes, latest projects, most viewed, member searches, trending votes, and trending projects.
+- Added factual explainer panels for committees and parliamentary groups.
+- Added hot buttons to vote/project directory cards and vote/project detail pages.
+- Generated and applied migration `0003_chubby_whiplash` to the configured database.
+- Verified:
+  - `npm run typecheck` passed
+  - `npm run test` passed
+  - `npm run build` passed
+  - local `/ro`, `/ro/votes?year=2025&month=12`, `/ro/bills?q=PL-x`, and directory APIs returned successful responses
+  - `hot` API returns a controlled disabled response until `ANALYTICS_SALT` is configured

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { chamberLabels } from "@cumsevoteaza/parliament-model";
 import { getMemberPageData } from "@/lib/data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
+import { EngagementTracker } from "../../_components/EngagementTracker";
 import { MemberHistoryTable } from "../../_components/MemberHistoryTable";
 import { SourceBadge } from "../../_components/SourceBadge";
 
@@ -16,6 +17,7 @@ export default async function MemberPage({ params }: { params: Promise<{ locale:
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
+      <EngagementTracker entityType="member" entityId={member.id} locale={locale} />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="text-sm font-semibold uppercase text-blue-800">

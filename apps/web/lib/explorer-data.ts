@@ -1,0 +1,698 @@
+import { sql } from "drizzle-orm";
+import { createDbSession } from "@cumsevoteaza/db";
+import { demoDataset, type Bill, type ChamberId, type ParliamentaryGroup, type SourceSnapshot, type Vote } from "@cumsevoteaza/parliament-model";
+
+export type SourceStatusFilter = "parsed" | "partial" | "failed";
+
+export interface ExplorerFilters {
+  year?: string;
+  month?: string;
+  chamber?: ChamberId;
+  sourceStatus?: SourceStatusFilter;
+  q?: string;
+  group?: string;
+}
+
+export interface ExplorerQuery {
+  limit?: number;
+  cursor?: string;
+  filters?: ExplorerFilters;
+}
+
+export interface VoteExplorerItem {
+  vote: Vote;
+  bill?: Bill;
+  source?: SourceSnapshot;
+  hotCount: number;
+}
+
+export interface BillExplorerItem {
+  bill: Bill;
+  submittedOn?: string;
+  latestEventOn?: string;
+  source?: SourceSnapshot;
+  voteCount: number;
+  hotCount: number;
+}
+
+export interface ExplorerPageData<T> {
+  items: T[];
+  nextCursor?: string;
+  hasMore: boolean;
+  sourceKind: "database" | "demo";
+}
+
+export interface DirectoryFilterOptions {
+  groups: ParliamentaryGroup[];
+}
+
+export interface HomeDashboardData {
+  latestVotes: VoteExplorerItem[];
+  latestBills: BillExplorerItem[];
+  mostViewed: DashboardItem[];
+  mostSearchedMembers: DashboardItem[];
+  trendingVotes: DashboardItem[];
+  trendingBills: DashboardItem[];
+  sourceKind: "database" | "demo";
+}
+
+export interface DashboardItem {
+  entityType: "member" | "bill" | "vote" | "party" | "search";
+  entityId?: string;
+  title: string;
+  href?: string;
+  count: number;
+}
+
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 30;
+
+export function parseExplorerFilters(input: Record<string, string | string[] | undefined>): ExplorerFilters {
+  const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
+  const year = first(input.year)?.match(/^\d{4}$/)?.[0];
+  const monthValue = first(input.month);
+  const monthNumber = monthValue ? Number(monthValue) : undefined;
+  const chamber = first(input.chamber);
+  const sourceStatus = first(input.sourceStatus);
+  const q = first(input.q)?.trim();
+  const group = first(input.group)?.trim();
+
+  return {
+    ...(year ? { year } : {}),
+    ...(monthNumber && monthNumber >= 1 && monthNumber <= 12 ? { month: String(monthNumber) } : {}),
+    ...(chamber === "senate" || chamber === "deputies" ? { chamber } : {}),
+    ...(sourceStatus === "parsed" || sourceStatus === "partial" || sourceStatus === "failed" ? { sourceStatus } : {}),
+    ...(q ? { q } : {}),
+    ...(group ? { group } : {})
+  };
+}
+
+export function encodeCursor(date: string, id: string): string {
+  return Buffer.from(JSON.stringify({ date, id }), "utf8").toString("base64url");
+}
+
+export function decodeCursor(cursor?: string): { date: string; id: string } | undefined {
+  if (!cursor) return undefined;
+  try {
+    const parsed = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as { date?: string; id?: string };
+    return parsed.date && parsed.id ? { date: parsed.date, id: parsed.id } : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function getDirectoryFilterOptions(): Promise<DirectoryFilterOptions> {
+  if (!process.env.DATABASE_URL) {
+    return { groups: demoDataset.groups };
+  }
+
+  const session = createDbSession();
+  try {
+    const rows = await session.db.execute<GroupRow>(sql`
+      select id, party_id, chamber, short_name, name, color
+      from parliamentary_groups
+      order by chamber, short_name
+    `);
+    return { groups: rows.map(mapGroupRow) };
+  } catch {
+    return { groups: demoDataset.groups };
+  } finally {
+    await session.close();
+  }
+}
+
+export async function getVoteExplorerData(query: ExplorerQuery = {}): Promise<ExplorerPageData<VoteExplorerItem>> {
+  const limit = normalizedLimit(query.limit);
+  if (!process.env.DATABASE_URL) return demoVoteExplorerData(limit, query.cursor);
+
+  const session = createDbSession();
+  try {
+    const filters = query.filters ?? {};
+    const cursor = decodeCursor(query.cursor);
+    const conditions = voteConditions(filters, cursor);
+    const where = conditions.length ? sql`where ${sql.join(conditions, sql` and `)}` : sql``;
+    const rows = await session.db.execute<VoteDirectoryRow>(sql`
+      select
+        v.id as vote_id,
+        v.bill_id as vote_bill_id,
+        v.chamber as vote_chamber,
+        v.title as vote_title,
+        v.held_on as vote_held_on,
+        v.vote_type as vote_type,
+        v.present as vote_present,
+        v.for_count as vote_for_count,
+        v.against as vote_against,
+        v.abstention as vote_abstention,
+        v.present_not_voting as vote_present_not_voting,
+        v.absent as vote_absent,
+        v.source_snapshot_id as vote_source_snapshot_id,
+        b.id as bill_id,
+        b.slug as bill_slug,
+        b.title as bill_title,
+        b.identifiers as bill_identifiers,
+        b.chamber_of_origin as bill_chamber_of_origin,
+        b.status as bill_status,
+        b.source_snapshot_ids as bill_source_snapshot_ids,
+        ss.id as source_id,
+        ss.source_url as source_url,
+        ss.fetched_at as source_fetched_at,
+        ss.content_hash as source_content_hash,
+        ss.parser as source_parser,
+        ss.parser_version as source_parser_version,
+        ss.status as source_status,
+        ss.notes as source_notes,
+        coalesce(h.hot_count, 0)::int as hot_count
+      from votes v
+      left join bills b on b.id = v.bill_id
+      left join source_snapshots ss on ss.id = v.source_snapshot_id
+      left join (
+        select entity_id, count(*)::int as hot_count
+        from content_reactions
+        where entity_type = 'vote' and reaction = 'hot'
+        group by entity_id
+      ) h on h.entity_id = v.id
+      ${where}
+      order by v.held_on desc, v.id desc
+      limit ${limit + 1}
+    `);
+
+    const visible = rows.slice(0, limit).map(mapVoteDirectoryRow);
+    const last = visible.at(-1);
+    return {
+      items: visible,
+      nextCursor: rows.length > limit && last ? encodeCursor(last.vote.heldOn, last.vote.id) : undefined,
+      hasMore: rows.length > limit,
+      sourceKind: "database"
+    };
+  } catch {
+    return demoVoteExplorerData(limit, query.cursor);
+  } finally {
+    await session.close();
+  }
+}
+
+export async function getBillExplorerData(query: ExplorerQuery = {}): Promise<ExplorerPageData<BillExplorerItem>> {
+  const limit = normalizedLimit(query.limit);
+  if (!process.env.DATABASE_URL) return demoBillExplorerData(limit, query.cursor);
+
+  const session = createDbSession();
+  try {
+    const filters = query.filters ?? {};
+    const cursor = decodeCursor(query.cursor);
+    const conditions = billConditions(filters, cursor);
+    const where = conditions.length ? sql`where ${sql.join(conditions, sql` and `)}` : sql``;
+    const rows = await session.db.execute<BillDirectoryRow>(sql`
+      with event_bounds as (
+        select bill_id, min(occurred_on) as submitted_on, max(occurred_on) as latest_event_on
+        from bill_events
+        group by bill_id
+      ),
+      vote_counts as (
+        select bill_id, count(*)::int as vote_count
+        from votes
+        where bill_id is not null
+        group by bill_id
+      ),
+      hot_counts as (
+        select entity_id, count(*)::int as hot_count
+        from content_reactions
+        where entity_type = 'bill' and reaction = 'hot'
+        group by entity_id
+      )
+      select
+        b.id as bill_id,
+        b.slug as bill_slug,
+        b.title as bill_title,
+        b.identifiers as bill_identifiers,
+        b.chamber_of_origin as bill_chamber_of_origin,
+        b.status as bill_status,
+        b.source_snapshot_ids as bill_source_snapshot_ids,
+        eb.submitted_on as submitted_on,
+        eb.latest_event_on as latest_event_on,
+        coalesce(vc.vote_count, 0)::int as vote_count,
+        coalesce(hc.hot_count, 0)::int as hot_count,
+        ss.id as source_id,
+        ss.source_url as source_url,
+        ss.fetched_at as source_fetched_at,
+        ss.content_hash as source_content_hash,
+        ss.parser as source_parser,
+        ss.parser_version as source_parser_version,
+        ss.status as source_status,
+        ss.notes as source_notes
+      from bills b
+      left join event_bounds eb on eb.bill_id = b.id
+      left join vote_counts vc on vc.bill_id = b.id
+      left join hot_counts hc on hc.entity_id = b.id
+      left join source_snapshots ss on ss.id = b.source_snapshot_ids->>0
+      ${where}
+      order by coalesce(eb.submitted_on, eb.latest_event_on, date '0001-01-01') desc, b.id desc
+      limit ${limit + 1}
+    `);
+
+    const visible = rows.slice(0, limit).map(mapBillDirectoryRow);
+    const last = visible.at(-1);
+    const cursorDate = last?.submittedOn ?? last?.latestEventOn;
+    return {
+      items: visible,
+      nextCursor: rows.length > limit && last && cursorDate ? encodeCursor(cursorDate, last.bill.id) : undefined,
+      hasMore: rows.length > limit,
+      sourceKind: "database"
+    };
+  } catch {
+    return demoBillExplorerData(limit, query.cursor);
+  } finally {
+    await session.close();
+  }
+}
+
+export async function getHotCount(entityType: "bill" | "vote", entityId: string): Promise<number> {
+  if (!process.env.DATABASE_URL) return 0;
+
+  const session = createDbSession();
+  try {
+    const rows = await session.db.execute<{ count: number }>(sql`
+      select count(*)::int as count
+      from content_reactions
+      where entity_type = ${entityType} and entity_id = ${entityId} and reaction = 'hot'
+    `);
+    return rows[0]?.count ?? 0;
+  } catch {
+    return 0;
+  } finally {
+    await session.close();
+  }
+}
+
+export async function getHomeDashboardData(locale: string): Promise<HomeDashboardData> {
+  const [votes, bills] = await Promise.all([
+    getVoteExplorerData({ limit: 5 }),
+    getBillExplorerData({ limit: 5 })
+  ]);
+
+  if (!process.env.DATABASE_URL) {
+    return {
+      latestVotes: votes.items,
+      latestBills: bills.items,
+      mostViewed: [],
+      mostSearchedMembers: [],
+      trendingVotes: [],
+      trendingBills: [],
+      sourceKind: votes.sourceKind === "database" || bills.sourceKind === "database" ? "database" : "demo"
+    };
+  }
+
+  const session = createDbSession();
+  try {
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const [viewRows, searchRows, hotVoteRows, hotBillRows] = await Promise.all([
+      session.db.execute<AggregateRow>(sql`
+        select entity_type, entity_id, count(*)::int as count
+        from engagement_events
+        where event_type = 'page_view' and occurred_at >= ${monthStart} and entity_id is not null
+        group by entity_type, entity_id
+        order by count(*) desc
+        limit 5
+      `),
+      session.db.execute<AggregateRow>(sql`
+        select 'member' as entity_type, query_text as entity_id, count(*)::int as count
+        from engagement_events
+        where event_type = 'search' and entity_type = 'member' and occurred_at >= ${monthStart} and query_text is not null
+        group by query_text
+        order by count(*) desc
+        limit 5
+      `),
+      session.db.execute<AggregateRow>(sql`
+        select 'vote' as entity_type, entity_id, count(*)::int as count
+        from content_reactions
+        where entity_type = 'vote' and reaction = 'hot' and created_at >= ${monthStart}
+        group by entity_id
+        order by count(*) desc
+        limit 5
+      `),
+      session.db.execute<AggregateRow>(sql`
+        select 'bill' as entity_type, entity_id, count(*)::int as count
+        from content_reactions
+        where entity_type = 'bill' and reaction = 'hot' and created_at >= ${monthStart}
+        group by entity_id
+        order by count(*) desc
+        limit 5
+      `)
+    ]);
+
+    return {
+      latestVotes: votes.items,
+      latestBills: bills.items,
+      mostViewed: await resolveDashboardItems(session.db, viewRows, locale),
+      mostSearchedMembers: searchRows.map((row) => ({
+        entityType: "search",
+        title: row.entity_id ?? "",
+        href: `/${locale}/members?q=${encodeURIComponent(row.entity_id ?? "")}`,
+        count: row.count
+      })),
+      trendingVotes: await resolveDashboardItems(session.db, hotVoteRows, locale),
+      trendingBills: await resolveDashboardItems(session.db, hotBillRows, locale),
+      sourceKind: "database"
+    };
+  } catch {
+    return {
+      latestVotes: votes.items,
+      latestBills: bills.items,
+      mostViewed: [],
+      mostSearchedMembers: [],
+      trendingVotes: [],
+      trendingBills: [],
+      sourceKind: votes.sourceKind === "database" || bills.sourceKind === "database" ? "database" : "demo"
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+function voteConditions(filters: ExplorerFilters, cursor?: { date: string; id: string }) {
+  const conditions = [];
+  const range = dateRange(filters);
+  if (range) {
+    conditions.push(sql`v.held_on >= ${range.start}::date`);
+    conditions.push(sql`v.held_on < ${range.end}::date`);
+  }
+  if (filters.chamber) conditions.push(sql`v.chamber = ${filters.chamber}`);
+  if (filters.sourceStatus) conditions.push(sql`ss.status = ${filters.sourceStatus}`);
+  if (filters.q) {
+    const pattern = `%${filters.q}%`;
+    conditions.push(sql`(v.title ilike ${pattern} or b.title ilike ${pattern} or b.identifiers::text ilike ${pattern})`);
+  }
+  if (filters.group) {
+    conditions.push(sql`exists (
+      select 1
+      from group_vote_totals gvt
+      left join parliamentary_groups pg on pg.id = gvt.group_id
+      where gvt.vote_id = v.id and (gvt.group_id = ${filters.group} or pg.party_id = ${filters.group})
+    )`);
+  }
+  if (cursor) conditions.push(sql`(v.held_on < ${cursor.date}::date or (v.held_on = ${cursor.date}::date and v.id < ${cursor.id}))`);
+  return conditions;
+}
+
+function billConditions(filters: ExplorerFilters, cursor?: { date: string; id: string }) {
+  const conditions = [];
+  const sortDate = sql`coalesce(eb.submitted_on, eb.latest_event_on, date '0001-01-01')`;
+  const range = dateRange(filters);
+  if (range) {
+    conditions.push(sql`${sortDate} >= ${range.start}::date`);
+    conditions.push(sql`${sortDate} < ${range.end}::date`);
+  }
+  if (filters.chamber) conditions.push(sql`b.chamber_of_origin = ${filters.chamber}`);
+  if (filters.sourceStatus) conditions.push(sql`ss.status = ${filters.sourceStatus}`);
+  if (filters.q) {
+    const pattern = `%${filters.q}%`;
+    conditions.push(sql`(b.title ilike ${pattern} or b.identifiers::text ilike ${pattern})`);
+  }
+  if (filters.group) {
+    conditions.push(sql`exists (
+      select 1
+      from bill_sponsors bs
+      join member_group_memberships mgm on mgm.member_id = bs.member_id
+      left join parliamentary_groups pg on pg.id = mgm.group_id
+      where bs.bill_id = b.id and (mgm.group_id = ${filters.group} or pg.party_id = ${filters.group})
+    )`);
+  }
+  if (cursor) conditions.push(sql`(${sortDate} < ${cursor.date}::date or (${sortDate} = ${cursor.date}::date and b.id < ${cursor.id}))`);
+  return conditions;
+}
+
+function dateRange(filters: ExplorerFilters): { start: string; end: string } | undefined {
+  if (!filters.year) return undefined;
+  const year = Number(filters.year);
+  if (!Number.isInteger(year)) return undefined;
+  const month = filters.month ? Number(filters.month) : undefined;
+  if (month) {
+    const start = `${year}-${String(month).padStart(2, "0")}-01`;
+    const next = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    return { start, end: next };
+  }
+  return { start: `${year}-01-01`, end: `${year + 1}-01-01` };
+}
+
+async function resolveDashboardItems(db: ReturnType<typeof createDbSession>["db"], rows: AggregateRow[], locale: string): Promise<DashboardItem[]> {
+  return Promise.all(rows.map((row) => resolveDashboardItem(db, row, locale)));
+}
+
+async function resolveDashboardItem(db: ReturnType<typeof createDbSession>["db"], row: AggregateRow, locale: string): Promise<DashboardItem> {
+  if (row.entity_type === "vote" && row.entity_id) {
+    const records = await db.execute<{ id: string; title: string }>(sql`select id, title from votes where id = ${row.entity_id} limit 1`);
+    return { entityType: "vote", entityId: row.entity_id, title: records[0]?.title ?? row.entity_id, href: `/${locale}/votes/${row.entity_id}`, count: row.count };
+  }
+  if (row.entity_type === "bill" && row.entity_id) {
+    const records = await db.execute<{ slug: string; title: string }>(sql`select slug, title from bills where id = ${row.entity_id} limit 1`);
+    return { entityType: "bill", entityId: row.entity_id, title: records[0]?.title ?? row.entity_id, href: `/${locale}/bills/${records[0]?.slug ?? row.entity_id}`, count: row.count };
+  }
+  if (row.entity_type === "member" && row.entity_id) {
+    const records = await db.execute<{ slug: string; display_name: string }>(sql`select slug, display_name from members where id = ${row.entity_id} limit 1`);
+    return { entityType: "member", entityId: row.entity_id, title: records[0]?.display_name ?? row.entity_id, href: `/${locale}/members/${records[0]?.slug ?? row.entity_id}`, count: row.count };
+  }
+  if (row.entity_type === "party" && row.entity_id) {
+    const records = await db.execute<{ slug: string; short_name: string; name: string }>(sql`select slug, short_name, name from parties where id = ${row.entity_id} limit 1`);
+    return { entityType: "party", entityId: row.entity_id, title: records[0]?.short_name ?? records[0]?.name ?? row.entity_id, href: `/${locale}/parties/${records[0]?.slug ?? row.entity_id}`, count: row.count };
+  }
+  return { entityType: "search", entityId: row.entity_id ?? undefined, title: row.entity_id ?? "-", count: row.count };
+}
+
+function demoVoteExplorerData(limit: number, cursor?: string): ExplorerPageData<VoteExplorerItem> {
+  const decoded = decodeCursor(cursor);
+  const sorted = [...demoDataset.votes].sort((a, b) => b.heldOn.localeCompare(a.heldOn) || b.id.localeCompare(a.id));
+  const startIndex = decoded ? sorted.findIndex((vote) => vote.heldOn === decoded.date && vote.id === decoded.id) + 1 : 0;
+  const rows = sorted.slice(Math.max(0, startIndex), Math.max(0, startIndex) + limit + 1);
+  const visible = rows.slice(0, limit).map((vote) => ({
+    vote,
+    bill: demoDataset.bills.find((bill) => bill.id === vote.billId),
+    source: demoDataset.sourceSnapshots.find((source) => source.id === vote.sourceSnapshotId),
+    hotCount: 0
+  }));
+  const last = visible.at(-1);
+  return {
+    items: visible,
+    nextCursor: rows.length > limit && last ? encodeCursor(last.vote.heldOn, last.vote.id) : undefined,
+    hasMore: rows.length > limit,
+    sourceKind: "demo"
+  };
+}
+
+function demoBillExplorerData(limit: number, cursor?: string): ExplorerPageData<BillExplorerItem> {
+  const decoded = decodeCursor(cursor);
+  const sorted = demoDataset.bills
+    .map((bill) => {
+      const events = demoDataset.billEvents.filter((event) => event.billId === bill.id).sort((a, b) => a.occurredOn.localeCompare(b.occurredOn));
+      return {
+        bill,
+        submittedOn: events[0]?.occurredOn,
+        latestEventOn: events.at(-1)?.occurredOn,
+        source: demoDataset.sourceSnapshots.find((source) => bill.sourceSnapshotIds.includes(source.id)),
+        voteCount: demoDataset.votes.filter((vote) => vote.billId === bill.id).length,
+        hotCount: 0
+      };
+    })
+    .sort((a, b) => (b.submittedOn ?? b.latestEventOn ?? "").localeCompare(a.submittedOn ?? a.latestEventOn ?? "") || b.bill.id.localeCompare(a.bill.id));
+  const startIndex = decoded ? sorted.findIndex((item) => (item.submittedOn ?? item.latestEventOn) === decoded.date && item.bill.id === decoded.id) + 1 : 0;
+  const rows = sorted.slice(Math.max(0, startIndex), Math.max(0, startIndex) + limit + 1);
+  const visible = rows.slice(0, limit);
+  const last = visible.at(-1);
+  const cursorDate = last?.submittedOn ?? last?.latestEventOn;
+  return {
+    items: visible,
+    nextCursor: rows.length > limit && last && cursorDate ? encodeCursor(cursorDate, last.bill.id) : undefined,
+    hasMore: rows.length > limit,
+    sourceKind: "demo"
+  };
+}
+
+function normalizedLimit(limit = DEFAULT_LIMIT): number {
+  if (!Number.isFinite(limit)) return DEFAULT_LIMIT;
+  return Math.max(1, Math.min(MAX_LIMIT, Math.floor(limit)));
+}
+
+function mapVoteDirectoryRow(row: VoteDirectoryRow): VoteExplorerItem {
+  const vote: Vote = {
+    id: row.vote_id,
+    billId: row.vote_bill_id ?? undefined,
+    chamber: row.vote_chamber,
+    title: row.vote_title,
+    heldOn: dateString(row.vote_held_on),
+    voteType: row.vote_type,
+    totals: {
+      present: Number(row.vote_present),
+      for: Number(row.vote_for_count),
+      against: Number(row.vote_against),
+      abstention: Number(row.vote_abstention),
+      presentNotVoting: Number(row.vote_present_not_voting),
+      absent: row.vote_absent === null || row.vote_absent === undefined ? undefined : Number(row.vote_absent)
+    },
+    sourceSnapshotId: row.vote_source_snapshot_id
+  };
+
+  return {
+    vote,
+    bill: row.bill_id ? mapBillFromRow(row) : undefined,
+    source: row.source_id ? mapSourceFromRow(row) : undefined,
+    hotCount: Number(row.hot_count ?? 0)
+  };
+}
+
+function mapBillDirectoryRow(row: BillDirectoryRow): BillExplorerItem {
+  return {
+    bill: {
+      id: row.bill_id,
+      slug: row.bill_slug,
+      title: row.bill_title,
+      identifiers: jsonRecord(row.bill_identifiers),
+      chamberOfOrigin: row.bill_chamber_of_origin === "senate" || row.bill_chamber_of_origin === "deputies" ? row.bill_chamber_of_origin : "unknown",
+      status: row.bill_status,
+      sourceSnapshotIds: jsonStringArray(row.bill_source_snapshot_ids)
+    },
+    submittedOn: row.submitted_on ? dateString(row.submitted_on) : undefined,
+    latestEventOn: row.latest_event_on ? dateString(row.latest_event_on) : undefined,
+    source: row.source_id ? mapSourceFromRow(row) : undefined,
+    voteCount: Number(row.vote_count ?? 0),
+    hotCount: Number(row.hot_count ?? 0)
+  };
+}
+
+function mapBillFromRow(row: VoteDirectoryRow): Bill {
+  return {
+    id: row.bill_id!,
+    slug: row.bill_slug!,
+    title: row.bill_title!,
+    identifiers: jsonRecord(row.bill_identifiers),
+    chamberOfOrigin: row.bill_chamber_of_origin === "senate" || row.bill_chamber_of_origin === "deputies" ? row.bill_chamber_of_origin : "unknown",
+    status: row.bill_status!,
+    sourceSnapshotIds: jsonStringArray(row.bill_source_snapshot_ids)
+  };
+}
+
+function mapSourceFromRow(row: SourceColumns): SourceSnapshot {
+  return {
+    id: row.source_id!,
+    sourceUrl: row.source_url!,
+    fetchedAt: timestampString(row.source_fetched_at ?? new Date(0)),
+    contentHash: row.source_content_hash!,
+    parser: row.source_parser!,
+    parserVersion: row.source_parser_version!,
+    status: row.source_status!,
+    notes: row.source_notes ?? undefined
+  };
+}
+
+function mapGroupRow(row: GroupRow): ParliamentaryGroup {
+  return {
+    id: row.id,
+    partyId: row.party_id ?? undefined,
+    chamber: row.chamber,
+    shortName: row.short_name,
+    name: row.name,
+    color: row.color
+  };
+}
+
+function jsonRecord(value: unknown): Record<string, string> {
+  if (!value) return {};
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value) as Record<string, string>;
+    } catch {
+      return {};
+    }
+  }
+  return value as Record<string, string>;
+}
+
+function jsonStringArray(value: unknown): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function dateString(value: string | Date): string {
+  return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
+}
+
+function timestampString(value: string | Date): string {
+  return value instanceof Date ? value.toISOString() : String(value);
+}
+
+interface SourceColumns {
+  [key: string]: unknown;
+  source_id?: string | null;
+  source_url?: string | null;
+  source_fetched_at?: string | Date | null;
+  source_content_hash?: string | null;
+  source_parser?: string | null;
+  source_parser_version?: string | null;
+  source_status?: "parsed" | "partial" | "failed" | null;
+  source_notes?: string | null;
+}
+
+interface VoteDirectoryRow extends SourceColumns {
+  [key: string]: unknown;
+  vote_id: string;
+  vote_bill_id: string | null;
+  vote_chamber: ChamberId;
+  vote_title: string;
+  vote_held_on: string | Date;
+  vote_type: string;
+  vote_present: number;
+  vote_for_count: number;
+  vote_against: number;
+  vote_abstention: number;
+  vote_present_not_voting: number;
+  vote_absent: number | null;
+  vote_source_snapshot_id: string;
+  bill_id: string | null;
+  bill_slug: string | null;
+  bill_title: string | null;
+  bill_identifiers: unknown;
+  bill_chamber_of_origin: string | null;
+  bill_status: string | null;
+  bill_source_snapshot_ids: unknown;
+  hot_count: number;
+}
+
+interface BillDirectoryRow extends SourceColumns {
+  [key: string]: unknown;
+  bill_id: string;
+  bill_slug: string;
+  bill_title: string;
+  bill_identifiers: unknown;
+  bill_chamber_of_origin: string;
+  bill_status: string;
+  bill_source_snapshot_ids: unknown;
+  submitted_on: string | Date | null;
+  latest_event_on: string | Date | null;
+  vote_count: number;
+  hot_count: number;
+}
+
+interface GroupRow {
+  [key: string]: unknown;
+  id: string;
+  party_id: string | null;
+  chamber: ChamberId;
+  short_name: string;
+  name: string;
+  color: string;
+}
+
+interface AggregateRow {
+  [key: string]: unknown;
+  entity_type: "member" | "bill" | "vote" | "party" | "search";
+  entity_id: string | null;
+  count: number;
+}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { chamberLabels } from "@cumsevoteaza/parliament-model";
 import { getMemberDirectoryData } from "@/lib/data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
+import { SearchEngagementTracker } from "../_components/EngagementTracker";
 
 export default async function MembersPage({
   params,
@@ -18,6 +19,7 @@ export default async function MembersPage({
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
+      <SearchEngagementTracker entityType="member" query={filters.q} locale={locale} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-sm font-semibold uppercase text-blue-800">{messages.home.eyebrow}</div>

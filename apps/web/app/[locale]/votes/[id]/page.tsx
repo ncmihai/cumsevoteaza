@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDate, voteChoiceLabels } from "@cumsevoteaza/parliament-model";
 import { getVotePageData } from "@/lib/data";
+import { getHotCount } from "@/lib/explorer-data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
+import { EngagementTracker } from "../../_components/EngagementTracker";
+import { HotButton } from "../../_components/HotButton";
 import { SourceBadge } from "../../_components/SourceBadge";
 import { Stat } from "../../_components/Stat";
 import { VoteExplorer } from "../../_components/VoteExplorer";
@@ -14,9 +17,11 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
   const data = await getVotePageData(id);
   if (!data) notFound();
   const { vote, bill, source, groups, members, groupTotals, individualVotes, seatVotes, sourceKind } = data;
+  const hotCount = await getHotCount("vote", vote.id);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
+      <EngagementTracker entityType="vote" entityId={vote.id} locale={locale} />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="text-sm font-semibold uppercase text-blue-800">{formatDate(vote.heldOn, locale)}</div>
@@ -28,6 +33,7 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
           ) : null}
         </div>
         <div className="flex flex-col items-start gap-2">
+          <HotButton entityType="vote" entityId={vote.id} initialCount={hotCount} />
           {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
           <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
         </div>

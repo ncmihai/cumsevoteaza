@@ -126,6 +126,32 @@ implementation steps.
 - [ ] Add a first-class joint-vote model/parser if joint Chamber/Senate sittings should be visible as their own vote type.
 - [ ] Re-check Vercel Cron suitability after real daily sync runs; move to Render Cron if duration/reliability becomes a problem.
 
+## Proposed Milestone — Public-Ready Explorer UX
+
+- [x] Replace fixed latest-30 vote/project directories with paginated server queries.
+- [x] Load the first 10 vote/project cards, then fetch more as the user scrolls or presses a load-more control.
+- [x] Add loading and skeleton states for initial page load and incremental loading.
+- [x] Add filters for votes and projects:
+  - year
+  - month
+  - chamber
+  - party/group sponsor where the official data supports it
+  - source/status health
+- [ ] Add a later factual category model for projects, starting with conservative tags such as budget, tax, justice, health, education, defense, labor, administration, environment, EU, and procedure.
+- [ ] Keep categories inspectable and source-linked; do not infer ideological labels or scores in v1.
+- [x] Add database indexes for directory sort/filter fields before broad 2024-present backfill becomes large.
+- [x] Replace the landing page demo cards with DB-backed dynamic panels:
+  - latest votes
+  - latest submitted projects
+  - most searched members/projects
+  - most viewed pages
+  - recent high-participation or close votes
+  - explainers for Parliament roles, committees, and legislative stages
+- [x] Add a minimal event/analytics table for private first-party usage counts, avoiding personal tracking.
+- [x] Add anonymous `hot` reactions for vote and project cards/pages.
+- [ ] Add automated UI tests for directory filters, pagination/load-more, loading states, and landing-page dynamic panels.
+- [ ] Set `ANALYTICS_SALT` in Vercel so production can record anonymous views, searches, and hot reactions.
+
 ## Verification
 
 - `npm run test` — passed.
@@ -211,6 +237,12 @@ implementation steps.
     - Follow-up February batches imported 39 more Deputies votes and skipped 21 unsupported/duplicate discoveries with 0 partials and 0 failures.
     - Current Neon Deputies vote quality after the guarded batches: 64 parsed visible Deputies votes, 0 partial, 0 failed, 0 generic `VOT ELECTRONIC` titles.
     - Current Deputies vote discovery queue: 287 pending, 70 imported, 40 skipped.
+- Public-ready explorer UX checks:
+  - Added migration `0003_chubby_whiplash` for engagement tables and directory indexes.
+  - Applied the migration to the configured database; `engagement_events` and `content_reactions` exist.
+  - `/ro`, `/ro/votes?year=2025&month=12`, and `/ro/bills?q=PL-x` returned `200` locally.
+  - `/api/directory/votes?limit=3&year=2025` and `/api/directory/bills?limit=3&q=PL-x` returned paginated JSON locally.
+  - `/api/reactions/hot` returns a controlled disabled response until `ANALYTICS_SALT` is configured.
 
 ## Import Proof
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPartyPageData } from "@/lib/data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
+import { EngagementTracker } from "../../_components/EngagementTracker";
 
 export default async function PartyPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale: rawLocale, slug } = await params;
@@ -13,6 +14,7 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
+      <EngagementTracker entityType="party" entityId={party.id} locale={locale} />
       <div className="flex items-center gap-3">
         <span className="h-4 w-4 rounded-full" style={{ backgroundColor: party.color }} />
         <div className="text-sm font-semibold uppercase text-blue-800">{party.shortName}</div>
