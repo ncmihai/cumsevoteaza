@@ -244,3 +244,22 @@ Append-only implementation history.
 - Live request from the current runtime to the CDEP yearly list returns `404`;
   importer now stores this as a failed `deputies-yearly-list` source snapshot so
   the issue is inspectable instead of being mistaken for an empty year.
+
+## 2026-05-16 — Senate As Complementary Lifecycle Source
+
+- Updated Senate bill parsing to read dated lifecycle rows instead of relying
+  only on broad page text.
+- Senate timeline rows now create factual bill events with the visible date,
+  chamber signal, and source URL.
+- Senate bill imports now enqueue nested official links found in those timeline
+  rows:
+  - Senate vote details from `VoturiPlenDetaliu.aspx`.
+  - Chamber nominal vote links from `cdep.ro/pls/steno/evot2015`.
+  - Chamber bill links from `upl_pck2015.proiect`.
+- Added parser tests for mixed Senate and Deputies timeline/vote links.
+- Verified:
+  - `npm run test` passed.
+  - `npm run typecheck` passed.
+  - `npm run build` passed outside the sandbox.
+  - `npm run ingest:import:pending -- --max-imports=1` imported `1` queued
+    source with no partials or failures.

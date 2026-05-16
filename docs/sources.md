@@ -33,6 +33,11 @@ Observed bill page structure:
   form says the number can start with `L`, `B`, `BP`, or `PLX`; importers
   normalize these as aliases and prefer the established `L` identifier when
   an official page links multiple identifiers for the same project.
+- Senate bill pages can act as a complementary lifecycle source. Dated timeline
+  rows may expose Senate lifecycle events plus nested official links to Senate
+  vote details, Chamber nominal vote pages, and Chamber bill detail pages. The
+  importer stores these links as resumable discoveries instead of trying to
+  infer missing lifecycle data.
 
 ## Chamber of Deputies
 

@@ -110,6 +110,7 @@ implementation steps.
 - [x] Add identifier normalization for Senate `B`, `BP`, `L`, compact `PLX`, and Chamber `PL-x`.
 - [x] Add generated Senate discovery prefixes via `--senate-prefixes=B,BP,L,PLX`.
 - [x] Add a dedicated Deputies yearly-list parser for `upl_pck2015.lista?anp=<year>` as the project backbone when the official endpoint is reachable.
+- [x] Use Senate bill timelines as a complementary lifecycle/vote source by parsing dated lifecycle rows and nested Senate/Deputies vote or bill links.
 - [x] Apply the new migration to Neon before deploying the cron route.
 - [x] Add `CRON_SECRET` in Vercel before enabling cron in production.
 - [ ] Tune Chamber seed/discovery URLs against full official 2024-present list pages before running a full backfill.
@@ -172,6 +173,8 @@ implementation steps.
   - Identifier discovery smoke passed in Neon for `B1-B2`, `BP1-BP2`, and `PLX1-PLX2` 2025 candidates: discovered `6`.
   - Deputies yearly-list parser tests passed against fixture-style rows.
   - Live Deputies yearly-list request from the current runtime returns `404`; importer now records a failed `deputies-yearly-list` source snapshot instead of silently treating it as empty.
+  - Senate lifecycle parser tests passed; Senate bill imports now enqueue nested official vote/bill links found in dated timeline rows.
+  - Pending-import smoke imported `1` queued official source with `0` partials and `0` failures.
 
 ## Import Proof
 

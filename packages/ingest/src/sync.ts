@@ -215,6 +215,7 @@ async function importDiscovery(row: typeof schema.sourceDiscoveries.$inferSelect
       const parsed = parseSenateBill(html, row.sourceUrl);
       await persistSenateBill(parsed);
       await saveNestedDiscoveries(nested, parsed.sourceSnapshot.id);
+      await saveNestedDiscoveries(parsed.discoveredSources, parsed.sourceSnapshot.id);
       await markDiscovery(row.id, "imported", parsed.sourceSnapshot.id);
       return "imported";
     }

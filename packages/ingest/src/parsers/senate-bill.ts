@@ -16,6 +16,14 @@ export interface ParsedSenateBill {
   events: BillEvent[];
   sponsors: BillSponsor[];
   documents: DocumentSource[];
+  discoveredSources: Array<{
+    chamber: "senate" | "deputies";
+    kind: "vote" | "bill";
+    sourceUrl: string;
+    officialId?: string;
+    title?: string;
+    discoveredOn?: string;
+  }>;
 }
 
 export function parseSenateBill(html: string, sourceUrl: string): ParsedSenateBill {
@@ -51,40 +59,7 @@ export function parseSenateBill(html: string, sourceUrl: string): ParsedSenateBi
       };
     });
 
-  const events: BillEvent[] = [];
-  const registeredDate = inferDate(allText);
-  if (/inregistrat|înregistrat/i.test(allText) && registeredDate) {
-    events.push({
-      id: `event-${billId}-registered`,
-      billId,
-      occurredOn: registeredDate,
-      chamber: "senate",
-      label: "Înregistrat la Senat pentru dezbatere",
-      sourceUrl
-    });
-  }
-  const adoptedDate = inferDateNear(allText, "adoptat");
-  if (/adoptat[^.]+Senat/i.test(allText) && adoptedDate) {
-    events.push({
-      id: `event-${billId}-adopted-senate`,
-      billId,
-      occurredOn: adoptedDate,
-      chamber: "senate",
-      label: "Adoptat de Senat",
-      sourceUrl
-    });
-  }
-  const sentDeputiesDate = inferDateNear(allText, "Camera Deput");
-  if (/Camera Deputa/i.test(allText) && sentDeputiesDate) {
-    events.push({
-      id: `event-${billId}-sent-deputies`,
-      billId,
-      occurredOn: sentDeputiesDate,
-      chamber: "deputies",
-      label: "Înregistrat sau transmis la Camera Deputaților",
-      sourceUrl
-    });
-  }
+  const timeline = extractTimeline($, billId, sourceUrl);
 
   return {
     sourceSnapshot,
@@ -97,7 +72,7 @@ export function parseSenateBill(html: string, sourceUrl: string): ParsedSenateBi
       status: /adoptat/i.test(allText) ? "Adoptat" : "unknown",
       sourceSnapshotIds: [sourceSnapshot.id]
     },
-    events,
+    events: timeline.events,
     sponsors: [
       {
         id: `sponsor-${billId}-unknown`,
@@ -106,8 +81,101 @@ export function parseSenateBill(html: string, sourceUrl: string): ParsedSenateBi
         name: /Guvern/i.test(allText) ? "Guvernul României" : "Inițiator necunoscut"
       }
     ],
-    documents
+    documents,
+    discoveredSources: timeline.discoveredSources
   };
+}
+
+function extractTimeline($: cheerio.CheerioAPI, billId: string, sourceUrl: string) {
+  const events: BillEvent[] = [];
+  const discoveredSources: ParsedSenateBill["discoveredSources"] = [];
+
+  $("tr").each((_, row) => {
+    const rowText = cleanText($(row).text());
+    const occurredOn = inferDate(rowText);
+    if (!occurredOn || !isTimelineRow(rowText)) return;
+    const chamber = chamberFromTimelineRow(rowText);
+    const label = timelineLabel(rowText);
+    const rowId = `event-${billId}-${occurredOn}-${slugify(label).slice(0, 56)}`;
+    events.push({
+      id: rowId,
+      billId,
+      occurredOn,
+      chamber,
+      label,
+      sourceUrl
+    });
+
+    $(row)
+      .find("a[href]")
+      .each((_, link) => {
+        const href = $(link).attr("href");
+        if (!href || href.startsWith("javascript:")) return;
+        const absoluteUrl = new URL(href.replace(/\\/g, "/"), sourceUrl).toString();
+        if (/VoturiPlenDetaliu\.aspx/i.test(absoluteUrl)) {
+          discoveredSources.push({
+            chamber: "senate",
+            kind: "vote",
+            sourceUrl: absoluteUrl,
+            title: cleanText($(link).text()) || "rezultat vot",
+            discoveredOn: occurredOn
+          });
+        }
+        if (/cdep\.ro\/pls\/steno\/evot2015\.Nominal/i.test(absoluteUrl) || /cdep\.ro\/pls\/steno\/evot2015/i.test(absoluteUrl)) {
+          discoveredSources.push({
+            chamber: "deputies",
+            kind: "vote",
+            sourceUrl: absoluteUrl,
+            title: cleanText($(link).text()) || "rezultat vot",
+            discoveredOn: occurredOn
+          });
+        }
+        if (/cdep\.ro\/pls\/proiecte\/upl_pck2015\.proiect/i.test(absoluteUrl)) {
+          discoveredSources.push({
+            chamber: "deputies",
+            kind: "bill",
+            sourceUrl: absoluteUrl,
+            title: cleanText($(link).text()) || "fișă Camera Deputaților",
+            discoveredOn: occurredOn
+          });
+        }
+      });
+  });
+
+  if (events.length === 0) {
+    const allText = cleanText($("body").text());
+    const registeredDate = inferDate(allText);
+    if (/inregistrat|înregistrat/i.test(allText) && registeredDate) {
+      events.push({
+        id: `event-${billId}-registered`,
+        billId,
+        occurredOn: registeredDate,
+        chamber: "senate",
+        label: "Înregistrat la Senat pentru dezbatere",
+        sourceUrl
+      });
+    }
+  }
+
+  return {
+    events: uniqueBy(events, (event) => event.id),
+    discoveredSources: uniqueBy(discoveredSources, (source) => source.sourceUrl)
+  };
+}
+
+function isTimelineRow(text: string): boolean {
+  return /(înregistrat|inregistrat|prezentare|trimis|primit|adoptat|respins|înscris|inscris|dezbatere|rezultat vot|promulgat|publicat)/i.test(text);
+}
+
+function chamberFromTimelineRow(text: string): "senate" | "deputies" | "joint" | "unknown" {
+  if (/\bCD\b|Camera Deput/i.test(text)) return "deputies";
+  if (/\bSE\b|Senat/i.test(text)) return "senate";
+  if (/\bPA\b|promulgat|Monitorul Oficial/i.test(text)) return "unknown";
+  return "unknown";
+}
+
+function timelineLabel(text: string): string {
+  return cleanText(text.replace(/^\d{2}[-/.]\d{2}[-/.]\d{4}\s*/, "")).slice(0, 500);
 }
 
 function extractTitle($: cheerio.CheerioAPI, senateId: string): string {
@@ -150,12 +218,16 @@ function normalize(value: string): string {
 }
 
 function inferDate(text: string): string | undefined {
-  const match = text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  const match = text.match(/(\d{2})[-/.](\d{2})[-/.](\d{4})/);
   return match ? `${match[3]}-${match[2]}-${match[1]}` : undefined;
 }
 
-function inferDateNear(text: string, marker: string): string | undefined {
-  const index = text.toLowerCase().indexOf(marker.toLowerCase());
-  if (index === -1) return inferDate(text);
-  return inferDate(text.slice(Math.max(0, index - 200), index + 200));
+function uniqueBy<T>(items: T[], getKey: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = getKey(item);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }

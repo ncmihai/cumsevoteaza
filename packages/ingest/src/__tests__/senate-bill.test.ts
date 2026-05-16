@@ -14,4 +14,45 @@ describe("parseSenateBill", () => {
     expect(parsed.events.length).toBeGreaterThan(0);
     expect(parsed.documents[0]?.url).toContain("25L316FS.pdf");
   });
+
+  it("extracts lifecycle rows and vote discoveries from Senate timelines", () => {
+    const html = `
+      <html>
+        <body>
+          <table>
+            <tr><td>Număr de înregistrare Senat:</td><td>L34/2025</td></tr>
+            <tr><td>Număr de înregistrare Camera Deputaților:</td><td>PLX6/2025</td></tr>
+          </table>
+          <h5>Proiect de lege privind controlul utilizării spațiului aerian național</h5>
+          <table>
+            <tr>
+              <td>19-02-2025</td>
+              <td>adoptat de Camera Deputatilor <a href="https://www.cdep.ro/pls/steno/evot2015.Nominal?idv=35953">rezultat vot</a> pentru=196, contra=99, abtineri=2</td>
+              <td>CD</td>
+            </tr>
+            <tr>
+              <td>26-02-2025</td>
+              <td>adoptat de Senat <a href="/VoturiPlenDetaliu.aspx?AppID=abc&Cod=123&Data=2025-02-26">rezultat vot</a> pentru=78 contra=11 abțineri=2</td>
+              <td>SE</td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const parsed = parseSenateBill(html, "https://www.senat.ro/legis/lista.aspx?an_cls=2025&nr_cls=L34");
+
+    expect(parsed.events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ chamber: "deputies", occurredOn: "2025-02-19" }),
+        expect.objectContaining({ chamber: "senate", occurredOn: "2025-02-26" })
+      ])
+    );
+    expect(parsed.discoveredSources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ chamber: "deputies", kind: "vote", discoveredOn: "2025-02-19" }),
+        expect.objectContaining({ chamber: "senate", kind: "vote", discoveredOn: "2025-02-26" })
+      ])
+    );
+  });
 });
