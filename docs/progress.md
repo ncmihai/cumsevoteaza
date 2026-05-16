@@ -193,3 +193,13 @@ Append-only implementation history.
   - The migration applied to local Docker Postgres.
   - The migration applied to Neon.
 - Local Senate discovery against the default Senate list/search page found no exposed result links, so full historical scraping still needs tuned official list seeds before the first real backfill run.
+
+## 2026-05-16 — Senate Generated Discovery Smoke
+
+- Added bounded generated Senate discovery using official
+  `Lista.aspx?an_cls=<year>&nr_cls=L<number>` search URLs.
+- Added `ingest:import:pending` for controlled import batches after discovery.
+- Verified against Neon with a one-row smoke:
+  - `npm run ingest:discover:senate -- --years=2025 --discovery-limit=0 --senate-from=316 --senate-to=316`
+  - `npm run ingest:import:pending -- --max-imports=1`
+  - Result: discovered `1`, imported `1`.

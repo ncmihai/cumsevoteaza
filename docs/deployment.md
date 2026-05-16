@@ -72,6 +72,15 @@ npm run ingest:sync:daily -- --max-imports=30
 Use the backfill command locally or from a longer-running worker first. Use the
 daily sync command for the same bounded workflow that Vercel Cron calls.
 
+For Senate backfill, the official search form can be seeded with a bounded
+number range:
+
+```bash
+npm run ingest:discover:senate -- --years=2025 --senate-from=1 --senate-to=700
+```
+
+Start with a narrow range, verify imports, then widen it.
+
 ## Git Flow
 
 Use `origin` for the canonical development repo and a separate deployment remote

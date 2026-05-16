@@ -354,7 +354,9 @@ function syncOptions() {
     years: years && years.length > 0 ? years : undefined,
     maxImports: numberFlag("max-imports"),
     maxRetries: numberFlag("max-retries"),
-    discoveryLimit: numberFlag("discovery-limit")
+    discoveryLimit: numberFlag("discovery-limit"),
+    senateFrom: numberFlag("senate-from"),
+    senateTo: numberFlag("senate-to")
   };
 }
 

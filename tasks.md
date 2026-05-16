@@ -105,9 +105,11 @@ implementation steps.
 - [x] Add Chamber bill persistence path and Chamber nominal vote persistence path.
 - [x] Make production importer output database-first instead of file-artifact-first.
 - [x] Add discovery parser tests for official-style Senate and Chamber links.
+- [x] Add bounded generated Senate `L<number>/<year>` discovery for backfill smoke and range runs.
+- [x] Add `ingest:import:pending` command for bounded pending imports.
 - [x] Apply the new migration to Neon before deploying the cron route.
-- [ ] Add `CRON_SECRET` in Vercel before enabling cron in production.
-- [ ] Tune Senate and Chamber seed/discovery URLs against full official 2024-present list pages before running a full backfill.
+- [x] Add `CRON_SECRET` in Vercel before enabling cron in production.
+- [ ] Tune Chamber seed/discovery URLs against full official 2024-present list pages before running a full backfill.
 - [ ] Re-check Vercel Cron suitability after real daily sync runs; move to Render Cron if duration/reliability becomes a problem.
 
 ## Verification
@@ -158,6 +160,7 @@ implementation steps.
   - New Drizzle migration applied successfully to local Docker Postgres.
   - New Drizzle migration applied successfully to Neon.
   - Local Senate discovery smoke against the default Senate search shell completed without errors but found `0` links, so full backfill still needs tuned source-specific list seeds.
+  - Neon Senate generated-discovery smoke passed for `L316/2025`: discovered `1`, imported `1`.
 
 ## Import Proof
 

@@ -23,6 +23,20 @@ describe("official source discovery", () => {
     );
   });
 
+  it("classifies Senate number-search URLs as bill sources", () => {
+    const html = `<a href="/legis/lista.aspx?an_cls=2025&nr_cls=L316">L316/2025</a>`;
+
+    const discoveries = discoverOfficialLinks(html, "https://www.senat.ro/Legis/Lista.aspx", "senate");
+
+    expect(discoveries).toEqual([
+      expect.objectContaining({
+        chamber: "senate",
+        kind: "bill",
+        officialId: "L316/2025"
+      })
+    ]);
+  });
+
   it("detects Chamber bill and nominal vote links from official-style pages", () => {
     const html = `
       <table>

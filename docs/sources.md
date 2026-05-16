@@ -25,6 +25,10 @@ Observed bill page structure:
   bill result links without a valid query/postback context. Backfill discovery
   should treat Senate list seeds as source-specific tuning work, not assume the
   default page is a complete feed.
+- Senate bill detail/search pages can also be reached with
+  `https://www.senat.ro/legis/lista.aspx?an_cls=<year>&nr_cls=L<number>`.
+  The backfill importer supports bounded generated `L<number>/<year>` discovery
+  ranges for this reason.
 
 ## Chamber of Deputies
 

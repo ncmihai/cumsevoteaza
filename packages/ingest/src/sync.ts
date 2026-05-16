@@ -29,6 +29,8 @@ export interface SyncOptions {
   maxImports?: number;
   maxRetries?: number;
   discoveryLimit?: number;
+  senateFrom?: number;
+  senateTo?: number;
 }
 
 export interface SyncSummary {
@@ -44,7 +46,11 @@ export interface SyncSummary {
 const defaultYears = yearsSince2024();
 
 export async function discoverSenateSources(options: SyncOptions = {}): Promise<SyncSummary> {
-  return discoverSources("senate", senateSeedUrls(options.years ?? defaultYears), options);
+  const summary = await discoverSources("senate", senateSeedUrls(options.years ?? defaultYears), options);
+  if (options.senateFrom && options.senateTo) {
+    addSummary(summary, await discoverGeneratedSenateBills(options.years ?? defaultYears, options.senateFrom, options.senateTo));
+  }
+  return summary;
 }
 
 export async function discoverDeputiesSources(options: SyncOptions = {}): Promise<SyncSummary> {
@@ -228,6 +234,9 @@ export function discoverOfficialLinks(
 
 function kindFromUrl(url: string): DiscoveryKind | undefined {
   if (/senat\.ro\/Legis\/Lista\.aspx\?cod=\d+/i.test(url)) return "bill";
+  if (/senat\.ro\/legis\/lista\.aspx/i.test(url) && /[?&]nr_cls=L\d+/i.test(url) && /[?&]an_cls=\d{4}/i.test(url)) {
+    return "bill";
+  }
   if (/cdep\.ro\/pls\/proiecte\/upl_pck2015\.proiect/i.test(url)) return "bill";
   if (/senat\.ro\/VoturiPlenDetaliu\.aspx/i.test(url)) return "vote";
   if (/cdep\.ro\/pls\/steno\/evot2015\.Nominal/i.test(url)) return "vote";
@@ -251,6 +260,30 @@ function senateSeedUrls(years: number[]): string[] {
     ],
     (url) => url
   );
+}
+
+async function discoverGeneratedSenateBills(years: number[], from: number, to: number): Promise<SyncSummary> {
+  const session = createDbSession();
+  const summary: SyncSummary = { discovered: 0, imported: 0, partial: 0, failed: 0, skipped: 0, errors: [] };
+  const start = Math.max(1, Math.min(from, to));
+  const end = Math.max(from, to);
+  try {
+    for (const year of years) {
+      for (let number = start; number <= end; number += 1) {
+        await upsertSourceDiscovery(session.db, {
+          chamber: "senate",
+          kind: "bill",
+          sourceUrl: `https://www.senat.ro/legis/lista.aspx?an_cls=${year}&nr_cls=L${number}`,
+          officialId: `L${number}/${year}`,
+          title: `Senate bill candidate L${number}/${year}`
+        });
+        summary.discovered += 1;
+      }
+    }
+    return summary;
+  } finally {
+    await session.close();
+  }
 }
 
 function deputiesSeedUrls(years: number[]): string[] {
