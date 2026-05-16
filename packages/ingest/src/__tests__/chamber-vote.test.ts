@@ -78,4 +78,33 @@ describe("parseChamberNominalVote", () => {
       "group-deputies-minoritati"
     ]);
   });
+
+  it("marks joint Chamber and Senate vote pages as unsupported", () => {
+    const html = `
+      <html>
+        <body>
+          <table>
+            <tr><td>Subiect vot:</td><td><b>PL-x 1/2025</b><br>Adoptare test</td></tr>
+          </table>
+          <table>
+            <tr><td>Optiune:</td><td>Total</td><td>Camera Deputatilor</td><td>Senat</td></tr>
+            <tr><td>#</td><td>Nume si prenume</td><td>Parlamentar</td><td>Grup</td><td>Vot</td></tr>
+            <tr>
+              <td>1.</td>
+              <td><a href="/ords/pls/parlam/structura2015.mp?idm=1&cam=1&leg=2024">Abrudean Mircea</a></td>
+              <td>Senator</td>
+              <td>PNL</td>
+              <td>DA</td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const parsed = parseChamberNominalVote(html, "https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=35087");
+
+    expect(parsed.sourceSnapshot.status).toBe("failed");
+    expect(parsed.individualVotes).toHaveLength(0);
+    expect(parsed.warnings).toContain("Joint Chamber/Senate vote page is not supported by the Deputies nominal vote parser yet.");
+  });
 });

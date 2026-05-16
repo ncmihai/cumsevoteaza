@@ -22,37 +22,44 @@ export function parseChamberNominalVote(html: string, sourceUrl: string): Parsed
   const members = new Map<string, Member>();
   const individualVotes: IndividualVote[] = [];
   const subject = extractVoteSubject($, sourceUrl);
+  const isJointVote = detectsJointVote($);
 
-  $("table tr").each((_, row) => {
-    const cells = $(row).find("td").toArray().map((cell) => cleanText($(cell).text()));
-    const rowNumber = cells[0]?.match(/^(\d+)\.$/)?.[1];
-    const profileHref = $(row).find("a[href*='structura2015.mp']").attr("href");
-    const officialId = profileHref?.match(/[?&]idm=(\d+)/i)?.[1];
-    const candidateName = cells[1];
-    const groupId = groupIdFromLabel(cells[2]);
-    const voteCell = cells[3];
-    if (!rowNumber || !officialId || !candidateName || !voteCell) return;
-    const choice = choiceFromText(voteCell);
-    if (choice === "unknown") return;
+  if (isJointVote) {
+    warnings.push("Joint Chamber/Senate vote page is not supported by the Deputies nominal vote parser yet.");
+  }
 
-    const displayName = titleCase(candidateName);
-    const memberId = `member-deputies-${officialId}`;
-    members.set(memberId, {
-      id: memberId,
-      slug: slugify(displayName),
-      firstName: displayName.split(" ").slice(0, -1).join(" ") || displayName,
-      lastName: displayName.split(" ").at(-1) ?? displayName,
-      displayName,
-      sourceIds: { cdepIdm: officialId }
+  if (!isJointVote) {
+    $("table tr").each((_, row) => {
+      const cells = $(row).find("td").toArray().map((cell) => cleanText($(cell).text()));
+      const rowNumber = cells[0]?.match(/^(\d+)\.$/)?.[1];
+      const profileHref = $(row).find("a[href*='structura2015.mp']").attr("href");
+      const officialId = profileHref?.match(/[?&]idm=(\d+)/i)?.[1];
+      const candidateName = cells[1];
+      const groupId = groupIdFromLabel(cells[2]);
+      const voteCell = cells[3];
+      if (!rowNumber || !officialId || !candidateName || !voteCell) return;
+      const choice = choiceFromText(voteCell);
+      if (choice === "unknown") return;
+
+      const displayName = titleCase(candidateName);
+      const memberId = `member-deputies-${officialId}`;
+      members.set(memberId, {
+        id: memberId,
+        slug: slugify(displayName),
+        firstName: displayName.split(" ").slice(0, -1).join(" ") || displayName,
+        lastName: displayName.split(" ").at(-1) ?? displayName,
+        displayName,
+        sourceIds: { cdepIdm: officialId }
+      });
+      individualVotes.push({
+        id: `iv-${voteId}-${memberId}`,
+        voteId,
+        memberId,
+        groupId,
+        choice
+      });
     });
-    individualVotes.push({
-      id: `iv-${voteId}-${memberId}`,
-      voteId,
-      memberId,
-      groupId,
-      choice
-    });
-  });
+  }
 
   if (individualVotes.length === 0) {
     warnings.push("No nominal vote rows detected. Source structure may require a specific Chamber parser update.");
@@ -140,6 +147,16 @@ function extractVoteSubject($: cheerio.CheerioAPI, sourceUrl: string): { voteTit
         }
       : undefined
   };
+}
+
+function detectsJointVote($: cheerio.CheerioAPI): boolean {
+  const headerText = cleanText(
+    $("tr")
+      .toArray()
+      .map((row) => $(row).find("td, th").toArray().map((cell) => $(cell).text()).join(" "))
+      .join(" ")
+  );
+  return /\bParlamentar\b/i.test(headerText) && /Camera Deputat/i.test(headerText) && /\bSenat\b/i.test(headerText);
 }
 
 function cleanBillTitle(subjectText: string, boldText: string, billLinkText: string, voteAction?: string): string {

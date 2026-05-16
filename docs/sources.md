@@ -77,6 +77,12 @@ Observed bill page structure:
 - CDEP nominal vote URLs vary by case and language parameter, for example
   `evot2015.nominal?idv=<id>&idl=1`; canonical identity is
   `evot2015.Nominal?idv=<id>`.
+- Some CDEP electronic vote pages are joint Chamber/Senate sittings, visible
+  through a mixed `Parlamentar` column and chamber labels for both Camera
+  Deputaților and Senat. The Deputies nominal vote importer intentionally skips
+  these pages for now because the current domain model stores a vote under a
+  single chamber. Keep their source snapshots inspectable and add a separate
+  joint-vote model/parser before showing them as complete data.
 - Chamber bill discovery targets official `upl_pck2015.proiect` detail URLs
   when they are exposed by list or timeline pages.
 - Chamber displayed identifiers normalize to `PL-x <number>/<year>`, even when

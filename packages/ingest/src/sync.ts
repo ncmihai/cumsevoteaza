@@ -254,6 +254,12 @@ async function importDiscovery(row: typeof schema.sourceDiscoveries.$inferSelect
 
     if (row.kind === "vote" && row.chamber === "deputies") {
       const parsed = parseChamberNominalVote(html, importUrl);
+      if (parsed.sourceSnapshot.status === "failed") {
+        await saveSourceSnapshot(parsed.sourceSnapshot);
+        const status = parsed.warnings.some((warning) => /Joint Chamber\/Senate vote/i.test(warning)) ? "skipped" : "failed";
+        await markDiscovery(row.id, status, parsed.sourceSnapshot.id, parsed.sourceSnapshot.notes);
+        return status;
+      }
       await persistChamberVote(parsed);
       const status = parsed.sourceSnapshot.status === "parsed" ? "imported" : parsed.sourceSnapshot.status;
       await markDiscovery(row.id, status, parsed.sourceSnapshot.id);
@@ -503,6 +509,15 @@ async function finishIngestionRun(id: string, status: "completed" | "partial" | 
         error
       })
       .where(eq(schema.ingestionRuns.id, id));
+  } finally {
+    await session.close();
+  }
+}
+
+async function saveSourceSnapshot(sourceSnapshot: SourceSnapshot) {
+  const session = createDbSession();
+  try {
+    await upsertSourceSnapshot(session.db, sourceSnapshot);
   } finally {
     await session.close();
   }

@@ -218,8 +218,6 @@ Append-only implementation history.
   - 11 Senate bills imported
   - 64 Senate bills pending
   - 9 Senate votes pending
-  - 5 Deputies votes pending
-  - 1 Deputies vote failed
 
 ## 2026-05-16 — Identifier-Aware Discovery
 
@@ -388,3 +386,30 @@ Append-only implementation history.
 Next broader backfill should use the CDEP vote-day calendar by month, then
 import in batches with the same `--chamber=deputies --kind=vote` filter and
 inspect partial/failed counts after each batch.
+
+## 2026-05-16 — CDEP Month-Scoped Vote Backfill Guard
+
+- Ran CDEP 2025 electronic-vote discovery by month before widening the backfill:
+  - January 2025 found 0 vote days/links.
+  - February 2025 discovered 395 official vote/project links.
+- Imported February discoveries in capped batches against Neon.
+- First February batch imported 15 Deputies votes and exposed 5 joint Chamber/Senate vote pages that use a mixed `Parlamentar` column instead of Deputies-only nominal rows.
+- Added a guard in the Chamber nominal vote parser:
+  - detect joint Chamber/Senate vote pages
+  - store the raw source snapshot as failed/inspectable
+  - mark the discovery as `skipped`
+  - do not create a Deputies-only vote row for a joint sitting
+- Cleaned the previously persisted failed joint-vote rows from Neon.
+- Ran guarded follow-up batches:
+  - 19 additional Deputies votes imported cleanly
+  - 21 unsupported joint/duplicate discoveries skipped
+  - 0 partial imports
+  - 0 failed imports
+- Current Neon quality after the guarded pass:
+  - 64 visible Deputies vote rows, all backed by parsed source snapshots
+  - 0 generic `VOT ELECTRONIC` vote titles
+  - 0 failed or partial visible Deputies vote rows
+  - discovery queue: 287 pending, 70 imported, 40 skipped
+
+Next broader backfill should continue February pending discoveries in capped
+batches until the queue is clean, then move to March 2025 discovery.

@@ -118,9 +118,12 @@ implementation steps.
 - [x] Add filtered pending importer support for `--chamber=deputies --kind=vote`.
 - [x] Add controlled Deputies electronic-vote day discovery command.
 - [x] Run a controlled Deputies vote sample before broader 2025 backfill.
+- [x] Run month-scoped Deputies vote discovery for January and February 2025.
+- [x] Skip unsupported joint Chamber/Senate CDEP vote pages instead of persisting them as failed Deputies votes.
 - [x] Apply the new migration to Neon before deploying the cron route.
 - [x] Add `CRON_SECRET` in Vercel before enabling cron in production.
 - [ ] Tune Chamber seed/discovery URLs against full official 2024-present list pages before running a full backfill.
+- [ ] Add a first-class joint-vote model/parser if joint Chamber/Senate sittings should be visible as their own vote type.
 - [ ] Re-check Vercel Cron suitability after real daily sync runs; move to Render Cron if duration/reliability becomes a problem.
 
 ## Verification
@@ -199,6 +202,15 @@ implementation steps.
     - Imported 10 pending Deputies votes with `0` partials and `0` failures.
     - Re-imported 5 older pre-fix Deputies votes with generic `VOT ELECTRONIC` titles.
     - Neon Deputies vote quality after repair: 16 parsed, 0 partial, 0 failed, 0 generic `VOT ELECTRONIC` titles.
+  - Month-scoped CDEP 2025 discovery:
+    - January 2025 discovered 0 electronic-vote links.
+    - February 2025 discovered 395 electronic-vote/project links.
+    - First February import batch imported 15 votes and exposed 5 unsupported joint Chamber/Senate pages.
+    - Unsupported joint pages are now stored as failed source snapshots and marked `skipped` in the discovery queue, without creating Deputies vote rows.
+    - Cleaned previously persisted failed joint-vote rows from Neon.
+    - Follow-up February batches imported 39 more Deputies votes and skipped 21 unsupported/duplicate discoveries with 0 partials and 0 failures.
+    - Current Neon Deputies vote quality after the guarded batches: 64 parsed visible Deputies votes, 0 partial, 0 failed, 0 generic `VOT ELECTRONIC` titles.
+    - Current Deputies vote discovery queue: 287 pending, 70 imported, 40 skipped.
 
 ## Import Proof
 
