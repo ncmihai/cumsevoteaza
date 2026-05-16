@@ -177,6 +177,9 @@ implementation steps.
   - Pending-import smoke imported `1` queued official source with `0` partials and `0` failures.
   - Bounded daily-style pass for 2025 completed with `10` imports, `1` failed CDEP nominal vote fetch, and no partials or top-level errors.
   - Same-page Senate hash-anchor discovery artifacts were marked `skipped` in Neon and the importer now ignores those links.
+  - Chamber nominal vote links now canonicalize to the working `cdep.ro/ords/pls/steno` endpoint.
+  - Repaired CDEP vote pass imported `6` Deputies votes into Neon with nominal row counts matching parsed totals.
+  - Chamber vote persistence now batches members, derived mandates, and nominal rows so CDEP vote imports are cron-friendlier.
 
 ## Import Proof
 
@@ -185,6 +188,7 @@ implementation steps.
 - Live Senate bill import succeeded for `L316/2025` / `PL-x 429/2025`.
 - Live Senate vote import succeeded with 121 nominal votes.
 - Chamber nominal vote official URL was attempted and wrote a failed import snapshot for inspection.
+- Chamber nominal vote import now succeeds through the ORDS endpoint; first repaired batch persisted 6 Deputies votes.
 - Persistent import command shape:
   - `npm run ingest:senate:bill -- --cod=27035 --persist`
   - `npm run ingest:senate:vote -- --persist`

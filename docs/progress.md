@@ -283,3 +283,29 @@ Append-only implementation history.
   - Focused ingest parser/discovery tests passed.
   - `npm run typecheck` passed.
   - `npm run build` passed outside the sandbox.
+
+## 2026-05-16 — Chamber Nominal Vote Repair
+
+- Confirmed the current Chamber electronic vote pages work under
+  `https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=<id>`.
+- Added canonicalization for legacy `cdep.ro/pls/steno/evot2015.*` links so
+  discovery and imports use the ORDS endpoint.
+- Updated the Chamber nominal parser to read only real nominal rows:
+  - numeric row index;
+  - official member profile link with `idm`;
+  - group label;
+  - vote value.
+- Chamber vote member IDs now use official Deputies IDs, for example
+  `member-deputies-3`, so imported votes join to roster-backed profiles.
+- Added parser coverage for `DA`, `NU`, `AB`, and `-` vote values.
+- Batched Chamber vote persistence for members, derived mandates, and nominal
+  rows to avoid one SQL statement per deputy per vote.
+- Updated existing CDEP vote discoveries in Neon from legacy `/pls/steno` URLs
+  to `/ords/pls/steno` URLs and reset failed rows to pending.
+- Imported the repaired CDEP vote batch into Neon:
+  - 6 Deputies vote discoveries imported.
+  - Each imported vote has nominal row counts matching parsed totals.
+- Verification:
+  - `npm run test` passed.
+  - `npm run typecheck` passed.
+  - `npm run build` passed outside the sandbox.

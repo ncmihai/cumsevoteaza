@@ -50,7 +50,12 @@ describe("parseSenateBill", () => {
     );
     expect(parsed.discoveredSources).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ chamber: "deputies", kind: "vote", discoveredOn: "2025-02-19" }),
+        expect.objectContaining({
+          chamber: "deputies",
+          kind: "vote",
+          discoveredOn: "2025-02-19",
+          sourceUrl: "https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=35953"
+        }),
         expect.objectContaining({ chamber: "senate", kind: "vote", discoveredOn: "2025-02-26" })
       ])
     );

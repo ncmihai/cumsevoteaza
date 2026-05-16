@@ -8,6 +8,7 @@ import { parseSenateBill } from "./parsers/senate-bill";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "./parsers/senate-roster";
 import { parseSenateVote } from "./parsers/senate-vote";
 import { fetchOfficialSource } from "./fetch-source";
+import { canonicalizeOfficialUrl } from "./official-urls";
 import { persistRoster, persistSenateBill, persistSenateVote } from "./persist";
 import { snapshotFor } from "./parsers/utils";
 import { discoverDeputiesSources, discoverSenateSources, importPendingDiscoveries, runBackfill2024, runDailySync } from "./sync";
@@ -43,7 +44,7 @@ async function main() {
   }
 
   if (command === "chamber:vote") {
-    const url = flag("url") ?? "http://www.cdep.ro/pls/steno/evot2015.Nominal?idv=35953";
+    const url = canonicalizeOfficialUrl(flag("url") ?? "https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=35953");
     try {
       const html = await loadHtml(url);
       await writeImport("chamber-vote", parseChamberNominalVote(html, url), html);

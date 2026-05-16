@@ -72,7 +72,11 @@ describe("official source discovery", () => {
     expect(discoveries).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ chamber: "deputies", kind: "bill", officialId: "PL-x 42/2025" }),
-        expect.objectContaining({ chamber: "deputies", kind: "vote" })
+        expect.objectContaining({
+          chamber: "deputies",
+          kind: "vote",
+          sourceUrl: "https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=35953"
+        })
       ])
     );
   });

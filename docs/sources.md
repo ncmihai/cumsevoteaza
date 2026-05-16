@@ -59,6 +59,9 @@ Observed bill page structure:
   pages for mandates, committees, groups, and party history.
 - Chamber nominal vote links may be referenced from Senate legislative timeline,
   for example `cdep.ro/pls/steno/evot2015.Nominal?idv=35953`.
+  The working 2024-present endpoint is the ORDS path
+  `https://www.cdep.ro/ords/pls/steno/evot2015.Nominal?idv=<id>`, so legacy
+  `/pls/steno` vote links are canonicalized before import.
 - Chamber bill discovery targets official `upl_pck2015.proiect` detail URLs
   when they are exposed by list or timeline pages.
 - Chamber displayed identifiers normalize to `PL-x <number>/<year>`, even when
@@ -70,9 +73,10 @@ Observed bill page structure:
   for inspection instead of treating the source as empty.
 - Direct fetches can be slower or flaky. Importers must retry, store failures,
   and keep the official URL as source metadata.
-- 2026-05-16: first importer attempt against
-  `http://www.cdep.ro/pls/steno/evot2015.Nominal?idv=35953` failed gracefully
-  and wrote a local ignored failure snapshot under `data/imports/`.
+- 2026-05-16: first importer attempt against the legacy
+  `http://www.cdep.ro/pls/steno/evot2015.Nominal?idv=35953` path failed
+  gracefully. Retesting through the ORDS endpoint succeeded and the first
+  repaired batch persisted 6 Deputies nominal votes.
 
 ## Reliability Rules
 

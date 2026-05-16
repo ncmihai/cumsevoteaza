@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import type {
@@ -116,10 +116,10 @@ export async function persistChamberVote(parsed: ParsedChamberVote) {
   try {
     await upsertDefaultLegislature(session.db);
     await upsertSourceSnapshot(session.db, parsed.sourceSnapshot);
-    await Promise.all(parsed.members.map((member) => upsertMember(session.db, member)));
-    await Promise.all(parsed.individualVotes.map((vote) => upsertDerivedDeputiesMandate(session.db, vote.memberId)));
+    await upsertMembers(session.db, parsed.members);
+    await upsertDerivedDeputiesMandates(session.db, parsed.members.map((member) => member.id));
     await upsertVote(session.db, parsed.vote);
-    await Promise.all(parsed.individualVotes.map((vote) => upsertIndividualVote(session.db, vote)));
+    await upsertIndividualVotes(session.db, parsed.individualVotes);
 
     return {
       voteId: parsed.vote.id,
@@ -245,6 +245,23 @@ async function upsertMember(db: Db, member: Member) {
         lastName: member.lastName,
         displayName: member.displayName,
         sourceIds: member.sourceIds
+      }
+    });
+}
+
+async function upsertMembers(db: Db, members: Member[]) {
+  if (members.length === 0) return;
+  await db
+    .insert(schema.members)
+    .values(members)
+    .onConflictDoUpdate({
+      target: schema.members.id,
+      set: {
+        slug: sql`excluded.slug`,
+        firstName: sql`excluded.first_name`,
+        lastName: sql`excluded.last_name`,
+        displayName: sql`excluded.display_name`,
+        sourceIds: sql`excluded.source_ids`
       }
     });
 }
@@ -500,6 +517,23 @@ async function upsertIndividualVote(db: Db, vote: IndividualVote) {
     });
 }
 
+async function upsertIndividualVotes(db: Db, votes: IndividualVote[]) {
+  if (votes.length === 0) return;
+  await db
+    .insert(schema.individualVotes)
+    .values(votes)
+    .onConflictDoUpdate({
+      target: schema.individualVotes.id,
+      set: {
+        voteId: sql`excluded.vote_id`,
+        memberId: sql`excluded.member_id`,
+        groupId: sql`excluded.group_id`,
+        choice: sql`excluded.choice`,
+        voteMethod: sql`excluded.vote_method`
+      }
+    });
+}
+
 async function upsertDerivedMandateAndMembership(db: Db, vote: IndividualVote, parsed: ParsedSenateVote) {
   if (!vote.groupId) return;
   const startsOn = parsed.vote.heldOn;
@@ -541,25 +575,29 @@ async function upsertDerivedMandateAndMembership(db: Db, vote: IndividualVote, p
   });
 }
 
-async function upsertDerivedDeputiesMandate(db: Db, memberId: string) {
+async function upsertDerivedDeputiesMandates(db: Db, memberIds: string[]) {
+  const uniqueMemberIds = [...new Set(memberIds)];
+  if (uniqueMemberIds.length === 0) return;
   await db
     .insert(schema.memberMandates)
-    .values({
-      id: `mandate-${memberId}-2024-2028-deputies`,
-      memberId,
-      legislatureId: defaultLegislature.id,
-      chamber: "deputies",
-      startsOn: defaultLegislature.startsOn,
-      status: "active"
-    })
+    .values(
+      uniqueMemberIds.map((memberId) => ({
+        id: `mandate-${memberId}-2024-2028-deputies`,
+        memberId,
+        legislatureId: defaultLegislature.id,
+        chamber: "deputies" as const,
+        startsOn: defaultLegislature.startsOn,
+        status: "active" as const
+      }))
+    )
     .onConflictDoUpdate({
       target: schema.memberMandates.id,
       set: {
-        memberId,
-        legislatureId: defaultLegislature.id,
-        chamber: "deputies",
-        startsOn: defaultLegislature.startsOn,
-        status: "active"
+        memberId: sql`excluded.member_id`,
+        legislatureId: sql`excluded.legislature_id`,
+        chamber: sql`excluded.chamber`,
+        startsOn: sql`excluded.starts_on`,
+        status: sql`excluded.status`
       }
     });
 }

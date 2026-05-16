@@ -11,6 +11,7 @@ import { parseSenateVote } from "./parsers/senate-vote";
 import { cleanText, hashContent, slugify, snapshotFor } from "./parsers/utils";
 import { findOfficialIdentifiers, normalizeOfficialIdentifier } from "./parsers/identifiers";
 import { persistChamberVote, persistDeputiesBill, persistSenateBill, persistSenateVote } from "./persist";
+import { canonicalizeOfficialUrl } from "./official-urls";
 
 export type DiscoveryKind = "bill" | "vote";
 export type DiscoveryStatus = "pending" | "imported" | "partial" | "failed" | "skipped";
@@ -208,11 +209,12 @@ async function importDiscovery(row: typeof schema.sourceDiscoveries.$inferSelect
   }
 
   try {
-    const html = await fetchOfficialSource(row.sourceUrl, 3);
-    const nested = discoverOfficialLinks(html, row.sourceUrl, row.chamber, row.sourceSnapshotId ?? undefined);
+    const importUrl = canonicalizeOfficialUrl(row.sourceUrl);
+    const html = await fetchOfficialSource(importUrl, 3);
+    const nested = discoverOfficialLinks(html, importUrl, row.chamber, row.sourceSnapshotId ?? undefined);
 
     if (row.kind === "bill" && row.chamber === "senate") {
-      const parsed = parseSenateBill(html, row.sourceUrl);
+      const parsed = parseSenateBill(html, importUrl);
       await persistSenateBill(parsed);
       await saveNestedDiscoveries(nested, parsed.sourceSnapshot.id);
       await saveNestedDiscoveries(parsed.discoveredSources, parsed.sourceSnapshot.id);
@@ -221,7 +223,7 @@ async function importDiscovery(row: typeof schema.sourceDiscoveries.$inferSelect
     }
 
     if (row.kind === "bill" && row.chamber === "deputies") {
-      const parsed = parseDeputiesBill(html, row.sourceUrl);
+      const parsed = parseDeputiesBill(html, importUrl);
       await persistDeputiesBill(parsed);
       await saveNestedDiscoveries(nested, parsed.sourceSnapshot.id);
       await markDiscovery(row.id, "imported", parsed.sourceSnapshot.id);
@@ -229,17 +231,18 @@ async function importDiscovery(row: typeof schema.sourceDiscoveries.$inferSelect
     }
 
     if (row.kind === "vote" && row.chamber === "senate") {
-      const parsed = parseSenateVote(html, row.sourceUrl);
+      const parsed = parseSenateVote(html, importUrl);
       await persistSenateVote(parsed);
       await markDiscovery(row.id, parsed.sourceSnapshot.status === "parsed" ? "imported" : "partial", parsed.sourceSnapshot.id);
       return parsed.sourceSnapshot.status === "parsed" ? "imported" : "partial";
     }
 
     if (row.kind === "vote" && row.chamber === "deputies") {
-      const parsed = parseChamberNominalVote(html, row.sourceUrl);
+      const parsed = parseChamberNominalVote(html, importUrl);
       await persistChamberVote(parsed);
-      await markDiscovery(row.id, parsed.sourceSnapshot.status === "failed" ? "failed" : "partial", parsed.sourceSnapshot.id);
-      return parsed.sourceSnapshot.status === "failed" ? "failed" : "partial";
+      const status = parsed.sourceSnapshot.status === "parsed" ? "imported" : parsed.sourceSnapshot.status;
+      await markDiscovery(row.id, status, parsed.sourceSnapshot.id);
+      return status;
     }
 
     await markDiscovery(row.id, "skipped");
@@ -262,7 +265,7 @@ export function discoverOfficialLinks(
   $("a[href]").each((_, node) => {
     const href = $(node).attr("href");
     if (!href || href.startsWith("javascript:") || href.trim().startsWith("#")) return;
-    const absoluteUrl = new URL(href.replace(/\\/g, "/"), sourceUrl).toString();
+    const absoluteUrl = canonicalizeOfficialUrl(new URL(href.replace(/\\/g, "/"), sourceUrl).toString());
     if (isSameDocumentAnchor(absoluteUrl, sourceUrl)) return;
     const text = cleanText($(node).text());
     const rowText = cleanText($(node).closest("tr").text()) || text;
@@ -328,9 +331,9 @@ function kindFromUrl(url: string): DiscoveryKind | undefined {
   if (/senat\.ro\/legis\/lista\.aspx/i.test(url) && /[?&]nr_cls=(?:BP|B|L|PLX)\d+/i.test(url) && /[?&]an_cls=\d{4}/i.test(url)) {
     return "bill";
   }
-  if (/cdep\.ro\/pls\/proiecte\/upl_pck2015\.proiect/i.test(url)) return "bill";
+  if (/cdep\.ro\/(?:ords\/)?pls\/proiecte\/upl_pck2015\.proiect/i.test(url)) return "bill";
   if (/senat\.ro\/VoturiPlenDetaliu\.aspx/i.test(url)) return "vote";
-  if (/cdep\.ro\/pls\/steno\/evot2015\.Nominal/i.test(url)) return "vote";
+  if (/cdep\.ro\/(?:ords\/)?pls\/steno\/evot2015\.Nominal/i.test(url)) return "vote";
   return undefined;
 }
 

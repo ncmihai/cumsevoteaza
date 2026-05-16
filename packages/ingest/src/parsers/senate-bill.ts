@@ -9,6 +9,7 @@ import {
   normalizeOfficialIdentifier,
   yearFromUrl
 } from "./identifiers";
+import { canonicalizeOfficialUrl } from "../official-urls";
 
 export interface ParsedSenateBill {
   sourceSnapshot: SourceSnapshot;
@@ -111,7 +112,7 @@ function extractTimeline($: cheerio.CheerioAPI, billId: string, sourceUrl: strin
       .each((_, link) => {
         const href = $(link).attr("href");
         if (!href || href.startsWith("javascript:")) return;
-        const absoluteUrl = new URL(href.replace(/\\/g, "/"), sourceUrl).toString();
+        const absoluteUrl = canonicalizeOfficialUrl(new URL(href.replace(/\\/g, "/"), sourceUrl).toString());
         if (/VoturiPlenDetaliu\.aspx/i.test(absoluteUrl)) {
           discoveredSources.push({
             chamber: "senate",
@@ -121,7 +122,7 @@ function extractTimeline($: cheerio.CheerioAPI, billId: string, sourceUrl: strin
             discoveredOn: occurredOn
           });
         }
-        if (/cdep\.ro\/pls\/steno\/evot2015\.Nominal/i.test(absoluteUrl) || /cdep\.ro\/pls\/steno\/evot2015/i.test(absoluteUrl)) {
+        if (/cdep\.ro\/(?:ords\/)?pls\/steno\/evot2015\.Nominal/i.test(absoluteUrl) || /cdep\.ro\/(?:ords\/)?pls\/steno\/evot2015/i.test(absoluteUrl)) {
           discoveredSources.push({
             chamber: "deputies",
             kind: "vote",
@@ -130,7 +131,7 @@ function extractTimeline($: cheerio.CheerioAPI, billId: string, sourceUrl: strin
             discoveredOn: occurredOn
           });
         }
-        if (/cdep\.ro\/pls\/proiecte\/upl_pck2015\.proiect/i.test(absoluteUrl)) {
+        if (/cdep\.ro\/(?:ords\/)?pls\/proiecte\/upl_pck2015\.proiect/i.test(absoluteUrl)) {
           discoveredSources.push({
             chamber: "deputies",
             kind: "bill",
