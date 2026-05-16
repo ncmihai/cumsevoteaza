@@ -145,20 +145,32 @@ Observed bill page structure:
     the 2020 page states 330 Deputies and 136 Senators were elected. They are
     not official sources and should not replace Parliament pages or official
     electoral records.
-- Deputies 2020-2024:
+- Deputies historical profiles:
   - Official member profiles are available through
-    `https://www.cdep.ro/ords/pls/parlam/structura2015.mp?cam=2&idl=1&idm=<id>&leg=2020&pag=1`.
+    `https://www.cdep.ro/ords/pls/parlam/structura2015.mp?cam=2&idl=1&idm=<id>&leg=<year>&pag=1`.
+  - Verified `leg` values so far:
+    - `2020`
+    - `2016`
+    - `2012`
   - CDEP `idm` values are not globally stable across legislatures. They can be
     reused by different people in different legislatures, so historical
     Deputies member IDs must include the legislature year, e.g.
     `member-deputies-2020-93`. Current 2024 records keep
     `member-deputies-<idm>` for compatibility with imported nominal votes.
   - A controlled ID scan from `1` to `450` parsed 354 valid Deputies profiles.
+  - A controlled ID scan from `1` to `450` parsed 361 valid Deputies profiles
+    for 2016-2020.
+  - A controlled ID scan from `1` to `650` parsed 417 valid Deputies profiles
+    for 2012-2016.
   - Generic section pages such as `Activitate publică` can be returned for
     unused IDs and must be filtered before persistence.
   - The CDEP TLS chain can fail Node's default certificate verification. The
     importer keeps the normal verified fetch first, then uses a scoped
     certificate-validation fallback only for certificate failures.
+  - Historical party/group parsing currently recognizes older formations such
+    as ALDE, PMP, PDL, PP-DD, PC, UNPR, USL, and PRO România. Only parties
+    actually observed in parsed official rows are persisted by the roster
+    import.
 - Senate 2020-2024:
   - The current `EnumGrupuri.aspx` endpoint does not expose an obvious
     historical index for all 2020 groups.

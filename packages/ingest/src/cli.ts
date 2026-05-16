@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseChamberNominalVote } from "./parsers/chamber-vote";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "./parsers/deputies-roster";
-import { legislatureFromFlag, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
+import { legislatureFromFlag, partyCatalog, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
 import { parseSenateBill } from "./parsers/senate-bill";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "./parsers/senate-roster";
 import { parseSenateVote } from "./parsers/senate-vote";
@@ -206,7 +206,8 @@ async function importSenateRoster(): Promise<ParsedRoster> {
       [
         ...(index?.groups ?? []).flatMap((group) => (group.party ? [group.party] : [])),
         ...groupParts.flatMap((group) => (group.party ? [group.party] : [])),
-        ...profiles.flatMap((profile) => profile.parties ?? [])
+        ...profiles.flatMap((profile) => profile.parties ?? []),
+        ...partiesFromGroups([...(index?.groups ?? []).map((group) => group.group), ...groupParts.map((group) => group.group)])
       ],
       (party) => party.id
     ),
@@ -298,7 +299,12 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
       [
         ...(index?.groups ?? []).flatMap((group) => (group.party ? [group.party] : [])),
         ...groupParts.flatMap((group) => (group.party ? [group.party] : [])),
-        ...profiles.flatMap((profile) => profile.parties ?? [])
+        ...profiles.flatMap((profile) => profile.parties ?? []),
+        ...partiesFromGroups([
+          ...(index?.groups ?? []).map((group) => group.group),
+          ...groupParts.map((group) => group.group),
+          ...profiles.flatMap((profile) => profile.groups ?? [])
+        ])
       ],
       (party) => party.id
     ),
@@ -361,7 +367,10 @@ async function importDeputiesRosterByMemberIds(
     chamber: "deputies",
     legislature,
     sourceSnapshots: uniqueBy(profiles.map((profile) => profile.sourceSnapshot), (source) => source.id),
-    parties: uniqueBy(profiles.flatMap((profile) => profile.parties ?? []), (party) => party.id),
+    parties: uniqueBy(
+      [...profiles.flatMap((profile) => profile.parties ?? []), ...partiesFromGroups(profiles.flatMap((profile) => profile.groups ?? []))],
+      (party) => party.id
+    ),
     groups: uniqueBy(profiles.flatMap((profile) => profile.groups ?? []), (group) => group.id),
     members: uniqueBy(profiles.map((profile) => profile.member), (member) => member.id),
     mandates: uniqueBy(profiles.flatMap((profile) => (profile.mandate ? [profile.mandate] : [])), (mandate) => mandate.id),
@@ -380,6 +389,15 @@ function flag(name: string): string | undefined {
 
 function hasFlag(name: string): boolean {
   return process.argv.includes(`--${name}`);
+}
+
+function partiesFromGroups(groups: ParsedRoster["groups"]): ParsedRoster["parties"] {
+  const partiesById = new Map(Object.values(partyCatalog).map((party) => [party.id, party]));
+  return groups.flatMap((group) => {
+    if (!group.partyId) return [];
+    const party = partiesById.get(group.partyId);
+    return party ? [party] : [];
+  });
 }
 
 function logRosterSummary(parsed: ParsedRoster) {

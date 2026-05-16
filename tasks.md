@@ -309,6 +309,17 @@ implementation steps.
     2024 Deputies: 330 members; 2020 Deputies: 354 members.
   - Member pages now aggregate all chamber/source member records connected to the same `people` row.
   - `drula-catalin` verification now shows Cătălin Drulă as USR only, with 2020 and 2024 mandate history and no PSD row.
+  - Extended historical Deputies imports to 2016-2020 and 2012-2016 using official CDEP profile URLs:
+    2016-2020 has 361 Deputies mandates, 9 groups, 508 group memberships, and 929 committee memberships;
+    2012-2016 has 417 Deputies mandates, 10 groups, 702 group memberships, and 857 committee memberships.
+  - Added parser support for older parties/formations:
+    ALDE, PMP, PDL, PP-DD, PC, UNPR, USL, and PRO România.
+  - Fixed historical group-to-party persistence so groups referencing old parties create the party rows before parliamentary groups are upserted.
+  - Fixed duplicate member slug persistence across legislatures by suffixing duplicate member slugs with deterministic member IDs.
+  - People backfill after the 2016/2012 imports:
+    1723 members read, 1280 people upserted, 1723 members linked.
+  - Database check after the import:
+    417 Deputies mandates for `leg-2012-2016`, 361 Deputies mandates for `leg-2016-2020`, and no unscoped Deputies IDs spanning multiple legislatures.
 
 ## Import Proof
 
@@ -341,10 +352,12 @@ implementation steps.
 ## Next Actions
 
 - Find an official, reliable source path for 2020 Senate unaffiliated members.
+- Find official historical Senate roster paths for 2016-2020 and 2012-2016.
+- Decide whether to seed manually curated historical party rows that are known from election history but not directly observed in parsed CDEP group/profile rows, such as USL, or keep persistence strictly source-observed.
 - Add dated mandate end/replacement parsing so 2020-era compositions show exact seats-at-date, while member profiles can still show everyone who served during the term.
 - Treat historical member imports as person-linked source records, not one globally stable chamber ID; CDEP `idm` can be reused by legislature.
 - Smoke-check `/ro/compozitii` on Vercel after the 2020 roster deploy and confirm 2020 government stops show imported chamber data.
-- Extend the historical roster strategy to 2016-2020 after 2020-2024 is visually verified.
+- Extend the historical roster strategy to 2008-2012 after 2012-2016 is visually verified.
 - Add composition alignment imports for governments/coalitions so seat maps can distinguish government support vs opposition by period.
 - Expand member profile importers for earlier legislatures.
 - Replace member and party pages with DB read models after roster import exists.

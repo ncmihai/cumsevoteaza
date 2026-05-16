@@ -270,20 +270,9 @@ async function upsertMember(db: Db, member: Member) {
 
 async function upsertMembers(db: Db, members: Member[]) {
   if (members.length === 0) return;
-  await db
-    .insert(schema.members)
-    .values(members)
-    .onConflictDoUpdate({
-      target: schema.members.id,
-      set: {
-        personId: sql`excluded.person_id`,
-        slug: sql`excluded.slug`,
-        firstName: sql`excluded.first_name`,
-        lastName: sql`excluded.last_name`,
-        displayName: sql`excluded.display_name`,
-        sourceIds: sql`excluded.source_ids`
-      }
-    });
+  for (const member of members) {
+    await upsertMember(db, member);
+  }
 }
 
 export async function backfillPeopleFromMembers() {

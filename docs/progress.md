@@ -586,3 +586,51 @@ Verification:
   - `drula-catalin` now resolves to Cătălin Drulă, current group USR, current party USR, with 2020 and 2024 USR history rows and no PSD row.
   - No unscoped Deputies member ID now spans multiple legislatures.
   - `npm run typecheck`, `npm run test`, and `npm run build` passed.
+
+## 2026-05-16 — Deputies Historical Rosters: 2016-2020 and 2012-2016
+
+- Extended the roster legislature catalog with 2016-2020 and 2012-2016.
+- Expanded the party catalog and party parser for older formations that appear
+  in historical CDEP profiles/groups:
+  - ALDE
+  - PMP
+  - PDL
+  - PP-DD
+  - PC
+  - UNPR
+  - USL
+  - PRO România
+- Fixed a historical import dependency issue where a parsed group could
+  reference an older `partyId` that was not included in the normalized party
+  payload. The CLI now adds parties inferred from groups before persistence.
+- Fixed bulk member persistence for repeated politician names across
+  legislatures. Duplicate member slugs now get deterministic member-id suffixes
+  instead of failing the import.
+- Imported 2016-2020 Deputies from official CDEP profile pages:
+  - 361 members
+  - 361 mandates
+  - 9 groups
+  - 8 parties
+  - 508 group memberships
+  - 301 party affiliations
+  - 929 committee memberships
+- Imported 2012-2016 Deputies from official CDEP profile pages:
+  - 417 members
+  - 417 mandates
+  - 10 groups
+  - 9 parties
+  - 702 group memberships
+  - 489 party affiliations
+  - 857 committee memberships
+- Refreshed people linkage after the new historical imports:
+  - 1723 members read
+  - 1280 people upserted
+  - 1723 members linked
+- Database verification:
+  - `leg-2012-2016` Deputies mandates: 417
+  - `leg-2016-2020` Deputies mandates: 361
+  - historical party rows present: ALDE, PC, PDL, PMP, PP-DD, PRO România, UNPR
+  - no unscoped Deputies member ID spans multiple legislatures.
+- Verification:
+  - `npm run typecheck` passed.
+  - `npm run test` passed.

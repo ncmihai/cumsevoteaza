@@ -78,7 +78,27 @@ export const legislature2020: Legislature = {
   endsOn: "2024-12-20"
 };
 
+export const legislature2016: Legislature = {
+  id: "leg-2016-2020",
+  label: "2016-2020",
+  startsOn: "2016-12-21",
+  endsOn: "2020-12-20"
+};
+
+export const legislature2012: Legislature = {
+  id: "leg-2012-2016",
+  label: "2012-2016",
+  startsOn: "2012-12-19",
+  endsOn: "2016-12-20"
+};
+
 export const legislatureCatalog: Record<string, Legislature> = {
+  "2012": legislature2012,
+  "2012-2016": legislature2012,
+  "leg-2012-2016": legislature2012,
+  "2016": legislature2016,
+  "2016-2020": legislature2016,
+  "leg-2016-2020": legislature2016,
   "2020": legislature2020,
   "2020-2024": legislature2020,
   "leg-2020-2024": legislature2020,
@@ -92,7 +112,7 @@ export function legislatureFromFlag(value: string | undefined): Legislature {
   const normalized = value.trim().toLowerCase();
   const legislature = legislatureCatalog[normalized];
   if (!legislature) {
-    throw new Error(`Unsupported legislature "${value}". Supported values: 2020, 2024.`);
+    throw new Error(`Unsupported legislature "${value}". Supported values: 2012, 2016, 2020, 2024.`);
   }
   return legislature;
 }
@@ -103,6 +123,14 @@ export const partyCatalog: Record<string, Party> = {
   usr: { id: "party-usr", slug: "usr", shortName: "USR", name: "Uniunea Salvați România", color: "#1d71b8" },
   aur: { id: "party-aur", slug: "aur", shortName: "AUR", name: "Alianța pentru Unirea Românilor", color: "#111827" },
   udmr: { id: "party-udmr", slug: "udmr", shortName: "UDMR", name: "Uniunea Democrată Maghiară din România", color: "#159447" },
+  alde: { id: "party-alde", slug: "alde", shortName: "ALDE", name: "Alianța Liberalilor și Democraților", color: "#f97316" },
+  pmp: { id: "party-pmp", slug: "pmp", shortName: "PMP", name: "Partidul Mișcarea Populară", color: "#2563eb" },
+  pdl: { id: "party-pdl", slug: "pdl", shortName: "PDL", name: "Partidul Democrat Liberal", color: "#f97316" },
+  "pp-dd": { id: "party-pp-dd", slug: "pp-dd", shortName: "PP-DD", name: "Partidul Poporului - Dan Diaconescu", color: "#7c3aed" },
+  pc: { id: "party-pc", slug: "pc", shortName: "PC", name: "Partidul Conservator", color: "#0f766e" },
+  unpr: { id: "party-unpr", slug: "unpr", shortName: "UNPR", name: "Uniunea Națională pentru Progresul României", color: "#0ea5e9" },
+  usl: { id: "party-usl", slug: "usl", shortName: "USL", name: "Uniunea Social Liberală", color: "#7f1d1d" },
+  "pro-romania": { id: "party-pro-romania", slug: "pro-romania", shortName: "PRO România", name: "PRO România", color: "#0e7490" },
   "sos-ro": { id: "party-sos-ro", slug: "sos-ro", shortName: "SOS RO", name: "SOS România", color: "#7f1d1d" },
   pot: { id: "party-pot", slug: "pot", shortName: "POT", name: "Partidul Oamenilor Tineri", color: "#9333ea" },
   pace: { id: "party-pace", slug: "pace", shortName: "PACE", name: "PACE - Întâi România", color: "#0f766e" },
@@ -118,6 +146,14 @@ export const partyCatalog: Record<string, Party> = {
 
 export function partyFromText(value: string): Party | undefined {
   const text = normalize(value);
+  if (text.includes("uniunea social liberala") || /\busl\b/.test(text)) return partyCatalog.usl;
+  if (text.includes("alianta liberalilor") || /\balde\b/.test(text)) return partyCatalog.alde;
+  if (text.includes("miscarea populara") || /\bpmp\b/.test(text)) return partyCatalog.pmp;
+  if (text.includes("democrat liberal") || /\bpdl\b/.test(text)) return partyCatalog.pdl;
+  if (text.includes("partidul poporului") || /\bpp-?dd\b/.test(text)) return partyCatalog["pp-dd"];
+  if (text.includes("partidul conservator") || /\bpc\b/.test(text)) return partyCatalog.pc;
+  if (text.includes("progresul romaniei") || /\bunpr\b/.test(text)) return partyCatalog.unpr;
+  if (text.includes("pro romania")) return partyCatalog["pro-romania"];
   if (text.includes("social democrat") || /\bpsd\b/.test(text)) return partyCatalog.psd;
   if (text.includes("national liberal") || /\bpnl\b/.test(text)) return partyCatalog.pnl;
   if (text.includes("salvati romania") || /\busr\b/.test(text)) return partyCatalog.usr;
