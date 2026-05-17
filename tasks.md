@@ -145,6 +145,10 @@ implementation steps.
   - 1 page imported
   - 0 failures
   - stale error metadata cleared
+- [x] Import the next bounded Senate 2025 bill batch:
+  - 10 pages imported
+  - 0 failures
+  - Senate 2025 bill discoveries now 18 imported / 83 pending / 0 failed
 - [x] Use Senate bill timelines as a complementary lifecycle/vote source by parsing dated lifecycle rows and nested Senate/Deputies vote or bill links.
 - [x] Change source discovery dedupe to canonical official URLs plus official identifiers.
 - [x] Fix member directory search so politician last-name queries work.

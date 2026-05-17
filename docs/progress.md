@@ -931,3 +931,17 @@ Verification:
   - 93 pending;
   - 8 imported;
   - 0 failed.
+
+## 2026-05-17 — Senate 2025 Backfill Batch
+
+- Imported the next bounded Senate 2025 bill batch from pending discoveries:
+  - 10 imported;
+  - 0 partial;
+  - 0 failed;
+  - 0 skipped.
+- Senate 2025 bill discovery status after the batch:
+  - 83 pending;
+  - 18 imported;
+  - 0 failed.
+- Smoke-checked the live Vercel projects page:
+  - `/ro/bills` returned `200`.
