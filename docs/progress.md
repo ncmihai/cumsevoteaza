@@ -912,3 +912,22 @@ Verification:
   - 0 partial;
   - 0 failed;
   - refreshed read models to 115 bill summaries and 4301 search-index rows.
+
+## 2026-05-17 — Targeted Senate Retry
+
+- Added targeted pending-import filters:
+  - `--official-id=<id>`;
+  - `--source-url=<url>`.
+- Used the new filter to retry only the previously failed Senate discovery
+  `L522/2025`.
+- Retry result:
+  - 1 imported;
+  - 0 partial;
+  - 0 failed.
+- Updated discovery status handling so successful imports clear stale
+  `failure_count` and `last_error` values.
+- Cleaned the already-imported `L522/2025` Neon row after the retry.
+- Senate 2025 bill discovery status after cleanup:
+  - 93 pending;
+  - 8 imported;
+  - 0 failed.

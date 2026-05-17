@@ -138,6 +138,13 @@ implementation steps.
 - [x] Import a controlled Senate 2025 bill batch after the fix:
   - 5 pages imported
   - 0 failures
+- [x] Add targeted pending import filters:
+  - `--official-id`
+  - `--source-url`
+- [x] Retry and clean the old `L522/2025` Senate failure:
+  - 1 page imported
+  - 0 failures
+  - stale error metadata cleared
 - [x] Use Senate bill timelines as a complementary lifecycle/vote source by parsing dated lifecycle rows and nested Senate/Deputies vote or bill links.
 - [x] Change source discovery dedupe to canonical official URLs plus official identifiers.
 - [x] Fix member directory search so politician last-name queries work.
@@ -447,8 +454,6 @@ implementation steps.
 - Push cron/backfill implementation to the Vercel repo.
 - Tune official source seeds and run a small date-slice backfill before the full 2024-present backfill.
 - Continue 2025 backfill one bounded batch at a time:
-  - retry/fix the old `L522/2025` failed discovery after the dedupe patch reaches
-    production code;
   - import more Senate `B` candidates in small batches;
   - continue Deputies yearly project imports;
   - run month-scoped Deputies vote discovery/imports.

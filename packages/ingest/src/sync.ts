@@ -44,6 +44,8 @@ export interface SyncOptions {
   senateFrom?: number;
   senateTo?: number;
   senatePrefixes?: Array<"B" | "BP" | "L" | "PLX">;
+  officialId?: string;
+  sourceUrl?: string;
 }
 
 export interface SyncSummary {
@@ -139,6 +141,8 @@ export async function importPendingDiscoveries(options: SyncOptions = {}): Promi
       inArray(schema.sourceDiscoveries.status, ["pending", "partial", "failed"]),
       options.chamber ? eq(schema.sourceDiscoveries.chamber, options.chamber) : undefined,
       options.kind ? eq(schema.sourceDiscoveries.kind, options.kind) : undefined,
+      options.officialId ? eq(schema.sourceDiscoveries.officialId, options.officialId) : undefined,
+      options.sourceUrl ? eq(schema.sourceDiscoveries.sourceUrl, canonicalizeOfficialUrl(options.sourceUrl)) : undefined,
       discoveryYearFilter(options.years)
     ].filter((filter): filter is Exclude<typeof filter, undefined> => Boolean(filter));
     const rows = await session.db
@@ -570,7 +574,7 @@ async function markDiscovery(id: string, status: DiscoveryStatus, sourceSnapshot
   const session = createDbSession();
   try {
     const row = await session.db.select().from(schema.sourceDiscoveries).where(eq(schema.sourceDiscoveries.id, id)).limit(1);
-    const failureCount = status === "failed" ? (row[0]?.failureCount ?? 0) + 1 : row[0]?.failureCount ?? 0;
+    const failureCount = status === "failed" ? (row[0]?.failureCount ?? 0) + 1 : 0;
     await session.db
       .update(schema.sourceDiscoveries)
       .set({
@@ -579,7 +583,7 @@ async function markDiscovery(id: string, status: DiscoveryStatus, sourceSnapshot
         lastAttemptAt: new Date(),
         sourceSnapshotId: sourceSnapshotId ?? row[0]?.sourceSnapshotId,
         failureCount,
-        lastError: error
+        lastError: error ?? null
       })
       .where(eq(schema.sourceDiscoveries.id, id));
   } finally {

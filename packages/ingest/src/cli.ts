@@ -530,7 +530,9 @@ function syncOptions() {
     deputiesVoteMonths: numberListFlag("deputies-vote-months"),
     senateFrom: numberFlag("senate-from"),
     senateTo: numberFlag("senate-to"),
-    senatePrefixes: senatePrefixesFlag()
+    senatePrefixes: senatePrefixesFlag(),
+    officialId: flag("official-id"),
+    sourceUrl: flag("source-url")
   };
 }
 
