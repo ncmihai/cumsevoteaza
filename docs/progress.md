@@ -798,3 +798,29 @@ Verification:
   - `2020-2024`: 12 period-relevant chamber groups
   - `2012-2016`: 10 period-relevant chamber groups
   - `2004-2008`: 8 period-relevant chamber groups
+
+## 2026-05-17 — 2025 Bills/Votes Coverage Audit
+
+- Confirmed the database does not yet contain all 2025 bills/votes.
+- Current imported 2025 votes after audit:
+  - Senate: 2
+  - Deputies: 64
+- Current imported 2025 projects after the first bounded import batch:
+  - Senate: 11
+  - Deputies: 20
+- Fixed `import:pending --years=<year>` so pending imports are constrained by
+  `source_discoveries.discovered_on`.
+- Found an old 2015 Deputies vote (`idv=12774`) at the front of the unfiltered
+  pending queue, which explains why broad vote imports were pulling old pages.
+- Updated Deputies yearly-list discovery from the obsolete `/pls/...` URL to
+  the working official `/ords/pls/proiecte/upl_pck2015.lista?anp=<year>` URL.
+- Verified the official 2025 Deputies yearly project list:
+  - expected records: 592
+  - discovered records: 592
+- Imported a bounded 2025 Deputies project batch:
+  - 20 imported
+  - 0 partial
+  - 0 failed
+- Tried all-month Deputies vote discovery for 2025, but it ran too long as one
+  job. Next pass should run month-scoped vote discovery batches and add better
+  progress logging/timeouts.

@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, or } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import type { ChamberId, SourceSnapshot, SourceStatus } from "@cumsevoteaza/parliament-model";
@@ -131,7 +131,8 @@ export async function importPendingDiscoveries(options: SyncOptions = {}): Promi
     const filters = [
       inArray(schema.sourceDiscoveries.status, ["pending", "partial", "failed"]),
       options.chamber ? eq(schema.sourceDiscoveries.chamber, options.chamber) : undefined,
-      options.kind ? eq(schema.sourceDiscoveries.kind, options.kind) : undefined
+      options.kind ? eq(schema.sourceDiscoveries.kind, options.kind) : undefined,
+      discoveryYearFilter(options.years)
     ].filter((filter): filter is Exclude<typeof filter, undefined> => Boolean(filter));
     const rows = await session.db
       .select()
@@ -149,6 +150,19 @@ export async function importPendingDiscoveries(options: SyncOptions = {}): Promi
   } finally {
     await session.close();
   }
+}
+
+function discoveryYearFilter(years?: number[]) {
+  const validYears = (years ?? []).filter((year) => Number.isInteger(year));
+  if (validYears.length === 0) return undefined;
+  return or(
+    ...validYears.map((year) =>
+      and(
+        gte(schema.sourceDiscoveries.discoveredOn, `${year}-01-01`),
+        lt(schema.sourceDiscoveries.discoveredOn, `${year + 1}-01-01`)
+      )
+    )
+  );
 }
 
 async function discoverSources(chamber: ChamberId, seedUrls: string[], options: SyncOptions): Promise<SyncSummary> {
@@ -411,7 +425,7 @@ async function discoverGeneratedSenateBills(
 }
 
 function deputiesSeedUrls(years: number[]): string[] {
-  return years.map((year) => `https://www.cdep.ro/pls/proiecte/upl_pck2015.lista?anp=${year}`);
+  return years.map((year) => `https://www.cdep.ro/ords/pls/proiecte/upl_pck2015.lista?anp=${year}`);
 }
 
 async function discoverDeputiesVoteDates(years: number[], options: SyncOptions): Promise<string[]> {

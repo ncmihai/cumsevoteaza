@@ -110,6 +110,13 @@ implementation steps.
 - [x] Add identifier normalization for Senate `B`, `BP`, `L`, compact `PLX`, and Chamber `PL-x`.
 - [x] Add generated Senate discovery prefixes via `--senate-prefixes=B,BP,L,PLX`.
 - [x] Add a dedicated Deputies yearly-list parser for `upl_pck2015.lista?anp=<year>` as the project backbone when the official endpoint is reachable.
+- [x] Update Deputies yearly-list discovery to use the current official `/ords/pls/proiecte/upl_pck2015.lista?anp=<year>` URL.
+- [x] Make `ingest:import:pending --years=<year>` filter pending discoveries by `discovered_on`.
+- [x] Discover the official 2025 Deputies project list:
+  - expected 592
+  - discovered 592
+- [x] Import the first bounded 2025 Deputies project batch:
+  - 20 project pages imported
 - [x] Use Senate bill timelines as a complementary lifecycle/vote source by parsing dated lifecycle rows and nested Senate/Deputies vote or bill links.
 - [x] Change source discovery dedupe to canonical official URLs plus official identifiers.
 - [x] Fix member directory search so politician last-name queries work.
