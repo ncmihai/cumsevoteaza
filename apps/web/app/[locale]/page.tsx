@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, FileText, Flame, Search, TrendingUp, UserRound } from "lucide-react";
+import { BarChart3, FileText, Search, TrendingUp, UserRound } from "lucide-react";
 import { formatDate, voteChoiceLabels } from "@cumsevoteaza/parliament-model";
 import { getHomeDashboardData, type DashboardItem } from "@/lib/explorer-data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
@@ -42,7 +42,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       <section className="mt-8 grid gap-4 lg:grid-cols-2">
-        <Panel title={labels.trendingVotes} icon={<Flame size={18} aria-hidden="true" />}>
+        <Panel title={labels.trendingVotes} icon={<TrendingUp size={18} aria-hidden="true" />}>
           <MetricList items={dashboard.trendingVotes} empty={labels.noActivity} />
         </Panel>
         <Panel title={labels.trendingProjects} icon={<TrendingUp size={18} aria-hidden="true" />}>
@@ -57,7 +57,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <Link key={vote.id} href={`/${locale}/votes/${vote.id}`} className="block px-4 py-3 hover:bg-slate-50">
                 <div className="font-medium text-slate-950">{vote.title}</div>
                 <div className="mt-1 text-sm text-slate-600">
-                  {formatDate(vote.heldOn, locale)} · {voteChoiceLabels[locale].for}: {vote.totals.for} · Hot {hotCount}
+                  {formatDate(vote.heldOn, locale)} · {voteChoiceLabels[locale].for}: {vote.totals.for} · {labels.publicInterest} {hotCount}
                 </div>
               </Link>
             ))}
@@ -69,7 +69,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <Link key={bill.id} href={`/${locale}/bills/${bill.slug}`} className="block px-4 py-3 hover:bg-slate-50">
                 <div className="font-medium text-slate-950">{bill.identifiers.senate ?? bill.identifiers.deputies ?? bill.id}</div>
                 <div className="mt-1 line-clamp-2 text-sm text-slate-600">
-                  {submittedOn ? `${formatDate(submittedOn, locale)} · ` : ""}{bill.title} · Hot {hotCount}
+                  {submittedOn ? `${formatDate(submittedOn, locale)} · ` : ""}{bill.title} · {labels.publicInterest} {hotCount}
                 </div>
               </Link>
             ))}
@@ -138,8 +138,9 @@ function Explainer({ title, body }: { title: string; body: string }) {
 const pageLabels = {
   ro: {
     thisMonth: "Cele mai văzute luna aceasta",
-    trendingVotes: "Voturi hot",
-    trendingProjects: "Proiecte hot",
+    trendingVotes: "Voturi cu interes public",
+    trendingProjects: "Proiecte cu interes public",
+    publicInterest: "Interes public",
     latestVotes: "Ultimele voturi",
     latestProjects: "Ultimele proiecte",
     searches: "Căutări membri",
@@ -151,8 +152,9 @@ const pageLabels = {
   },
   en: {
     thisMonth: "Most viewed this month",
-    trendingVotes: "Hot votes",
-    trendingProjects: "Hot projects",
+    trendingVotes: "Votes with public interest",
+    trendingProjects: "Projects with public interest",
+    publicInterest: "Public interest",
     latestVotes: "Latest votes",
     latestProjects: "Latest projects",
     searches: "Member searches",

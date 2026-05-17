@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Flame } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 export function HotButton({
   entityType,
   entityId,
   initialCount,
-  label = "Hot"
+  label = "Public interest"
 }: {
   entityType: "bill" | "vote";
   entityId: string;
@@ -36,11 +36,11 @@ export function HotButton({
         });
       }}
       className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold ${
-        active ? "border-orange-600 bg-orange-600 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-orange-600 hover:text-orange-700"
+        active ? "border-blue-800 bg-blue-800 text-white" : "border-slate-300 bg-white text-slate-700 hover:border-blue-800 hover:text-blue-800"
       }`}
       aria-label={`${label}: ${count}`}
     >
-      <Flame size={14} aria-hidden="true" />
+      <TrendingUp size={14} aria-hidden="true" />
       {label} {count}
     </button>
   );

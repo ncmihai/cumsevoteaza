@@ -12,6 +12,7 @@ import { governmentSkeletonData } from "./government-skeleton";
 import { canonicalizeOfficialUrl } from "./official-urls";
 import { backfillPeopleFromMembers, persistChamberVote, persistGovernmentSkeleton, persistRoster, persistSenateBill, persistSenateVote } from "./persist";
 import { snapshotFor } from "./parsers/utils";
+import { refreshReadModels } from "./read-models";
 import {
   discoverDeputiesSources,
   discoverDeputiesVoteSources,
@@ -151,6 +152,11 @@ async function main() {
 
   if (command === "import:pending") {
     console.log(JSON.stringify(await importPendingDiscoveries(syncOptions()), null, 2));
+    return;
+  }
+
+  if (command === "refresh-read-models") {
+    console.log(JSON.stringify(await refreshReadModels(), null, 2));
     return;
   }
 

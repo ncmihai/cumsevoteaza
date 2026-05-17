@@ -1,4 +1,4 @@
-import { eq, inArray, or } from "drizzle-orm";
+import { eq, inArray, or, sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import {
@@ -88,11 +88,36 @@ export interface MemberPageData {
   group?: ParliamentaryGroup;
   party?: Party;
   source?: SourceSnapshot;
+  legislatures: Legislature[];
+  selectedLegislature?: Legislature;
+  activity?: MemberLegislatureActivityData;
+  voteCoverage: Record<string, VoteCoverageData>;
   history: MemberHistoryRow[];
   votes: IndividualVote[];
   voteRecords: Vote[];
   sponsoredBills: Bill[];
   sourceKind: "database" | "demo";
+}
+
+export interface MemberLegislatureActivityData {
+  votesFor: number;
+  votesAgainst: number;
+  abstentions: number;
+  presentNotVoting: number;
+  absent: number;
+  unknown: number;
+  proposals: number;
+  committees: number;
+  roles: number;
+  firstActivityOn?: string;
+  lastActivityOn?: string;
+}
+
+export interface VoteCoverageData {
+  coverageLevel: "nominal" | "group_totals" | "result_only" | "source_only";
+  nominalVotes: number;
+  groupTotals: number;
+  sourceStatus: "parsed" | "partial" | "failed";
 }
 
 export interface PartyPageData {
@@ -197,8 +222,8 @@ export async function getMemberDirectoryData(filters?: { chamber?: string; group
   };
 }
 
-export async function getMemberPageData(slug: string): Promise<MemberPageData | undefined> {
-  const dbData = await tryDatabaseMember(slug);
+export async function getMemberPageData(slug: string, options: { legislature?: string } = {}): Promise<MemberPageData | undefined> {
+  const dbData = await tryDatabaseMember(slug, options);
   if (dbData) return dbData;
 
   const member = demoDataset.members.find((item) => item.slug === slug || item.id === slug);
@@ -208,14 +233,41 @@ export async function getMemberPageData(slug: string): Promise<MemberPageData | 
   const group = demoDataset.groups.find((item) => item.id === groupMembership?.groupId);
   const party = demoDataset.parties.find((item) => item.id === group?.partyId);
   const mandate = demoDataset.mandates.find((item) => item.memberId === member.id);
+  const legislatures = demoDataset.legislatures.filter((legislature) => demoDataset.mandates.some((item) => item.memberId === member.id && item.legislatureId === legislature.id));
+  const selectedLegislature = legislatures.find((legislature) => legislature.id === options.legislature) ?? legislatures[0];
+  const selectedMandate = selectedLegislature
+    ? demoDataset.mandates.find((item) => item.memberId === member.id && item.legislatureId === selectedLegislature.id)
+    : mandate;
   const source = demoDataset.sourceSnapshots.find((item) => item.id === groupMembership?.sourceSnapshotId);
-  const votes = demoDataset.individualVotes.filter((vote) => vote.memberId === member.id);
+  const votes = demoDataset.individualVotes.filter((vote) => {
+    const record = demoDataset.votes.find((item) => item.id === vote.voteId);
+    return vote.memberId === member.id && (!selectedLegislature || (record && record.heldOn >= selectedLegislature.startsOn && record.heldOn < selectedLegislature.endsOn));
+  });
   const voteRecords = demoDataset.votes.filter((vote) => votes.some((individualVote) => individualVote.voteId === vote.id));
   const sponsoredBills = demoDataset.billSponsors
     .filter((sponsor) => sponsor.memberId === member.id)
-    .flatMap((sponsor) => demoDataset.bills.filter((bill) => bill.id === sponsor.billId));
+    .flatMap((sponsor) => demoDataset.bills.filter((bill) => bill.id === sponsor.billId))
+    .filter((bill) => {
+      const events = demoDataset.billEvents.filter((event) => event.billId === bill.id);
+      return !selectedLegislature || events.some((event) => event.occurredOn >= selectedLegislature.startsOn && event.occurredOn < selectedLegislature.endsOn);
+    });
 
-  return { member, mandate, group, party, source, history, votes, voteRecords, sponsoredBills, sourceKind: "demo" };
+  return {
+    member,
+    mandate: selectedMandate,
+    group,
+    party,
+    source,
+    legislatures,
+    selectedLegislature,
+    activity: activityFromRows(votes, sponsoredBills.length, history),
+    voteCoverage: {},
+    history,
+    votes,
+    voteRecords,
+    sponsoredBills,
+    sourceKind: "demo"
+  };
 }
 
 export async function getPartyPageData(slug: string): Promise<PartyPageData | undefined> {
@@ -439,7 +491,7 @@ async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: 
   }
 }
 
-async function tryDatabaseMember(slug: string): Promise<MemberPageData | undefined> {
+async function tryDatabaseMember(slug: string, options: { legislature?: string } = {}): Promise<MemberPageData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
   const session = createDbSession();
@@ -470,21 +522,26 @@ async function tryDatabaseMember(slug: string): Promise<MemberPageData | undefin
       .from(schema.memberCommitteeMemberships)
       .where(inArray(schema.memberCommitteeMemberships.memberId, memberIds));
     const roleRows = await session.db.select().from(schema.memberRoles).where(inArray(schema.memberRoles.memberId, memberIds));
-    const individualVoteRows = await session.db
-      .select()
-      .from(schema.individualVotes)
-      .where(inArray(schema.individualVotes.memberId, memberIds));
-    const billSponsorRows = await session.db.select().from(schema.billSponsors).where(inArray(schema.billSponsors.memberId, memberIds));
     const groups = (await session.db.select().from(schema.parliamentaryGroups)).map(mapGroup);
     const parties = (await session.db.select().from(schema.parties)).map(mapParty);
-    const votes = individualVoteRows.map(mapIndividualVote);
-    const voteRows = await session.db.select().from(schema.votes);
-    const billRows = await session.db.select().from(schema.bills);
     const memberships = membershipRows.map(mapMemberGroupMembership);
     const mandates = mandateRows.map(mapMemberMandate);
-    const mandate = latestMandate(mandates);
+    const legislatureRows = await session.db.select().from(schema.legislatures);
+    const legislatures = legislatureRows
+      .map(mapLegislature)
+      .filter((legislature) => mandates.some((mandate) => mandate.legislatureId === legislature.id))
+      .sort((a, b) => b.startsOn.localeCompare(a.startsOn));
+    const selectedLegislature = legislatures.find((legislature) => legislature.id === options.legislature) ?? legislatures[0];
+    const mandate = latestMandate(mandates.filter((item) => !selectedLegislature || item.legislatureId === selectedLegislature.id)) ?? latestMandate(mandates);
     const member = relatedMembers.find((item) => item.id === mandate?.memberId) ?? mapMember(memberRow);
-    const currentMembership = latestMembership(memberships.filter((membership) => !mandate || membership.memberId === mandate.memberId));
+    const currentMembership =
+      mandate && selectedLegislature
+        ? latestMembershipDuring(
+            memberships.filter((membership) => membership.memberId === mandate.memberId),
+            mandate.startsOn,
+            earliestDate(mandate.endsOn, selectedLegislature.endsOn)
+          )
+        : latestMembership(memberships.filter((membership) => !mandate || membership.memberId === mandate.memberId));
     const group = groups.find((item) => item.id === currentMembership?.groupId);
     const party = parties.find((item) => item.id === group?.partyId);
     const sourceId =
@@ -495,25 +552,41 @@ async function tryDatabaseMember(slug: string): Promise<MemberPageData | undefin
       ? await session.db.select().from(schema.sourceSnapshots).where(eq(schema.sourceSnapshots.id, sourceId)).limit(1)
       : [];
 
+    const selectedVotes = selectedLegislature
+      ? await getMemberVotesForLegislature(session.db, memberIds, selectedLegislature.id)
+      : { individualVotes: [], voteRecords: [] };
+    const sponsoredBills = selectedLegislature
+      ? await getMemberSponsoredBillsForLegislature(session.db, memberIds, selectedLegislature.id)
+      : [];
+    const activity = selectedLegislature
+      ? await getMemberLegislatureActivity(session.db, memberIds, selectedLegislature.id)
+      : undefined;
+    const voteCoverage = await getVoteCoverage(session.db, selectedVotes.voteRecords.map((vote) => vote.id));
+    const history = buildMemberHistory({
+      mandates,
+      groupMemberships: memberships,
+      partyAffiliations: partyAffiliationRows.map(mapMemberPartyAffiliation),
+      committees: committeeRows.map(mapMemberCommitteeMembership),
+      roles: roleRows.map(mapMemberRole),
+      groups,
+      parties,
+      votes: selectedVotes.individualVotes
+    });
+
     return {
       member,
       mandate,
       group,
       party,
       source: sourceRow ? mapSource(sourceRow) : undefined,
-      history: buildMemberHistory({
-        mandates,
-        groupMemberships: memberships,
-        partyAffiliations: partyAffiliationRows.map(mapMemberPartyAffiliation),
-        committees: committeeRows.map(mapMemberCommitteeMembership),
-        roles: roleRows.map(mapMemberRole),
-        groups,
-        parties,
-        votes
-      }),
-      votes,
-      voteRecords: voteRows.map(mapVote).filter((vote) => votes.some((individualVote) => individualVote.voteId === vote.id)),
-      sponsoredBills: billRows.map(mapBill).filter((bill) => billSponsorRows.some((sponsor) => sponsor.billId === bill.id)),
+      legislatures,
+      selectedLegislature,
+      activity: activity ?? activityFromRows(selectedVotes.individualVotes, sponsoredBills.length, history),
+      voteCoverage,
+      history,
+      votes: selectedVotes.individualVotes,
+      voteRecords: selectedVotes.voteRecords,
+      sponsoredBills,
       sourceKind: "database"
     };
   } catch {
@@ -744,6 +817,233 @@ function mapDocument(row: typeof schema.documents.$inferSelect): DocumentSource 
     label: row.label,
     url: row.url
   };
+}
+
+async function getMemberVotesForLegislature(
+  db: ReturnType<typeof createDbSession>["db"],
+  memberIds: string[],
+  legislatureId: string
+): Promise<{ individualVotes: IndividualVote[]; voteRecords: Vote[] }> {
+  if (memberIds.length === 0) return { individualVotes: [], voteRecords: [] };
+  const rows = await db.execute<MemberVoteRow>(sql`
+    select
+      iv.id as individual_vote_id,
+      iv.vote_id as individual_vote_vote_id,
+      iv.member_id as individual_vote_member_id,
+      iv.group_id as individual_vote_group_id,
+      iv.choice as individual_vote_choice,
+      iv.vote_method as individual_vote_method,
+      v.id as vote_id,
+      v.bill_id as vote_bill_id,
+      v.chamber as vote_chamber,
+      v.title as vote_title,
+      v.held_on as vote_held_on,
+      v.vote_type as vote_type,
+      v.present as vote_present,
+      v.for_count as vote_for_count,
+      v.against as vote_against,
+      v.abstention as vote_abstention,
+      v.present_not_voting as vote_present_not_voting,
+      v.absent as vote_absent,
+      v.source_snapshot_id as vote_source_snapshot_id
+    from individual_votes iv
+    join votes v on v.id = iv.vote_id
+    join legislatures l on l.id = ${legislatureId}
+    where iv.member_id in (${sql.join(memberIds.map((memberId) => sql`${memberId}`), sql`, `)})
+      and v.held_on >= l.starts_on
+      and v.held_on < l.ends_on
+    order by v.held_on desc, v.id desc
+    limit 100
+  `);
+  const voteById = new Map<string, Vote>();
+  const individualVotes = rows.map((row) => {
+    const vote = voteFromMemberVoteRow(row);
+    voteById.set(vote.id, vote);
+    return {
+      id: row.individual_vote_id,
+      voteId: row.individual_vote_vote_id,
+      memberId: row.individual_vote_member_id,
+      groupId: row.individual_vote_group_id ?? undefined,
+      choice: row.individual_vote_choice,
+      voteMethod: row.individual_vote_method ?? undefined
+    };
+  });
+  return { individualVotes, voteRecords: [...voteById.values()] };
+}
+
+async function getMemberSponsoredBillsForLegislature(
+  db: ReturnType<typeof createDbSession>["db"],
+  memberIds: string[],
+  legislatureId: string
+): Promise<Bill[]> {
+  if (memberIds.length === 0) return [];
+  const rows = await db.execute<MemberBillRow>(sql`
+    select distinct
+      b.id,
+      b.slug,
+      b.title,
+      b.identifiers,
+      b.chamber_of_origin,
+      b.status,
+      b.source_snapshot_ids,
+      coalesce(min(be.occurred_on), date '0001-01-01') as sort_date
+    from bill_sponsors bs
+    join bills b on b.id = bs.bill_id
+    left join bill_events be on be.bill_id = b.id
+    join legislatures l on l.id = ${legislatureId}
+    where bs.member_id in (${sql.join(memberIds.map((memberId) => sql`${memberId}`), sql`, `)})
+      and exists (
+        select 1
+        from bill_events be2
+        where be2.bill_id = b.id
+          and be2.occurred_on >= l.starts_on
+          and be2.occurred_on < l.ends_on
+      )
+    group by b.id, b.slug, b.title, b.identifiers, b.chamber_of_origin, b.status, b.source_snapshot_ids
+    order by sort_date desc, b.id desc
+    limit 100
+  `);
+  return rows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    identifiers: jsonRecord(row.identifiers),
+    chamberOfOrigin: row.chamber_of_origin === "senate" || row.chamber_of_origin === "deputies" ? row.chamber_of_origin : "unknown",
+    status: row.status,
+    sourceSnapshotIds: jsonStringArray(row.source_snapshot_ids)
+  }));
+}
+
+async function getMemberLegislatureActivity(
+  db: ReturnType<typeof createDbSession>["db"],
+  memberIds: string[],
+  legislatureId: string
+): Promise<MemberLegislatureActivityData | undefined> {
+  if (memberIds.length === 0) return undefined;
+  try {
+    const rows = await db.execute<MemberActivityRow>(sql`
+      select
+        sum(votes_for)::int as votes_for,
+        sum(votes_against)::int as votes_against,
+        sum(abstentions)::int as abstentions,
+        sum(present_not_voting)::int as present_not_voting,
+        sum(absent)::int as absent,
+        sum(unknown)::int as unknown,
+        sum(proposals)::int as proposals,
+        sum(committees)::int as committees,
+        sum(roles)::int as roles,
+        min(first_activity_on) as first_activity_on,
+        max(last_activity_on) as last_activity_on
+      from member_legislature_activity
+      where member_id in (${sql.join(memberIds.map((memberId) => sql`${memberId}`), sql`, `)})
+        and legislature_id = ${legislatureId}
+    `);
+    const row = rows[0];
+    if (!row) return undefined;
+    return {
+      votesFor: Number(row.votes_for ?? 0),
+      votesAgainst: Number(row.votes_against ?? 0),
+      abstentions: Number(row.abstentions ?? 0),
+      presentNotVoting: Number(row.present_not_voting ?? 0),
+      absent: Number(row.absent ?? 0),
+      unknown: Number(row.unknown ?? 0),
+      proposals: Number(row.proposals ?? 0),
+      committees: Number(row.committees ?? 0),
+      roles: Number(row.roles ?? 0),
+      firstActivityOn: row.first_activity_on ? dateString(row.first_activity_on) : undefined,
+      lastActivityOn: row.last_activity_on ? dateString(row.last_activity_on) : undefined
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+async function getVoteCoverage(db: ReturnType<typeof createDbSession>["db"], voteIds: string[]): Promise<Record<string, VoteCoverageData>> {
+  if (voteIds.length === 0) return {};
+  try {
+    const rows = await db.execute<VoteCoverageRow>(sql`
+      select vote_id, coverage_level, nominal_votes, group_totals, source_status
+      from vote_coverage_summaries
+      where vote_id in (${sql.join(voteIds.map((voteId) => sql`${voteId}`), sql`, `)})
+    `);
+    return Object.fromEntries(
+      rows.map((row) => [
+        row.vote_id,
+        {
+          coverageLevel: row.coverage_level,
+          nominalVotes: Number(row.nominal_votes),
+          groupTotals: Number(row.group_totals),
+          sourceStatus: row.source_status
+        }
+      ])
+    );
+  } catch {
+    return {};
+  }
+}
+
+function activityFromRows(votes: IndividualVote[], proposals: number, history: MemberHistoryRow[]): MemberLegislatureActivityData {
+  return {
+    votesFor: votes.filter((vote) => vote.choice === "for").length,
+    votesAgainst: votes.filter((vote) => vote.choice === "against").length,
+    abstentions: votes.filter((vote) => vote.choice === "abstention").length,
+    presentNotVoting: votes.filter((vote) => vote.choice === "present_not_voting").length,
+    absent: votes.filter((vote) => vote.choice === "absent").length,
+    unknown: votes.filter((vote) => vote.choice === "unknown").length,
+    proposals,
+    committees: history.filter((row) => row.type === "committee").length,
+    roles: history.filter((row) => row.type === "role").length
+  };
+}
+
+function voteFromMemberVoteRow(row: MemberVoteRow): Vote {
+  return {
+    id: row.vote_id,
+    billId: row.vote_bill_id ?? undefined,
+    chamber: row.vote_chamber,
+    title: row.vote_title,
+    heldOn: dateString(row.vote_held_on),
+    voteType: row.vote_type,
+    totals: {
+      present: Number(row.vote_present),
+      for: Number(row.vote_for_count),
+      against: Number(row.vote_against),
+      abstention: Number(row.vote_abstention),
+      presentNotVoting: Number(row.vote_present_not_voting),
+      absent: row.vote_absent === null || row.vote_absent === undefined ? undefined : Number(row.vote_absent)
+    },
+    sourceSnapshotId: row.vote_source_snapshot_id
+  };
+}
+
+function dateString(value: Date | string): string {
+  return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
+}
+
+function jsonRecord(value: unknown): Record<string, string> {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, string>;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, string> : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
+function jsonStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 function directoryBillItem(input: {
@@ -1007,3 +1307,59 @@ function chamberForMemberPeriod(mandates: MemberMandate[], memberId: string, dat
     "deputies"
   );
 }
+
+type DateValue = Date | string;
+
+type MemberVoteRow = {
+  individual_vote_id: string;
+  individual_vote_vote_id: string;
+  individual_vote_member_id: string;
+  individual_vote_group_id: string | null;
+  individual_vote_choice: IndividualVote["choice"];
+  individual_vote_method: string | null;
+  vote_id: string;
+  vote_bill_id: string | null;
+  vote_chamber: Vote["chamber"];
+  vote_title: string;
+  vote_held_on: DateValue;
+  vote_type: string;
+  vote_present: number;
+  vote_for_count: number;
+  vote_against: number;
+  vote_abstention: number;
+  vote_present_not_voting: number;
+  vote_absent: number | null;
+  vote_source_snapshot_id: string;
+};
+
+type MemberBillRow = {
+  id: string;
+  slug: string;
+  title: string;
+  identifiers: unknown;
+  chamber_of_origin: string;
+  status: string;
+  source_snapshot_ids: unknown;
+};
+
+type MemberActivityRow = {
+  votes_for: number | null;
+  votes_against: number | null;
+  abstentions: number | null;
+  present_not_voting: number | null;
+  absent: number | null;
+  unknown: number | null;
+  proposals: number | null;
+  committees: number | null;
+  roles: number | null;
+  first_activity_on: DateValue | null;
+  last_activity_on: DateValue | null;
+};
+
+type VoteCoverageRow = {
+  vote_id: string;
+  coverage_level: VoteCoverageData["coverageLevel"];
+  nominal_votes: number;
+  group_totals: number;
+  source_status: VoteCoverageData["sourceStatus"];
+};

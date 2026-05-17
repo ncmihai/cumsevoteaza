@@ -8,3 +8,4 @@ export {
   type SyncOptions,
   type SyncSummary
 } from "./sync";
+export { refreshReadModels, type ReadModelRefreshSummary } from "./read-models";

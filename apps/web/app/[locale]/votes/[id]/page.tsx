@@ -14,6 +14,7 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
   const { locale: rawLocale, id } = await params;
   const locale: AppLocale = isLocale(rawLocale) ? rawLocale : "ro";
   const messages = messagesFor(locale);
+  const labels = votePageLabels[locale];
   const data = await getVotePageData(id);
   if (!data) notFound();
   const { vote, bill, source, groups, members, groupTotals, individualVotes, seatVotes, sourceKind } = data;
@@ -33,7 +34,7 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
           ) : null}
         </div>
         <div className="flex flex-col items-start gap-2">
-          <HotButton entityType="vote" entityId={vote.id} initialCount={hotCount} />
+          <HotButton entityType="vote" entityId={vote.id} initialCount={hotCount} label={labels.publicInterest} />
           {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
           <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
         </div>
@@ -95,3 +96,12 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
     </main>
   );
 }
+
+const votePageLabels = {
+  ro: {
+    publicInterest: "Marchează interes"
+  },
+  en: {
+    publicInterest: "Mark interest"
+  }
+} satisfies Record<AppLocale, Record<string, string>>;

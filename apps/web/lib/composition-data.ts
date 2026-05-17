@@ -46,10 +46,12 @@ export interface CompositionPageData {
 
 export interface CompositionTimelineStop {
   id: string;
-  government: Government;
+  legislature: Legislature;
+  activeGovernment?: Government;
+  governments: Government[];
   primeMinister?: Person;
   primeMinisterRole?: GovernmentRole;
-  event: CompositionEvent;
+  events: CompositionEvent[];
   sourceStatus: "manual" | "verified";
   chambers: ChamberComposition[];
 }
@@ -156,33 +158,52 @@ async function tryDatabaseCompositionTimeline(
     const governmentsById = new Map(governments.map((government) => [government.id, government]));
     const events = eventRows
       .map(mapCompositionEvent)
-      .filter((event) => event.governmentId && isTimelineEvent(event.eventType))
-      .sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) || a.title.localeCompare(b.title, "ro"));
+      .filter((event) => isTimelineEvent(event.eventType))
+      .sort((a, b) => a.occurredOn.localeCompare(b.occurredOn) || a.title.localeCompare(b.title, "ro"));
+    const legislatures = legislatureRows.map(mapLegislature).sort((a, b) => b.startsOn.localeCompare(a.startsOn));
+    const today = new Date().toISOString().slice(0, 10);
 
     return {
       mode,
       asOf: currentComposition.asOf,
       currentComposition,
       sourceKind: "database",
-      stops: events.flatMap((event) => {
-        const government = event.governmentId ? governmentsById.get(event.governmentId) : undefined;
-        if (!government) return [];
-        const primeMinister = government.primeMinisterPersonId ? peopleById.get(government.primeMinisterPersonId) : undefined;
-        const primeMinisterRole = roles.find((role) => role.governmentId === government.id && role.personId === government.primeMinisterPersonId);
+      stops: legislatures.flatMap((legislature) => {
+        const legislatureGovernments = governments
+          .filter((government) => government.legislatureId === legislature.id)
+          .sort((a, b) => b.startsOn.localeCompare(a.startsOn));
+        const legislatureEvents = events.filter((event) => {
+          if (event.legislatureId === legislature.id) return true;
+          const government = event.governmentId ? governmentsById.get(event.governmentId) : undefined;
+          return government?.legislatureId === legislature.id;
+        });
+        if (legislatureGovernments.length === 0 && legislatureEvents.length === 0) return [];
+
+        const compositionDate = today >= legislature.startsOn && today < legislature.endsOn
+          ? today
+          : legislatureGovernments[0]?.startsOn ?? legislature.startsOn;
+        const activeGovernment =
+          legislatureGovernments.find((government) => isActiveGovernment(government, compositionDate)) ?? legislatureGovernments[0];
+        const primeMinister = activeGovernment?.primeMinisterPersonId ? peopleById.get(activeGovernment.primeMinisterPersonId) : undefined;
+        const primeMinisterRole = activeGovernment
+          ? roles.find((role) => role.governmentId === activeGovernment.id && role.personId === activeGovernment.primeMinisterPersonId)
+          : undefined;
         const stopComposition = buildComposition({
           mode,
-          asOf: event.occurredOn,
+          asOf: compositionDate,
           ...compositionRows,
           sourceKind: "database"
         });
         return [
           {
-            id: event.id,
-            government,
+            id: legislature.id,
+            legislature,
+            activeGovernment,
+            governments: legislatureGovernments,
             primeMinister,
             primeMinisterRole,
-            event,
-            sourceStatus: government.sourceSnapshotId || event.sourceSnapshotId ? "verified" : "manual",
+            events: legislatureEvents,
+            sourceStatus: legislatureGovernments.some((government) => government.sourceSnapshotId) || legislatureEvents.some((event) => event.sourceSnapshotId) ? "verified" : "manual",
             chambers: hasCompositionSeats(stopComposition) ? stopComposition.chambers : []
           }
         ];
@@ -573,8 +594,19 @@ function mapCompositionEvent(row: typeof schema.compositionEvents.$inferSelect):
   };
 }
 
+function mapLegislature(row: typeof schema.legislatures.$inferSelect): Legislature {
+  return {
+    id: row.id,
+    label: row.label,
+    startsOn: row.startsOn,
+    endsOn: row.endsOn
+  };
+}
+
 function isTimelineEvent(type: CompositionEvent["eventType"]): boolean {
   return [
+    "legislature_start",
+    "legislature_end",
     "government_designated",
     "government_invested",
     "government_ended",

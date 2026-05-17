@@ -12,6 +12,7 @@ import { cleanText, hashContent, slugify, snapshotFor } from "./parsers/utils";
 import { findOfficialIdentifiers, normalizeOfficialIdentifier } from "./parsers/identifiers";
 import { persistChamberVote, persistDeputiesBill, persistSenateBill, persistSenateVote } from "./persist";
 import { canonicalizeOfficialUrl } from "./official-urls";
+import { refreshReadModels } from "./read-models";
 
 export type DiscoveryKind = "bill" | "vote";
 export type DiscoveryStatus = "pending" | "imported" | "partial" | "failed" | "skipped";
@@ -53,6 +54,12 @@ export interface SyncSummary {
   failed: number;
   skipped: number;
   expected?: number;
+  readModels?: {
+    billVoteSummaries: number;
+    voteCoverageSummaries: number;
+    memberLegislatureActivity: number;
+    entitySearchIndex: number;
+  };
   errors: string[];
 }
 
@@ -146,6 +153,9 @@ export async function importPendingDiscoveries(options: SyncOptions = {}): Promi
       summary[result] += 1;
     }
     summary.skipped += rows.filter((item) => item.failureCount >= maxRetries).length;
+    if (summary.imported > 0 || summary.partial > 0) {
+      summary.readModels = await refreshReadModels();
+    }
     return summary;
   } finally {
     await session.close();
@@ -498,6 +508,7 @@ async function startIngestionRun(kind: string) {
   const session = createDbSession();
   const id = `run-${slugify(kind)}-${new Date().toISOString().replace(/[:.]/g, "-")}-${Math.random().toString(36).slice(2, 8)}`;
   try {
+    await markStaleRunningIngestionRuns(session.db, kind);
     await session.db.insert(schema.ingestionRuns).values({
       id,
       kind,
@@ -509,6 +520,23 @@ async function startIngestionRun(kind: string) {
   } finally {
     await session.close();
   }
+}
+
+async function markStaleRunningIngestionRuns(db: ReturnType<typeof createDbSession>["db"], kind: string) {
+  await db
+    .update(schema.ingestionRuns)
+    .set({
+      status: "failed",
+      finishedAt: new Date(),
+      error: "Marked failed before starting a new run because it was still running after 6 hours."
+    })
+    .where(
+      and(
+        eq(schema.ingestionRuns.kind, kind),
+        eq(schema.ingestionRuns.status, "running"),
+        lt(schema.ingestionRuns.startedAt, new Date(Date.now() - 6 * 60 * 60 * 1000))
+      )
+    );
 }
 
 async function finishIngestionRun(id: string, status: "completed" | "partial" | "failed", summary: SyncSummary, error?: string) {
@@ -668,6 +696,7 @@ function addSummary(target: SyncSummary, next: SyncSummary) {
   target.failed += next.failed;
   target.skipped += next.skipped;
   target.expected = (target.expected ?? 0) + (next.expected ?? 0);
+  target.readModels = next.readModels ?? target.readModels;
   target.errors.push(...next.errors);
 }
 

@@ -12,6 +12,7 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
   const { locale: rawLocale, id } = await params;
   const locale: AppLocale = isLocale(rawLocale) ? rawLocale : "ro";
   const messages = messagesFor(locale);
+  const labels = billPageLabels[locale];
   const data = await getBillPageData(id);
   if (!data) notFound();
   const { bill, events, documents, votes, source, sourceKind } = data;
@@ -27,7 +28,7 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
           <p className="mt-3 text-slate-600">{bill.status}</p>
         </div>
         <div className="flex flex-col items-start gap-2">
-          <HotButton entityType="bill" entityId={bill.id} initialCount={hotCount} />
+          <HotButton entityType="bill" entityId={bill.id} initialCount={hotCount} label={labels.publicInterest} />
           {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
           <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
         </div>
@@ -77,3 +78,12 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
     </main>
   );
 }
+
+const billPageLabels = {
+  ro: {
+    publicInterest: "Marchează interes"
+  },
+  en: {
+    publicInterest: "Mark interest"
+  }
+} satisfies Record<AppLocale, Record<string, string>>;

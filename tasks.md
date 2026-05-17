@@ -156,8 +156,13 @@ implementation steps.
   - explainers for Parliament roles, committees, and legislative stages
 - [x] Add a minimal event/analytics table for private first-party usage counts, avoiding personal tracking.
 - [x] Add anonymous `hot` reactions for vote and project cards/pages.
+- [x] Rename visible `hot` language to neutral public-interest wording while keeping the internal reaction key compatible.
+- [x] Add durable read-model tables for member legislature activity, entity search, bill vote summaries, and vote coverage.
+- [x] Add `ingest:refresh-read-models` to rebuild derived data after importer batches.
+- [x] Add stale-running ingestion-run cleanup before starting a new run of the same kind.
 - [ ] Add automated UI tests for directory filters, pagination/load-more, loading states, and landing-page dynamic panels.
 - [ ] Set `ANALYTICS_SALT` in Vercel so production can record anonymous views, searches, and hot reactions.
+- [x] Apply migrations `0005` and `0006` to Neon, then run `npm run ingest:refresh-read-models`.
 
 ## Active Milestone — Historical Members + Compoziții Foundation
 
@@ -193,6 +198,10 @@ implementation steps.
   - stacked mobile cards
   - manual/official verification badges
   - current composition stage when roster data exists
+- [x] Change `Compoziții` timeline from cabinet-first stops to legislature-first sections with events nested inside each legislature.
+- [x] Add a three-column desktop composition layout: legislature/event rail, government period panel, compact Senate/Deputies chamber maps.
+- [x] Add a member profile legislature selector and period-scoped activity/votes/proposals sections.
+- [x] Preserve the current route and query params when switching languages.
 - [ ] Add current composition seat map that is not tied to a vote and uses alignment mode:
   - official investiture / coalition
   - computed governing support
@@ -204,6 +213,14 @@ implementation steps.
 - `npm run test` — passed.
 - `npm run typecheck` — passed.
 - `npm run build` — passed with escalation because Turbopack worker binding is sandbox-blocked.
+- 2026-05-17 public-readiness pass:
+  - `npm run typecheck` passed.
+  - `npm run test` passed.
+  - `npm run build` passed with escalation because Turbopack worker binding is sandbox-blocked.
+  - Browser smoke passed for `/ro`, `/ro/compozitii`, `/ro/votes`, `/ro/bills`, and `/ro/members/andra-bica`.
+  - Locale switch preserves member route and `legislature` query params.
+  - Neon read-model refresh completed:
+    101 bill summaries, 68 vote coverage rows, 4087 member-legislature activity rows, 4287 search-index rows.
 - V2 `npm run test` — passed.
 - V2 `npm run typecheck` — passed.
 - V2 `npm run build` — passed.

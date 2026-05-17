@@ -22,7 +22,8 @@
     "discover:deputies-votes": "tsx src/cli.ts discover:deputies-votes",
     "backfill:2024": "tsx src/cli.ts backfill:2024",
     "sync:daily": "tsx src/cli.ts sync:daily",
-    "import:pending": "tsx src/cli.ts import:pending"
+    "import:pending": "tsx src/cli.ts import:pending",
+    "refresh-read-models": "tsx src/cli.ts refresh-read-models"
   },
   "dependencies": {
     "@cumsevoteaza/db": "0.1.0",

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
+import { LocaleSwitcher } from "./_components/LocaleSwitcher";
 
 export function generateStaticParams() {
   return [{ locale: "ro" }, { locale: "en" }];
@@ -18,7 +19,6 @@ export default async function LocaleLayout({
   if (!isLocale(rawLocale)) notFound();
   const locale = rawLocale as AppLocale;
   const messages = messagesFor(locale);
-  const otherLocale = locale === "ro" ? "en" : "ro";
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
@@ -41,9 +41,7 @@ export default async function LocaleLayout({
               <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${locale}/compozitii`}>
                 {messages.nav.compositions}
               </Link>
-              <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`/${otherLocale}`}>
-                {otherLocale.toUpperCase()}
-              </Link>
+              <LocaleSwitcher locale={locale} />
             </nav>
           </div>
         </header>

@@ -824,3 +824,49 @@ Verification:
 - Tried all-month Deputies vote discovery for 2025, but it ran too long as one
   job. Next pass should run month-scoped vote discovery batches and add better
   progress logging/timeouts.
+
+## 2026-05-17 — Legislature Timeline + Public-Ready Data Pass
+
+- Added derived read-model tables:
+  - `member_legislature_activity`
+  - `entity_search_index`
+  - `bill_vote_summaries`
+  - `vote_coverage_summaries`
+- Added query indexes for member mandates, group/party memberships, sponsors,
+  group vote totals, and nominal votes.
+- Added `ingest:refresh-read-models` and wired pending/backfill/daily import
+  flows to refresh read models after successful import batches.
+- Added stale-running ingestion-run cleanup before starting a new run of the
+  same kind.
+- Optimized member profile loading so the selected legislature fetches only
+  period-scoped votes/proposals instead of reading all historical votes and
+  bills into the page.
+- Added a member profile legislature selector with period-scoped activity,
+  vote coverage, votes, and proposals.
+- Changed `Compoziții` from cabinet-first timeline stops to legislature-first
+  timeline sections with nested events and governments.
+- Split the desktop `Compoziții` experience into three columns:
+  - legislature/event rail;
+  - active government/PM panel;
+  - compact Senate and Deputies maps.
+- Replaced visible `Hot` wording with neutral public-interest language while
+  keeping the internal `hot` reaction key for compatibility.
+- Added a client locale switcher that preserves the current path and query
+  params when switching between Romanian and English.
+- Verification:
+  - `npm run typecheck` passed.
+  - `npm run test` passed.
+  - `npm run build` passed with escalation because Turbopack worker binding is
+    sandbox-blocked.
+  - Browser smoke passed locally for `/ro`, `/ro/compozitii`, `/ro/votes`,
+    `/ro/bills`, and `/ro/members/andra-bica`.
+  - Locale switch smoke confirmed `/ro/members/andra-bica?legislature=leg-2024-2028`
+    links to `/en/members/andra-bica?legislature=leg-2024-2028`.
+- Neon migration/read-model refresh:
+  - migrations `0005` and `0006` applied successfully.
+  - first refresh failed because overlapping legislature periods produced
+    duplicate entity-search rows for a bill.
+  - fixed entity-search refresh to choose one row per entity.
+  - refreshed read models:
+    101 bill summaries, 68 vote coverage rows, 4087 member-legislature activity
+    rows, and 4287 search-index rows.

@@ -222,7 +222,10 @@ export const memberMandates = pgTable("member_mandates", {
   constituency: text("constituency"),
   status: text("status").notNull().default("unknown"),
   sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
-});
+}, (table) => ({
+  memberLegislatureIdx: index("member_mandates_member_legislature_idx").on(table.memberId, table.legislatureId, table.chamber),
+  legislatureChamberIdx: index("member_mandates_legislature_chamber_idx").on(table.legislatureId, table.chamber)
+}));
 
 export const memberGroupMemberships = pgTable("member_group_memberships", {
   id: text("id").primaryKey(),
@@ -231,7 +234,10 @@ export const memberGroupMemberships = pgTable("member_group_memberships", {
   startsOn: date("starts_on").notNull(),
   endsOn: date("ends_on"),
   sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
-});
+}, (table) => ({
+  memberPeriodIdx: index("member_group_memberships_member_period_idx").on(table.memberId, table.startsOn, table.endsOn),
+  groupPeriodIdx: index("member_group_memberships_group_period_idx").on(table.groupId, table.startsOn, table.endsOn)
+}));
 
 export const memberPartyAffiliations = pgTable("member_party_affiliations", {
   id: text("id").primaryKey(),
@@ -240,7 +246,10 @@ export const memberPartyAffiliations = pgTable("member_party_affiliations", {
   startsOn: date("starts_on").notNull(),
   endsOn: date("ends_on"),
   sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
-});
+}, (table) => ({
+  memberPeriodIdx: index("member_party_affiliations_member_period_idx").on(table.memberId, table.startsOn, table.endsOn),
+  partyPeriodIdx: index("member_party_affiliations_party_period_idx").on(table.partyId, table.startsOn, table.endsOn)
+}));
 
 export const memberGovernanceAlignments = pgTable("member_governance_alignments", {
   id: text("id").primaryKey(),
@@ -312,6 +321,19 @@ export const bills = pgTable("bills", {
   statusIdx: index("bills_status_idx").on(table.status)
 }));
 
+export const billVoteSummaries = pgTable("bill_vote_summaries", {
+  billId: text("bill_id").primaryKey().references(() => bills.id),
+  submittedOn: date("submitted_on"),
+  latestEventOn: date("latest_event_on"),
+  voteCount: integer("vote_count").notNull().default(0),
+  sourceStatus: sourceStatusEnum("source_status").notNull().default("partial"),
+  refreshedAt: timestamp("refreshed_at", { withTimezone: true }).notNull()
+}, (table) => ({
+  submittedIdx: index("bill_vote_summaries_submitted_idx").on(table.submittedOn, table.billId),
+  latestEventIdx: index("bill_vote_summaries_latest_event_idx").on(table.latestEventOn, table.billId),
+  sourceStatusIdx: index("bill_vote_summaries_source_status_idx").on(table.sourceStatus)
+}));
+
 export const billEvents = pgTable("bill_events", {
   id: text("id").primaryKey(),
   billId: text("bill_id").notNull().references(() => bills.id),
@@ -330,7 +352,10 @@ export const billSponsors = pgTable("bill_sponsors", {
   sponsorType: text("sponsor_type").notNull().default("unknown"),
   memberId: text("member_id").references(() => members.id),
   name: text("name").notNull()
-});
+}, (table) => ({
+  billIdx: index("bill_sponsors_bill_idx").on(table.billId),
+  memberIdx: index("bill_sponsors_member_idx").on(table.memberId)
+}));
 
 export const documents = pgTable("documents", {
   id: text("id").primaryKey(),
@@ -360,6 +385,18 @@ export const votes = pgTable("votes", {
   sourceSnapshotIdx: index("votes_source_snapshot_idx").on(table.sourceSnapshotId)
 }));
 
+export const voteCoverageSummaries = pgTable("vote_coverage_summaries", {
+  voteId: text("vote_id").primaryKey().references(() => votes.id),
+  coverageLevel: text("coverage_level").notNull().default("source_only"),
+  nominalVotes: integer("nominal_votes").notNull().default(0),
+  groupTotals: integer("group_totals").notNull().default(0),
+  sourceStatus: sourceStatusEnum("source_status").notNull().default("partial"),
+  refreshedAt: timestamp("refreshed_at", { withTimezone: true }).notNull()
+}, (table) => ({
+  coverageIdx: index("vote_coverage_summaries_coverage_idx").on(table.coverageLevel, table.sourceStatus),
+  sourceStatusIdx: index("vote_coverage_summaries_source_status_idx").on(table.sourceStatus)
+}));
+
 export const groupVoteTotals = pgTable("group_vote_totals", {
   id: text("id").primaryKey(),
   voteId: text("vote_id").notNull().references(() => votes.id),
@@ -368,7 +405,10 @@ export const groupVoteTotals = pgTable("group_vote_totals", {
   against: integer("against").notNull().default(0),
   abstention: integer("abstention").notNull().default(0),
   presentNotVoting: integer("present_not_voting").notNull().default(0)
-});
+}, (table) => ({
+  voteIdx: index("group_vote_totals_vote_idx").on(table.voteId),
+  groupIdx: index("group_vote_totals_group_idx").on(table.groupId)
+}));
 
 export const individualVotes = pgTable("individual_votes", {
   id: text("id").primaryKey(),
@@ -377,7 +417,53 @@ export const individualVotes = pgTable("individual_votes", {
   groupId: text("group_id").references(() => parliamentaryGroups.id),
   choice: voteChoiceEnum("choice").notNull(),
   voteMethod: text("vote_method")
-});
+}, (table) => ({
+  voteIdx: index("individual_votes_vote_idx").on(table.voteId),
+  memberIdx: index("individual_votes_member_idx").on(table.memberId),
+  groupIdx: index("individual_votes_group_idx").on(table.groupId)
+}));
+
+export const memberLegislatureActivity = pgTable("member_legislature_activity", {
+  id: text("id").primaryKey(),
+  memberId: text("member_id").notNull().references(() => members.id),
+  personId: text("person_id").references(() => people.id),
+  legislatureId: text("legislature_id").notNull().references(() => legislatures.id),
+  chamber: chamberEnum("chamber").notNull(),
+  votesFor: integer("votes_for").notNull().default(0),
+  votesAgainst: integer("votes_against").notNull().default(0),
+  abstentions: integer("abstentions").notNull().default(0),
+  presentNotVoting: integer("present_not_voting").notNull().default(0),
+  absent: integer("absent").notNull().default(0),
+  unknown: integer("unknown").notNull().default(0),
+  proposals: integer("proposals").notNull().default(0),
+  committees: integer("committees").notNull().default(0),
+  roles: integer("roles").notNull().default(0),
+  firstActivityOn: date("first_activity_on"),
+  lastActivityOn: date("last_activity_on"),
+  refreshedAt: timestamp("refreshed_at", { withTimezone: true }).notNull()
+}, (table) => ({
+  memberLegislatureIdx: uniqueIndex("member_legislature_activity_member_leg_idx").on(table.memberId, table.legislatureId, table.chamber),
+  personLegislatureIdx: index("member_legislature_activity_person_leg_idx").on(table.personId, table.legislatureId),
+  legislatureIdx: index("member_legislature_activity_legislature_idx").on(table.legislatureId, table.chamber)
+}));
+
+export const entitySearchIndex = pgTable("entity_search_index", {
+  id: text("id").primaryKey(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  searchText: text("search_text").notNull(),
+  chamber: chamberEnum("chamber"),
+  legislatureId: text("legislature_id").references(() => legislatures.id),
+  sourceDate: date("source_date"),
+  refreshedAt: timestamp("refreshed_at", { withTimezone: true }).notNull()
+}, (table) => ({
+  entityIdx: uniqueIndex("entity_search_index_entity_idx").on(table.entityType, table.entityId),
+  textIdx: index("entity_search_index_text_idx").on(table.searchText),
+  chamberLegislatureIdx: index("entity_search_index_chamber_leg_idx").on(table.chamber, table.legislatureId),
+  sourceDateIdx: index("entity_search_index_source_date_idx").on(table.sourceDate)
+}));
 
 export const engagementEvents = pgTable("engagement_events", {
   id: text("id").primaryKey(),

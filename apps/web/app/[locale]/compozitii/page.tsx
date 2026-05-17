@@ -44,7 +44,7 @@ export default async function CompositionsPage({
             {labels.source}: {data.sourceKind === "database" ? labels.database : labels.demo}
           </span>
           <span className="border border-slate-300 bg-white px-3 py-1.5">
-            {labels.events}: {data.stops.length}
+            {labels.legislatures}: {data.stops.length} · {labels.events}: {data.stops.reduce((sum, stop) => sum + stop.events.length, 0)}
           </span>
         </div>
       </section>
@@ -89,6 +89,7 @@ const compositionPageLabels = {
     database: "bază de date",
     demo: "demo",
     events: "Evenimente",
+    legislatures: "Legislaturi",
     groupBreakdown: "Distribuție pe grupuri",
     alignments: {
       government: "Guvern",
@@ -110,6 +111,7 @@ const compositionPageLabels = {
     database: "database",
     demo: "demo",
     events: "Events",
+    legislatures: "Legislatures",
     groupBreakdown: "Breakdown by group",
     alignments: {
       government: "Government",
@@ -132,6 +134,7 @@ const compositionPageLabels = {
     database: string;
     demo: string;
     events: string;
+    legislatures: string;
     groupBreakdown: string;
     alignments: Record<GovernanceAlignment, string>;
   }
