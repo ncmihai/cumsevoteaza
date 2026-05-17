@@ -870,3 +870,45 @@ Verification:
   - refreshed read models:
     101 bill summaries, 68 vote coverage rows, 4087 member-legislature activity
     rows, and 4287 search-index rows.
+
+## 2026-05-17 — One-By-One Backfill Continuation
+
+- Verified the simplified member party/group filters on Vercel:
+  - `/ro/members?legislature=leg-2024-2028` now shows one chip per party/group
+    under `Toți`, not separate `PSD · Senat` / `PSD · Camera Deputaților`
+    style chips.
+  - `group=group-name:psd` returns both Deputies and Senate rows.
+  - adding `chamber=senate` narrows the same party/group filter to Senate rows.
+- Ran a bounded daily sync against Neon:
+  - 399 discoveries found;
+  - 3 imports;
+  - 0 partial;
+  - 0 failed;
+  - refreshed read models to 104 bill summaries, 68 vote coverage rows, 4087
+    member-legislature activity rows, and 4290 search-index rows.
+- Imported the next bounded Deputies 2025 project batch:
+  - 10 project pages imported;
+  - 0 partial;
+  - 0 failed;
+  - refreshed read models to 114 bill summaries and 4300 search-index rows.
+- Smoke-checked Vercel after the batch:
+  - `/ro/votes`, `/ro/bills`, one member profile, one vote detail page, and one
+    bill detail page all returned `200`.
+- Ran March 2025 Deputies vote discovery:
+  - 145 official links discovered;
+  - the bounded vote import found no new pending Deputies vote rows for that
+    scoped batch.
+- Ran Senate 2025 generated `B1-B100` discovery:
+  - 100 Senate bill candidate URLs discovered.
+- Found and fixed a Senate discovery/import dedupe issue:
+  - generated Senate candidates now store `discovered_on` from the requested
+    target year, so `--years=2025` imports can pick them up reliably;
+  - discovery upserts now check the deterministic discovery ID before inserting,
+    preventing duplicate primary-key failures when official pages expose the
+    same related source through a different URL path.
+- Re-ran Senate `B1-B100` discovery after the fix and imported a controlled
+  Senate bill batch:
+  - 5 imported;
+  - 0 partial;
+  - 0 failed;
+  - refreshed read models to 115 bill summaries and 4301 search-index rows.

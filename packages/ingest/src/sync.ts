@@ -422,7 +422,8 @@ async function discoverGeneratedSenateBills(
             kind: "bill",
             sourceUrl: `https://www.senat.ro/legis/lista.aspx?an_cls=${year}&nr_cls=${displayPrefix}${number}`,
             officialId: `${displayPrefix}${number}/${year}`,
-            title: `Senate bill candidate ${displayPrefix}${number}/${year}`
+            title: `Senate bill candidate ${displayPrefix}${number}/${year}`,
+            discoveredOn: `${year}-01-01`
           });
           summary.discovered += 1;
         }
@@ -609,6 +610,11 @@ async function upsertSourceDiscovery(db: ReturnType<typeof createDbSession>["db"
     .from(schema.sourceDiscoveries)
     .where(eq(schema.sourceDiscoveries.sourceUrl, values.sourceUrl))
     .limit(1);
+  const [existingById] = await db
+    .select({ id: schema.sourceDiscoveries.id })
+    .from(schema.sourceDiscoveries)
+    .where(eq(schema.sourceDiscoveries.id, values.id))
+    .limit(1);
   const [existingByOfficialId] = values.officialId
     ? await db
         .select({ id: schema.sourceDiscoveries.id })
@@ -623,20 +629,22 @@ async function upsertSourceDiscovery(db: ReturnType<typeof createDbSession>["db"
         .limit(1)
     : [];
 
-  const existing = existingByUrl ?? existingByOfficialId;
+  const updateValues: Partial<typeof schema.sourceDiscoveries.$inferInsert> = {
+    chamber: values.chamber,
+    kind: values.kind,
+    sourceUrl: values.sourceUrl,
+    officialId: values.officialId,
+    title: values.title,
+    lastSeenAt: values.lastSeenAt
+  };
+  if (values.discoveredOn) updateValues.discoveredOn = values.discoveredOn;
+  if (values.sourceSnapshotId) updateValues.sourceSnapshotId = values.sourceSnapshotId;
+
+  const existing = existingByUrl ?? existingByOfficialId ?? existingById;
   if (existing) {
     await db
       .update(schema.sourceDiscoveries)
-      .set({
-        chamber: values.chamber,
-        kind: values.kind,
-        sourceUrl: values.sourceUrl,
-        officialId: values.officialId,
-        title: values.title,
-        discoveredOn: values.discoveredOn,
-        lastSeenAt: values.lastSeenAt,
-        sourceSnapshotId: values.sourceSnapshotId
-      })
+      .set(updateValues)
       .where(eq(schema.sourceDiscoveries.id, existing.id));
     return;
   }
@@ -644,18 +652,7 @@ async function upsertSourceDiscovery(db: ReturnType<typeof createDbSession>["db"
   await db
     .insert(schema.sourceDiscoveries)
     .values(values)
-    .onConflictDoUpdate({
-      target: schema.sourceDiscoveries.sourceUrl,
-      set: {
-        chamber: values.chamber,
-        kind: values.kind,
-        officialId: values.officialId,
-        title: values.title,
-        discoveredOn: values.discoveredOn,
-        lastSeenAt: values.lastSeenAt,
-        sourceSnapshotId: values.sourceSnapshotId
-      }
-    });
+    .onConflictDoNothing();
 }
 
 function discoveryKey(discovery: Pick<SourceDiscoveryInput, "chamber" | "kind" | "sourceUrl" | "officialId">): string {

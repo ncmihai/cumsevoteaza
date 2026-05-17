@@ -117,6 +117,27 @@ implementation steps.
   - discovered 592
 - [x] Import the first bounded 2025 Deputies project batch:
   - 20 project pages imported
+- [x] Verify the simplified member party/group filters on Vercel.
+- [x] Run one bounded daily sync against Neon:
+  - 399 discoveries
+  - 3 imports
+  - 0 failures
+- [x] Import the next bounded 2025 Deputies project batch:
+  - 10 project pages imported
+  - 0 failures
+- [x] Smoke-check Vercel after the latest import batch:
+  - `/ro/votes`
+  - `/ro/bills`
+  - one member profile
+  - one vote detail
+  - one bill detail
+- [x] Run March 2025 Deputies vote discovery:
+  - 145 official links discovered
+- [x] Re-run Senate `B1-B100` discovery and fix year-scoped generated Senate candidates.
+- [x] Fix source discovery dedupe so deterministic discovery IDs are checked before insert.
+- [x] Import a controlled Senate 2025 bill batch after the fix:
+  - 5 pages imported
+  - 0 failures
 - [x] Use Senate bill timelines as a complementary lifecycle/vote source by parsing dated lifecycle rows and nested Senate/Deputies vote or bill links.
 - [x] Change source discovery dedupe to canonical official URLs plus official identifiers.
 - [x] Fix member directory search so politician last-name queries work.
@@ -425,3 +446,9 @@ implementation steps.
 - Add `CRON_SECRET` to Vercel.
 - Push cron/backfill implementation to the Vercel repo.
 - Tune official source seeds and run a small date-slice backfill before the full 2024-present backfill.
+- Continue 2025 backfill one bounded batch at a time:
+  - retry/fix the old `L522/2025` failed discovery after the dedupe patch reaches
+    production code;
+  - import more Senate `B` candidates in small batches;
+  - continue Deputies yearly project imports;
+  - run month-scoped Deputies vote discovery/imports.
