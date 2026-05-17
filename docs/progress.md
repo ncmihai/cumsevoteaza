@@ -945,3 +945,31 @@ Verification:
   - 0 failed.
 - Smoke-checked the live Vercel projects page:
   - `/ro/bills` returned `200`.
+
+## 2026-05-17 — 2025 Backfill Continuation Checkpoint
+
+- Continued the 2025 pending queue in controlled batches.
+- Completed the previously discovered Senate 2025 bill queue:
+  - Senate bill discoveries reached 101 imported / 0 pending / 0 failed before
+    later cross-links added more official Senate bill pages.
+- Completed the then-pending Senate vote queue:
+  - 9 pending votes were processed;
+  - one large batch was stopped after running too long, but had already imported
+    6 rows;
+  - the remaining 3 were retried by exact source URL and imported cleanly.
+- Imported additional Deputies 2025 project batches:
+  - one interrupted 50-page batch imported 47 rows before being stopped;
+  - three completed batches imported 20, 50, and 50 rows.
+- Cleared side discoveries produced by those project pages:
+  - 82 additional Senate bill pages imported;
+  - 35 additional Senate vote pages imported;
+  - 19 additional Deputies vote pages imported.
+- Current 2025 discovery status after this checkpoint:
+  - Senate bills: 183 imported;
+  - Senate votes: 57 imported, 27 pending;
+  - Deputies bills: 218 imported, 374 pending;
+  - Deputies votes: 46 imported;
+  - failed rows: 0.
+- Smoke-checks after the checkpoint:
+  - `/ro/bills` returned `200`;
+  - `/ro/votes` returned `200`.

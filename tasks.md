@@ -149,6 +149,12 @@ implementation steps.
   - 10 pages imported
   - 0 failures
   - Senate 2025 bill discoveries now 18 imported / 83 pending / 0 failed
+- [x] Continue 2025 pending backfill checkpoint:
+  - completed the first discovered Senate 2025 bill queue
+  - imported pending Senate votes discovered so far
+  - imported additional Deputies 2025 project batches
+  - cleared related Senate bill and Deputies vote side discoveries produced by those batches
+  - current 2025 status: 183 Senate bills imported, 57 Senate votes imported / 27 pending, 218 Deputies bills imported / 374 pending, 46 Deputies votes imported, 0 failed
 - [x] Use Senate bill timelines as a complementary lifecycle/vote source by parsing dated lifecycle rows and nested Senate/Deputies vote or bill links.
 - [x] Change source discovery dedupe to canonical official URLs plus official identifiers.
 - [x] Fix member directory search so politician last-name queries work.
