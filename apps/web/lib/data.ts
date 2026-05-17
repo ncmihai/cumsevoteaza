@@ -1176,7 +1176,7 @@ function filterDirectoryItems(
   return items
     .filter((item) => !filters?.chamber || item.mandate?.chamber === filters.chamber)
     .filter((item) => !filters?.legislature || item.mandate?.legislatureId === filters.legislature)
-    .filter((item) => !filters?.group || item.group?.id === filters.group)
+    .filter((item) => !filters?.group || matchesMemberGroupFilter(item, filters.group))
     .filter((item) => {
       if (!query) return true;
       return [item.member.displayName, item.member.firstName, item.member.lastName, item.group?.shortName, item.party?.shortName]
@@ -1184,6 +1184,18 @@ function filterDirectoryItems(
         .some((value) => value.includes(query));
     })
     .sort((a, b) => a.member.displayName.localeCompare(b.member.displayName, "ro"));
+}
+
+function matchesMemberGroupFilter(item: MemberDirectoryItem, groupFilter: string): boolean {
+  if (item.group?.id === groupFilter) return true;
+  if (item.party?.id === groupFilter) return true;
+  return groupFilter.startsWith("group-name:")
+    ? normalizeGroupFilterKey(item.group?.shortName) === groupFilter.replace(/^group-name:/, "")
+    : false;
+}
+
+function normalizeGroupFilterKey(value?: string): string {
+  return normalizeSearch(value).replace(/[^a-z0-9]/g, "");
 }
 
 function filterMemberDirectoryGroups(

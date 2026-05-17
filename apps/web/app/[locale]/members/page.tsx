@@ -16,7 +16,8 @@ export default async function MembersPage({
   const locale: AppLocale = isLocale(rawLocale) ? rawLocale : "ro";
   const messages = messagesFor(locale);
   const data = await getMemberDirectoryData(filters);
-  const activeGroupFilter = filters.group && data.groups.some((group) => group.id === filters.group) ? filters.group : undefined;
+  const groupChips = memberGroupChips(data.groups, data.parties, locale, filters.chamber);
+  const activeGroupFilter = filters.group && groupChips.some((group) => group.value === filters.group) ? filters.group : undefined;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -62,18 +63,18 @@ export default async function MembersPage({
         <FilterLink href={memberDirectoryHref(locale, { q: filters.q, legislature: filters.legislature })} active={!filters.chamber && !activeGroupFilter}>
           Toți
         </FilterLink>
-        <FilterLink href={memberDirectoryHref(locale, { chamber: "senate", q: filters.q, legislature: filters.legislature })} active={filters.chamber === "senate"}>
+        <FilterLink href={memberDirectoryHref(locale, { chamber: "senate", group: activeGroupFilter, q: filters.q, legislature: filters.legislature })} active={filters.chamber === "senate"}>
           {chamberLabels[locale].senate}
         </FilterLink>
-        <FilterLink href={memberDirectoryHref(locale, { chamber: "deputies", q: filters.q, legislature: filters.legislature })} active={filters.chamber === "deputies"}>
+        <FilterLink href={memberDirectoryHref(locale, { chamber: "deputies", group: activeGroupFilter, q: filters.q, legislature: filters.legislature })} active={filters.chamber === "deputies"}>
           {chamberLabels[locale].deputies}
         </FilterLink>
       </section>
 
       <section className="mt-3 flex flex-wrap gap-2">
-        {data.groups.map((group) => (
-          <FilterLink key={group.id} href={memberDirectoryHref(locale, { group: group.id, q: filters.q, legislature: filters.legislature })} active={activeGroupFilter === group.id}>
-            {group.shortName} · {chamberLabels[locale][group.chamber]}
+        {groupChips.map((group) => (
+          <FilterLink key={group.value} href={memberDirectoryHref(locale, { chamber: filters.chamber, group: group.value, q: filters.q, legislature: filters.legislature })} active={activeGroupFilter === group.value}>
+            {group.label}
           </FilterLink>
         ))}
       </section>
@@ -116,6 +117,39 @@ export default async function MembersPage({
       </section>
     </main>
   );
+}
+
+function memberGroupChips(
+  groups: Awaited<ReturnType<typeof getMemberDirectoryData>>["groups"],
+  parties: Awaited<ReturnType<typeof getMemberDirectoryData>>["parties"],
+  locale: AppLocale,
+  chamber?: string
+): Array<{ value: string; label: string; seats: number }> {
+  const partyById = new Map(parties.map((party) => [party.id, party]));
+  const scopedGroups = groups.filter((group) => !chamber || group.chamber === chamber);
+  const chips = new Map<string, { value: string; label: string; seats: number }>();
+
+  for (const group of scopedGroups) {
+    const party = group.partyId ? partyById.get(group.partyId) : undefined;
+    const value = `group-name:${normalizeGroupKey(party?.shortName ?? group.shortName)}`;
+    const label = party?.shortName ?? group.shortName;
+    const current = chips.get(value);
+    chips.set(value, {
+      value,
+      label,
+      seats: (current?.seats ?? 0) + 1
+    });
+  }
+
+  return [...chips.values()].sort((a, b) => a.label.localeCompare(b.label, locale));
+}
+
+function normalizeGroupKey(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
 
 function memberDirectoryHref(locale: AppLocale, filters: { chamber?: string; group?: string; q?: string; legislature?: string }): string {
