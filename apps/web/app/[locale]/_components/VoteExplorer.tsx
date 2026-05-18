@@ -136,6 +136,20 @@ export function VoteExplorer({ locale, chamber, groups, members, seatVotes, nomi
             const memberLabel = seat.member?.displayName ?? seat.vote.memberId;
             const groupLabel = seat.group?.shortName ?? labels.unknownGroup;
             const voteLabel = voteChoiceLabels[locale][seat.vote.choice];
+            const popupClass = [
+              "absolute top-0 z-[400] min-w-max -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md",
+              tooltipPositionClass(seat.left),
+              pinned ? "block" : "hidden group-hover/seat:block group-focus-within/seat:block",
+              seat.member ? "hover:border-blue-500 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600" : ""
+            ].join(" ");
+            const popupContent = (
+              <>
+                {memberLabel}
+                <span className="mt-0.5 block font-normal text-slate-600">
+                  {groupLabel} · {voteLabel}
+                </span>
+              </>
+            );
             return (
               <div
                 key={seat.vote.id}
@@ -166,27 +180,18 @@ export function VoteExplorer({ locale, chamber, groups, members, seatVotes, nomi
                     {memberLabel} {groupLabel} {voteLabel}
                   </span>
                 </button>
-                <div
-                  className={[
-                    "absolute top-0 z-[400] min-w-max -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md",
-                    tooltipPositionClass(seat.left),
-                    pinned ? "block" : "hidden group-hover/seat:block group-focus-within/seat:block"
-                  ].join(" ")}
-                >
-                  {memberLabel}
-                  <span className="mt-0.5 block font-normal text-slate-600">
-                    {groupLabel} · {voteLabel}
-                  </span>
-                  {pinned && seat.member ? (
-                    <Link
-                      href={`/${locale}/members/${seat.member.slug}`}
-                      className="mt-1 block font-medium text-blue-700 underline"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      {labels.openProfile}
-                    </Link>
-                  ) : null}
-                </div>
+                {seat.member ? (
+                  <Link
+                    href={`/${locale}/members/${seat.member.slug}`}
+                    aria-label={`${labels.openProfile}: ${memberLabel}`}
+                    className={popupClass}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {popupContent}
+                  </Link>
+                ) : (
+                  <div className={popupClass}>{popupContent}</div>
+                )}
               </div>
             );
           })}

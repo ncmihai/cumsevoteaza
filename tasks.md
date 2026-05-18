@@ -193,6 +193,14 @@ implementation steps.
   - group distribution includes table headers
   - nominal vote table is internally scrollable/resizable and shares the same filters as the seat map
   - seat popups render above the graph and contain the profile link
+- [x] Fix vote popup profile interaction:
+  - the popup itself links to the member profile
+  - removed the visible `Deschide profilul` text from the popup
+- [x] Repair 2024 Deputies identity corruption from vote imports:
+  - Chamber vote imports now insert missing vote-page members without overwriting roster-backed member identity rows
+  - reran the official 2024 Deputies roster against Neon
+  - refreshed people links after the roster repair
+  - verified `member-deputies-48` is Buzoianu Diana-Anda / USR and `member-deputies-56` is Ciobanu Adrian-Virgil / PNL
 - [x] Fix inflated vote seat-map totals for 2024-2028:
   - synthetic absent seats are capped by known chamber seat counts for the vote date and legislature
   - the selected 2026 Deputies vote now renders 331 seats instead of 398

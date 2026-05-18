@@ -1117,3 +1117,33 @@ Verification:
   - `npm run test` passed;
   - local browser smoke verified the selected vote renders 331 seats, multi-party
     filtering, shared table filters, and the member popup profile link.
+
+## 2026-05-19 — Chamber Vote Member Identity Repair
+
+- Investigated the live annotation where a PNL seat displayed as
+  `Buzoianu Diana-Anda`.
+- Root cause:
+  - the selected CDEP vote row with `idm=56` is officially
+    `Ciobanu Adrian-Virgil`, PNL;
+  - `Buzoianu Diana-Anda` is official CDEP `idm=48`, USR;
+  - Chamber vote imports were upserting vote-page member rows into the shared
+    `members` table and could overwrite roster-backed member identity rows.
+- Code fix:
+  - Chamber vote persistence now inserts missing vote-page members only;
+  - existing roster-backed `members` rows are no longer overwritten by vote
+    imports.
+- UI fix:
+  - the pinned/hovered seat popup is now the profile link itself;
+  - the visible `Deschide profilul` / `Open profile` line was removed.
+- Data repair performed against Neon:
+  - reran the official 2024 Deputies roster import;
+  - refreshed people links;
+  - verified `member-deputies-48` = `Buzoianu Diana-Anda`, USR;
+  - verified `member-deputies-56` = `Ciobanu Adrian-Virgil`, PNL;
+  - verified the selected vote row now resolves `member-deputies-56` as
+    `Ciobanu Adrian-Virgil`, PNL, `Pentru`.
+- Checks:
+  - `npm run typecheck` passed;
+  - `npm run test` passed;
+  - local browser smoke verified the vote page shows no visible
+    `Deschide profilul` text and has a whole-popup member profile link.

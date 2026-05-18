@@ -126,7 +126,7 @@ export async function persistChamberVote(parsed: ParsedChamberVote) {
         sourceSnapshotIds: [parsed.sourceSnapshot.id]
       });
     }
-    await upsertMembers(session.db, parsed.members);
+    await insertMissingMembers(session.db, parsed.members);
     await upsertDerivedDeputiesMandates(session.db, parsed.members.map((member) => member.id));
     await upsertVote(session.db, parsed.vote);
     await upsertIndividualVotes(session.db, parsed.individualVotes);
@@ -293,6 +293,24 @@ async function upsertMembers(db: Db, members: Member[]) {
   for (const member of members) {
     await upsertMember(db, member);
   }
+}
+
+async function insertMissingMembers(db: Db, members: Member[]) {
+  if (members.length === 0) return;
+  for (const member of members) {
+    await insertMissingMember(db, member);
+  }
+}
+
+async function insertMissingMember(db: Db, member: Member) {
+  const slugOwner = await db.select({ id: schema.members.id }).from(schema.members).where(eq(schema.members.slug, member.slug)).limit(1);
+  const slug = slugOwner[0] && slugOwner[0].id !== member.id ? `${member.slug}-${member.id.replace(/^member-/, "")}` : member.slug;
+  await db
+    .insert(schema.members)
+    .values({ ...member, slug })
+    .onConflictDoNothing({
+      target: schema.members.id
+    });
 }
 
 export async function backfillPeopleFromMembers() {
