@@ -167,7 +167,7 @@ export function parseDeputiesMemberProfile(
   const member = buildMember(officialId, name, legislature);
   const bodyText = cleanText($("body").text());
   const mandateStart = parseRomanianDate(bodyText.match(/data validării:\s*([^-.]+)/i)?.[1] ?? "") ?? legislature.startsOn;
-  const constituency = cleanText(bodyText.match(/circumscriptia electorala nr\.\d+\s*([^<\n]+)/i)?.[1] ?? "");
+  const constituency = extractDeputiesConstituency($, bodyText);
   const mandate: MemberMandate = {
     id: `mandate-${member.id}-${legislature.label}-deputies`,
     memberId: member.id,
@@ -246,18 +246,18 @@ function parseDeputiesPartyAffiliations(
   return $(deputiesPartySelector)
     .toArray()
     .map((node) => {
-      const line = cleanText($(node).parent().text());
+      const line = scopedProfileLine($, node);
       const party = partyFromText(line);
       if (!party) return undefined;
-      const startsOn = parseRomanianDate(line) ?? legislature.startsOn;
+      const period = parseDeputiesPeriod(line, legislature);
       const affiliation: MemberPartyAffiliation = {
-        id: `party-affiliation-${memberIdValue}-${party.id}-${startsOn}`,
+        id: `party-affiliation-${memberIdValue}-${party.id}-${period.startsOn}`,
         memberId: memberIdValue,
         partyId: party.id,
-        startsOn,
+        startsOn: period.startsOn,
         sourceSnapshotId
       };
-      if (/până/i.test(line)) affiliation.endsOn = startsOn;
+      if (period.endsOn) affiliation.endsOn = period.endsOn;
       return affiliation;
     })
     .filter((item): item is MemberPartyAffiliation => Boolean(item));
@@ -273,22 +273,108 @@ function parseDeputiesGroupMemberships(
     .toArray()
     .map((node) => {
       const link = $(node);
-      const line = cleanText(link.parent().text());
+      const line = scopedProfileLine($, node);
       const name = cleanText(link.text());
       if (!/Grupul parlamentar|neafilia/i.test(name)) return undefined;
       const group = buildGroup(name, partyFromText(name), link.attr("href")?.match(/idg=([^&]+)/i)?.[1] ?? name);
-      const startsOn = parseRomanianDate(line) ?? legislature.startsOn;
+      const period = parseDeputiesPeriod(line, legislature);
       const membership: MemberGroupMembership = {
-        id: `group-membership-${memberIdValue}-${group.id}-${startsOn}`,
+        id: `group-membership-${memberIdValue}-${group.id}-${period.startsOn}`,
         memberId: memberIdValue,
         groupId: group.id,
-        startsOn,
+        startsOn: period.startsOn,
         sourceSnapshotId
       };
-      if (/până/i.test(line)) membership.endsOn = startsOn;
+      if (period.endsOn) membership.endsOn = period.endsOn;
       return membership;
     })
     .filter((item): item is MemberGroupMembership => Boolean(item));
+}
+
+function extractDeputiesConstituency($: cheerio.CheerioAPI, bodyText: string): string {
+  const profileLink = $(".mp-profile-details2025 a[href*='structura2015.ce'], a[href*='structura.ce']").first();
+  const linkedConstituency = cleanConstituency(profileLink.text());
+  if (linkedConstituency) return linkedConstituency;
+
+  const match = bodyText.match(/circumscriptia electorala nr\.\d+\s*([^.;:]+?)(?:data validării|data incetarii|n\.\s*\d|Formaţiunea|Formatiunea|Grupul parlamentar|$)/i);
+  return cleanConstituency(match?.[1] ?? "");
+}
+
+function cleanConstituency(value: string): string {
+  return cleanText(value)
+    .replace(/^[-:,\s]+/, "")
+    .replace(/\bdata validării\b.*$/i, "")
+    .replace(/\bdata validarii\b.*$/i, "")
+    .replace(/\bn\.\s*\d.*$/i, "")
+    .replace(/\bFormaţiunea politică\b.*$/i, "")
+    .replace(/\bFormatiunea politica\b.*$/i, "")
+    .trim();
+}
+
+function scopedProfileLine($: cheerio.CheerioAPI, node: Parameters<cheerio.CheerioAPI>[0]): string {
+  const link = $(node);
+  const linkText = cleanText(link.text());
+  const container = link.closest("tr, li, p");
+  const rawLine = cleanText((container.length ? container : link.parent()).text());
+  const index = normalize(rawLine).indexOf(normalize(linkText));
+  return index >= 0 ? cleanText(`${linkText} ${rawLine.slice(index + linkText.length)}`) : rawLine;
+}
+
+function parseDeputiesPeriod(line: string, legislature: Legislature): { startsOn: string; endsOn?: string } {
+  const fullDate = parseRomanianDate(line);
+  const startsOn = parseMonthReference(line, "din") ?? fullDate ?? legislature.startsOn;
+  const endsOn = parseMonthReference(line, "pana");
+  return endsOn ? { startsOn, endsOn: endOfMonth(endsOn) } : { startsOn };
+}
+
+function parseMonthReference(value: string, keyword: "din" | "pana"): string | undefined {
+  const text = normalize(value).replace(/ţ/g, "t").replace(/ș/g, "s").replace(/ț/g, "t");
+  const pattern =
+    keyword === "din"
+      ? /\bdin\s+([a-z.]+)\s+(\d{4})/
+      : /\bpana(?:\s+in)?\s+([a-z.]+)\s+(\d{4})/;
+  const match = text.match(pattern);
+  if (!match) return undefined;
+  const month = deputyMonthNumber(match[1] ?? "");
+  const year = match[2];
+  return month && year ? `${year}-${month}-01` : undefined;
+}
+
+function deputyMonthNumber(value: string): string | undefined {
+  const key = value.replace(/\./g, "");
+  const months: Record<string, string> = {
+    ian: "01",
+    ianuarie: "01",
+    feb: "02",
+    februarie: "02",
+    mar: "03",
+    martie: "03",
+    apr: "04",
+    aprilie: "04",
+    mai: "05",
+    iun: "06",
+    iunie: "06",
+    iul: "07",
+    iulie: "07",
+    aug: "08",
+    august: "08",
+    sep: "09",
+    sept: "09",
+    septembrie: "09",
+    oct: "10",
+    octombrie: "10",
+    noi: "11",
+    noiembrie: "11",
+    dec: "12",
+    decembrie: "12"
+  };
+  return months[key];
+}
+
+function endOfMonth(date: string): string {
+  const [year, month] = date.split("-").map(Number);
+  if (!year || !month) return date;
+  return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
 }
 
 function parseDeputiesCommittees(

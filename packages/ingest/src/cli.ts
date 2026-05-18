@@ -196,6 +196,7 @@ async function importSenateRoster(): Promise<ParsedRoster> {
       }))
     );
   }
+  const profiledMemberIds = new Set(profiles.map((profile) => profile.member.id));
 
   return {
     chamber: "senate",
@@ -225,14 +226,16 @@ async function importSenateRoster(): Promise<ParsedRoster> {
     mandates: uniqueBy(profiles.flatMap((profile) => (profile.mandate ? [profile.mandate] : [])), (mandate) => mandate.id),
     groupMemberships: uniqueBy(
       [
-        ...groupParts.flatMap((group) => group.members.map((member) => member.membership)),
+        ...groupParts.flatMap((group) => group.members.filter((member) => !profiledMemberIds.has(member.member.id)).map((member) => member.membership)),
         ...profiles.flatMap((profile) => profile.groupMemberships)
       ],
       (membership) => membership.id
     ),
     partyAffiliations: uniqueBy(
       [
-        ...groupParts.flatMap((group) => group.members.flatMap((member) => (member.partyAffiliation ? [member.partyAffiliation] : []))),
+        ...groupParts.flatMap((group) =>
+          group.members.flatMap((member) => (!profiledMemberIds.has(member.member.id) && member.partyAffiliation ? [member.partyAffiliation] : []))
+        ),
         ...profiles.flatMap((profile) => profile.partyAffiliations)
       ],
       (affiliation) => affiliation.id
@@ -289,6 +292,7 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
       }))
     );
   }
+  const profiledMemberIds = new Set(profiles.map((profile) => profile.member.id));
 
   return {
     chamber: "deputies",
@@ -329,14 +333,16 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
     mandates: uniqueBy(profiles.flatMap((profile) => (profile.mandate ? [profile.mandate] : [])), (mandate) => mandate.id),
     groupMemberships: uniqueBy(
       [
-        ...groupParts.flatMap((group) => group.members.map((member) => member.membership)),
+        ...groupParts.flatMap((group) => group.members.filter((member) => !profiledMemberIds.has(member.member.id)).map((member) => member.membership)),
         ...profiles.flatMap((profile) => profile.groupMemberships)
       ],
       (membership) => membership.id
     ),
     partyAffiliations: uniqueBy(
       [
-        ...groupParts.flatMap((group) => group.members.flatMap((member) => (member.partyAffiliation ? [member.partyAffiliation] : []))),
+        ...groupParts.flatMap((group) =>
+          group.members.flatMap((member) => (!profiledMemberIds.has(member.member.id) && member.partyAffiliation ? [member.partyAffiliation] : []))
+        ),
         ...profiles.flatMap((profile) => profile.partyAffiliations)
       ],
       (affiliation) => affiliation.id

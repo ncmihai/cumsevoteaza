@@ -1147,3 +1147,36 @@ Verification:
   - `npm run test` passed;
   - local browser smoke verified the vote page shows no visible
     `Deschide profilul` text and has a whole-popup member profile link.
+
+## 2026-05-19 — Deputies Roster Cleanup and Shared Seat Counts
+
+- Fixed the Deputies profile parser so constituency is read from the scoped
+  official profile details row, not from flattened whole-page text.
+- Added parser support for CDEP month-level movements:
+  - `până în mai 2026` becomes an ended interval;
+  - `din mai 2026` becomes a new interval.
+- Added a regression fixture for Gavrilă Anamaria’s official CDEP profile
+  structure, including POT/UPR rows and party image cells.
+- Fixed roster assembly so profile-derived temporal group/party rows take
+  precedence over group-list fallback rows when profiles are available.
+- Fixed roster persistence so member detail rows from a roster import are
+  authoritative and stale group, party, committee, and role rows are deleted
+  before reinsert.
+- Reimported the official 2024 Deputies roster into Neon after the fixes:
+  - group counts matched all official CDEP group counts;
+  - Gavrilă Anamaria now has clean `HUNEDOARA` constituency;
+  - Gavrilă Anamaria now has two official-source temporal group rows:
+    POT from 2024-12-21 through 2026-05-31 and UPR from 2026-05-01 onward;
+  - party rows follow the same POT/UPR temporal split.
+- Added a shared site-wide chamber seat-count helper using the historical seat
+  totals provided for 1990-present legislatures, including 2024 as
+  134 Senate / 331 Deputies.
+- Applied the shared seat-count helper to vote seat maps and composition maps
+  so oversized active-looking mandate sets are capped consistently.
+- Updated the member directory table with internal scrolling, sticky headers,
+  and defensive constituency cleanup for older rows not yet reimported.
+- Logo note:
+  - official CDEP pages expose party image assets like `/aleg/pot2024.jpg` and
+    `/aleg/upr2026.jpg`;
+  - the next durable step is a `party_visual_identities` model keyed by
+    party/election period/legislature, not a single permanent party logo.

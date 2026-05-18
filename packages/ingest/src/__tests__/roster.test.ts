@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "../parsers/deputies-roster";
-import { legislature2020 } from "../parsers/roster";
+import { legislature2020, legislature2024 } from "../parsers/roster";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "../parsers/senate-roster";
 
 const fixtures = path.join(__dirname, "../fixtures");
@@ -35,9 +35,30 @@ describe("roster parsers", () => {
     const profile = parseDeputiesMemberProfile(read("deputies-member-profile.html"), group.members[0]!.profileUrl);
     expect(profile.member.id).toBe("member-deputies-254");
     expect(profile.mandate?.startsOn).toBe("2024-12-21");
+    expect(profile.mandate?.constituency).toBe("TIMIŞ");
     expect(profile.partyAffiliations[0]?.partyId).toBe("party-psd");
     expect(profile.groupMemberships[0]?.groupId).toBe("group-deputies-psd");
     expect(profile.committeeMemberships[0]?.committeeName).toContain("Comisia pentru cultură");
+  });
+
+  it("parses Deputies month-level party and group movements without swallowing the whole profile", () => {
+    const profile = parseDeputiesMemberProfile(read("deputies-member-profile-movements.html"), "https://www.cdep.ro/ords/pls/parlam/structura2015.mp?idm=113&leg=2024", {
+      legislature: legislature2024
+    });
+
+    expect(profile.mandate?.constituency).toBe("HUNEDOARA");
+    expect(profile.partyAffiliations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ partyId: "party-pot", startsOn: "2024-12-21", endsOn: "2026-05-31" }),
+        expect.objectContaining({ partyId: "party-upr", startsOn: "2026-05-01" })
+      ])
+    );
+    expect(profile.groupMemberships).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ groupId: "group-deputies-pot", startsOn: "2024-12-21", endsOn: "2026-05-31" }),
+        expect.objectContaining({ groupId: "group-deputies-upr", startsOn: "2026-05-01" })
+      ])
+    );
   });
 
   it("keeps historical roster mandates in their own legislature", () => {

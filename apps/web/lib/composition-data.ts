@@ -16,6 +16,7 @@ import {
   type Party,
   type Person
 } from "@cumsevoteaza/parliament-model";
+import { chamberSeatCount } from "./chamber-seat-counts";
 
 export type CompositionMode = "official" | "computed";
 
@@ -333,13 +334,15 @@ function buildComposition(input: {
           groupSortKey(a.group).localeCompare(groupSortKey(b.group), "ro") ||
           a.member.displayName.localeCompare(b.member.displayName, "ro")
       );
+    const targetSeats = chamberSeatCount(chamber, input.asOf, input.legislatures);
+    const visibleSeats = targetSeats && seats.length > targetSeats ? seats.slice(0, targetSeats) : seats;
 
-    const groups = [...new Set(seats.flatMap((seat) => (seat.group ? [seat.group.id] : [])))]
+    const groups = [...new Set(visibleSeats.flatMap((seat) => (seat.group ? [seat.group.id] : [])))]
       .flatMap((groupId) => {
         const group = groupById.get(groupId);
         if (!group) return [];
         const party = group.partyId ? partyById.get(group.partyId) : undefined;
-        const groupSeats = seats.filter((seat) => seat.group?.id === group.id);
+        const groupSeats = visibleSeats.filter((seat) => seat.group?.id === group.id);
         return [
           {
             group: compactGroup(group),
@@ -351,7 +354,7 @@ function buildComposition(input: {
       })
       .sort((a, b) => b.seats - a.seats || a.group.shortName.localeCompare(b.group.shortName, "ro"));
 
-    return { chamber, seats, groups };
+    return { chamber, seats: visibleSeats, groups };
   });
 
   return {

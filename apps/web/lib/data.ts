@@ -1,4 +1,4 @@
-import { eq, inArray, or, sql } from "drizzle-orm";
+import { eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import {
@@ -21,6 +21,7 @@ import {
   type SourceSnapshot,
   type Vote
 } from "@cumsevoteaza/parliament-model";
+import { chamberSeatCount } from "./chamber-seat-counts";
 
 export interface VotePageData {
   vote: Vote;
@@ -496,11 +497,14 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
 
   const session = createDbSession();
   try {
-    const [memberRow] = await session.db
+    let [memberRow] = await session.db
       .select()
       .from(schema.members)
       .where(or(eq(schema.members.slug, slug), eq(schema.members.id, slug)))
       .limit(1);
+    if (!memberRow) {
+      memberRow = await findMemberByLegacySlug(session.db, slug);
+    }
     if (!memberRow) return undefined;
 
     const relatedMemberRows = memberRow.personId
@@ -1131,22 +1135,6 @@ function buildVoteSeatRows(input: {
     });
 }
 
-function chamberSeatCount(chamber: Vote["chamber"], date: string, legislatures: Legislature[]): number | undefined {
-  const legislature = legislatures.find((item) => item.startsOn <= date && item.endsOn >= date);
-  if (!legislature) return undefined;
-  const counts = chamberSeatCountsByLegislature[legislature.label];
-  return counts?.[chamber as "deputies" | "senate"];
-}
-
-const chamberSeatCountsByLegislature: Record<string, Partial<Record<"deputies" | "senate", number>>> = {
-  "2024-2028": { deputies: 331, senate: 136 },
-  "2020-2024": { deputies: 330, senate: 136 },
-  "2016-2020": { deputies: 329, senate: 136 },
-  "2012-2016": { deputies: 412, senate: 176 },
-  "2008-2012": { deputies: 334, senate: 137 },
-  "2004-2008": { deputies: 332, senate: 137 }
-};
-
 function latestMembership(memberships: MemberGroupMembership[]): MemberGroupMembership | undefined {
   return [...memberships]
     .sort((a, b) => {
@@ -1283,7 +1271,7 @@ function buildMemberHistory(input: {
       chamber: mandate.chamber,
       type: "mandate" as const,
       label: "Mandat parlamentar",
-      details: mandate.constituency ?? mandate.status,
+      details: cleanHistoryDetail(mandate.constituency) ?? mandate.status,
       ...counts
     })),
     ...input.groupMemberships.map((membership) => {
@@ -1333,6 +1321,36 @@ function buildMemberHistory(input: {
       ...counts
     }))
   ].sort((a, b) => b.startsOn.localeCompare(a.startsOn));
+}
+
+async function findMemberByLegacySlug(
+  db: ReturnType<typeof createDbSession>["db"],
+  slug: string
+): Promise<typeof schema.members.$inferSelect | undefined> {
+  const baseSlug = slug.replace(/-(deputies|senate)-[a-z0-9-]+$/i, "");
+  if (!baseSlug || baseSlug === slug) return undefined;
+  const rows = await db.select().from(schema.members).where(ilike(schema.members.slug, `${baseSlug}%`));
+  return rows
+    .filter((row) => row.slug === baseSlug || row.slug.startsWith(`${baseSlug}-`))
+    .sort((a, b) => memberLegislatureRank(b) - memberLegislatureRank(a) || a.slug.length - b.slug.length)[0];
+}
+
+function memberLegislatureRank(row: typeof schema.members.$inferSelect): number {
+  const sourceIds = row.sourceIds && typeof row.sourceIds === "object" && !Array.isArray(row.sourceIds) ? row.sourceIds : {};
+  const key = Object.keys(sourceIds).find((item) => item.startsWith("deputies:") || item.startsWith("senate:"));
+  const year = key?.match(/:(\d{4})$/)?.[1];
+  return year ? Number(year) : row.id.includes("-2020-") ? 2020 : 2024;
+}
+
+function cleanHistoryDetail(value?: string): string | undefined {
+  const cleaned = (value ?? "")
+    .replace(/data validării.*$/i, "")
+    .replace(/data validarii.*$/i, "")
+    .replace(/\bn\.\s*\d.*$/i, "")
+    .replace(/Formaţiunea politică.*$/i, "")
+    .replace(/Formatiunea politica.*$/i, "")
+    .trim();
+  return cleaned || undefined;
 }
 
 function chamberForMemberPeriod(mandates: MemberMandate[], memberId: string, date: string): MemberMandate["chamber"] {

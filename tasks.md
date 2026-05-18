@@ -524,3 +524,25 @@ implementation steps.
   - import more Senate `B` candidates in small batches;
   - continue Deputies yearly project imports;
   - run month-scoped Deputies vote discovery/imports.
+
+## Latest Fix Notes
+
+- [x] Fix Deputies profile parsing so constituency stops at the official
+  constituency field instead of swallowing the whole CDEP profile page.
+- [x] Parse Deputies month-level group/party movements such as `până în mai
+  2026` and `din mai 2026` from profile rows.
+- [x] Make roster persistence authoritative for member profile-derived group,
+  party, committee, and role rows so stale parser rows are removed on reimport.
+- [x] Reimport official 2024 Deputies roster into Neon after parser/persistence
+  fixes; verified Gavrilă Anamaria now has clean `HUNEDOARA` constituency and
+  temporal POT/UPR rows from the official profile.
+- [x] Move chamber seat counts to a shared site-wide table:
+  2024: 134 S / 331 D; 2020: 136 S / 330 D; 2016: 136 S / 329 D;
+  2012: 176 S / 412 D; 2008: 137 S / 334 D; 2004: 137 S / 314 D;
+  2000: 140 S / 345 D; 1996: 143 S / 343 D; 1992: 143 S / 341 D;
+  1990: 119 S / 396 D.
+- [x] Apply shared seat-count caps to composition and vote-seat helpers.
+- [x] Make the member directory table internally scrollable with a sticky
+  header and defensive constituency cleanup.
+- [ ] Add a `party_visual_identities` data model and importer that stores
+  official logo/electoral-sign assets by party and legislature/election period.

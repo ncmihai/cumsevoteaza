@@ -79,9 +79,9 @@ export default async function MembersPage({
         ))}
       </section>
 
-      <section className="mt-6 overflow-x-auto border border-slate-300 bg-white">
+      <section className="mt-6 max-h-[70vh] overflow-auto border border-slate-300 bg-white">
         <table className="min-w-[760px] w-full border-collapse text-sm">
-          <thead className="bg-slate-100 text-left text-xs uppercase text-slate-600">
+          <thead className="sticky top-0 z-10 bg-slate-100 text-left text-xs uppercase text-slate-600 shadow-[0_1px_0_#cbd5e1]">
             <tr>
               <th className="px-3 py-2">{messages.nav.members}</th>
               <th className="px-3 py-2">{messages.common.chamber}</th>
@@ -109,7 +109,7 @@ export default async function MembersPage({
                     "-"
                   )}
                 </td>
-                <td className="px-3 py-3 text-slate-600">{mandate?.constituency ?? "-"}</td>
+                <td className="px-3 py-3 text-slate-600">{formatConstituency(mandate?.constituency)}</td>
               </tr>
             ))}
           </tbody>
@@ -117,6 +117,17 @@ export default async function MembersPage({
       </section>
     </main>
   );
+}
+
+function formatConstituency(value?: string): string {
+  const cleaned = (value ?? "")
+    .replace(/data validării.*$/i, "")
+    .replace(/data validarii.*$/i, "")
+    .replace(/\bn\.\s*\d.*$/i, "")
+    .replace(/Formaţiunea politică.*$/i, "")
+    .replace(/Formatiunea politica.*$/i, "")
+    .trim();
+  return cleaned || "-";
 }
 
 function memberGroupChips(

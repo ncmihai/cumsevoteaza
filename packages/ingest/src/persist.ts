@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import type {
@@ -152,6 +152,10 @@ export async function persistRoster(parsed: ParsedRoster) {
     await Promise.all(parsed.groups.map((group) => upsertGroup(session.db, group)));
     await Promise.all(parsed.members.map((member) => upsertMember(session.db, member)));
     await Promise.all(parsed.mandates.map((mandate) => upsertMemberMandate(session.db, mandate)));
+    await deleteRosterMemberDetails(
+      session.db,
+      parsed.members.map((member) => member.id)
+    );
     await Promise.all(parsed.groupMemberships.map((membership) => upsertMemberGroupMembership(session.db, membership)));
     await Promise.all(parsed.partyAffiliations.map((affiliation) => upsertMemberPartyAffiliation(session.db, affiliation)));
     await Promise.all(parsed.committeeMemberships.map((membership) => upsertMemberCommitteeMembership(session.db, membership)));
@@ -173,6 +177,14 @@ export async function persistRoster(parsed: ParsedRoster) {
   } finally {
     await session.close();
   }
+}
+
+async function deleteRosterMemberDetails(db: Db, memberIds: string[]) {
+  if (memberIds.length === 0) return;
+  await db.delete(schema.memberGroupMemberships).where(inArray(schema.memberGroupMemberships.memberId, memberIds));
+  await db.delete(schema.memberPartyAffiliations).where(inArray(schema.memberPartyAffiliations.memberId, memberIds));
+  await db.delete(schema.memberCommitteeMemberships).where(inArray(schema.memberCommitteeMemberships.memberId, memberIds));
+  await db.delete(schema.memberRoles).where(inArray(schema.memberRoles.memberId, memberIds));
 }
 
 async function upsertDefaultLegislature(db: Db) {
