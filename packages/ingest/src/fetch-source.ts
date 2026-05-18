@@ -56,8 +56,11 @@ async function fetchWithCurl(url: string): Promise<string> {
 async function fetchWithInsecureTls(url: string): Promise<string> {
   const previous = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
   try {
     const response = await fetch(url, {
+      signal: controller.signal,
       headers: {
         "user-agent": "cumsevoteaza-ingest/0.1 (+private research)"
       }
@@ -67,6 +70,7 @@ async function fetchWithInsecureTls(url: string): Promise<string> {
     }
     return await response.text();
   } finally {
+    clearTimeout(timeout);
     if (previous === undefined) {
       delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
     } else {

@@ -999,3 +999,28 @@ Verification:
   - `npm run typecheck` passed;
   - `npm run test` passed;
   - `npm run build` passed.
+
+## 2026-05-18 — Cleared 2025 Discovery Queue
+
+- Completed the remaining 2025 pending imports against Neon:
+  - imported the remaining 27 Senate vote rows;
+  - imported 374 pending Deputies bill rows;
+  - imported 2 additional Senate bill cross-links;
+  - imported 2 additional Senate vote cross-links;
+  - imported 110 additional Deputies vote rows discovered from project pages;
+  - skipped 2 additional Deputies vote pages that were not usable nominal vote
+    pages.
+- Fixed a backfill reliability issue in `fetchOfficialSource`:
+  - the normal fetch path already had a 30 second timeout;
+  - the insecure-TLS fallback used by some CDEP endpoints now has the same
+    timeout so official pages cannot hang a batch indefinitely.
+- Final 2025 discovery status:
+  - Senate bills: 185 imported;
+  - Senate votes: 86 imported;
+  - Deputies bills: 592 imported;
+  - Deputies votes: 156 imported, 4 skipped;
+  - 0 pending;
+  - 0 failed.
+- Checks:
+  - `npm run typecheck` passed;
+  - `npm --workspace @cumsevoteaza/ingest run test -- src/__tests__/discovery.test.ts src/__tests__/chamber-vote.test.ts` passed.
