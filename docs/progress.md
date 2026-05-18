@@ -1024,3 +1024,22 @@ Verification:
 - Checks:
   - `npm run typecheck` passed;
   - `npm --workspace @cumsevoteaza/ingest run test -- src/__tests__/discovery.test.ts src/__tests__/chamber-vote.test.ts` passed.
+
+## 2026-05-18 — Cleared 2026 Discovery Queue
+
+- Refreshed 2026 discovery against Neon:
+  - Deputies yearly project list returned 402 official projects;
+  - Deputies electronic-vote discovery ran for January-May 2026.
+- Completed the 2026 pending imports:
+  - imported 399 pending Deputies bill rows;
+  - imported 97 linked Senate bill rows produced by the Deputies bill pages;
+  - imported 81 linked Senate vote rows produced by the Senate bill pages;
+  - imported 65 Deputies vote rows;
+  - skipped 2 Deputies vote pages that were not usable nominal vote pages.
+- Final 2026 discovery status:
+  - Senate bills: 100 imported;
+  - Senate votes: 85 imported;
+  - Deputies bills: 402 imported;
+  - Deputies votes: 63 imported, 2 skipped;
+  - 0 pending;
+  - 0 failed.

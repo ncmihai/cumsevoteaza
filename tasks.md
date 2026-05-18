@@ -162,6 +162,13 @@ implementation steps.
   - skipped 2 additional Deputies vote pages that were not usable nominal vote pages
   - added a timeout to the CDEP insecure-TLS fetch fallback so slow official pages cannot hang a batch indefinitely
   - final 2025 discovery status: 185 Senate bills imported, 86 Senate votes imported, 592 Deputies bills imported, 156 Deputies votes imported, 4 Deputies vote pages skipped, 0 pending, 0 failed
+- [x] Refresh and clear the discovered 2026 queue:
+  - refreshed the Deputies 2026 yearly project list: 402 official projects discovered
+  - refreshed Deputies vote discovery for January-May 2026
+  - imported 399 pending Deputies bill rows plus 97 linked Senate bill rows
+  - imported 81 linked Senate vote rows and 65 Deputies vote rows
+  - skipped 2 Deputies vote pages that were not usable nominal vote pages
+  - final 2026 discovery status: 100 Senate bills imported, 85 Senate votes imported, 402 Deputies bills imported, 63 Deputies votes imported, 2 Deputies vote pages skipped, 0 pending, 0 failed
 - [x] Fix `Compoziții` empty timeline:
   - attach government skeleton rows to legislatures by date when `legislature_id` is missing
   - verified 10 legislatures and 85 events render locally
