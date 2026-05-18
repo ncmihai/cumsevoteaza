@@ -248,3 +248,32 @@ Composition parser rules:
 - Parliament structure/procedure explanations are tracked in
   `docs/parliament-how-it-works.md`; official procedure, group, committee, and
   constitutional pages take priority over Wikipedia overview text.
+
+## Party Visual Identities
+
+Goal:
+- Show party visual cues on member history and composition pages without
+  implying a current logo applies to a past legislature.
+
+Preferred source order:
+- Official electoral-sign material from BEC/AEP for the relevant election year
+  or legislature period.
+- Official party registration/electoral documents when they include a visual
+  sign and date.
+- Party website logos only as fallback evidence, time-scoped and clearly marked
+  as non-electoral branding.
+
+Modelling rule:
+- Do not store one permanent `party.logo`.
+- Store temporal visual identities with:
+  - `party_id`;
+  - `legislature_id` or election year;
+  - `valid_from` / `valid_to` when known;
+  - logo/sign asset URL or stored asset reference;
+  - `source_snapshot_id`;
+  - source type such as `electoral_sign`, `party_register`, or `party_site`;
+  - verification status.
+
+Open source-discovery task:
+- Build a small official-source matrix for 2024, 2020, 2016, 2012, 2008, and
+  2004 before importing visual identities broadly.

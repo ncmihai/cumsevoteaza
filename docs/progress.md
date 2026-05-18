@@ -1067,3 +1067,53 @@ Verification:
   - clear the 29 dated 2024 Deputies votes first;
   - then inspect the new 2025/2026 lifecycle links produced by the 2024 pages
     before importing them.
+
+## 2026-05-18 — Vote Detail UX Fixes and Daily Cron Diagnosis
+
+- Fixed the vote detail seat-map annotations:
+  - group filters now support selecting multiple groups and deselecting them;
+  - vote-choice filters now support selecting multiple choices and deselecting
+    them;
+  - filter buttons include counts, so the duplicate vote-count legend under the
+    seat map was removed;
+  - the group distribution table now has an explicit header;
+  - the nominal vote table is internally scrollable/resizable and shares the
+    same group/vote filters as the seat map;
+  - member popups render above the graph and contain an explicit profile link.
+- Fixed the inflated `398`-seat Deputies map on the selected 2026 vote:
+  - the nominal source has 281 named rows;
+  - the previous absent-seat fill pulled every active-looking mandate in the DB,
+    including historical/replacement rows with weak end dates;
+  - synthetic absent seats are now capped by the known chamber size for the vote
+    date and legislature, so the 2024-2028 Deputies map renders 331 seats.
+- Investigated the 2026-05-18 daily sync:
+  - Neon had no votes dated `2026-05-18`;
+  - Neon did contain 3 Deputies bills submitted on `2026-05-18`;
+  - the latest cron run was still marked `running`, suggesting the function was
+    killed before completing;
+  - the old Vercel schedule ran at 05:15 Bucharest time, before same-day votes
+    were likely published;
+  - the daily sync discovered bills but did not discover Deputies vote calendar
+    pages.
+- Patched daily sync behavior:
+  - Vercel Cron now runs at 19:15 UTC / 22:15 Bucharest;
+  - the cron route max duration is 300 seconds;
+  - default daily imports are capped at 5;
+  - daily sync discovers current-month Deputies vote pages in addition to bills;
+  - imports are constrained to the active sync year so old paused queues do not
+    consume the daily run first.
+- Current limitation:
+  - Senate same-day final-vote discovery still needs a first-class daily source
+    path; current Senate vote discovery mainly arrives through bill lifecycle
+    pages.
+- Party visual identity research decision:
+  - prefer official BEC/AEP electoral-sign material for legislature/election
+    period logos;
+  - party websites can be fallback sources only when time-scoped and clearly
+    marked;
+  - model these as temporal visual identities, not as one permanent logo field.
+- Checks:
+  - `npm run typecheck` passed;
+  - `npm run test` passed;
+  - local browser smoke verified the selected vote renders 331 seats, multi-party
+    filtering, shared table filters, and the member popup profile link.

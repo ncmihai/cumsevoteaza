@@ -19,7 +19,8 @@ interface VoteExplorerProps {
   chamber: ChamberId;
   groups: ParliamentaryGroup[];
   members: Member[];
-  individualVotes: IndividualVote[];
+  seatVotes: IndividualVote[];
+  nominalVotes: IndividualVote[];
   groupTotals: GroupVoteTotal[];
 }
 
@@ -40,149 +41,169 @@ interface SeatSlot {
   rowIndex: number;
 }
 
-export function VoteExplorer({ locale, chamber, groups, members, individualVotes, groupTotals }: VoteExplorerProps) {
-  const [activeGroup, setActiveGroup] = useState<string>("all");
-  const [activeChoice, setActiveChoice] = useState<VoteChoice | "all">("all");
+export function VoteExplorer({ locale, chamber, groups, members, seatVotes, nominalVotes, groupTotals }: VoteExplorerProps) {
+  const [activeGroups, setActiveGroups] = useState<string[]>([]);
+  const [activeChoices, setActiveChoices] = useState<VoteChoice[]>([]);
   const [pinnedSeatId, setPinnedSeatId] = useState<string | undefined>();
   const memberById = useMemo(() => new Map(members.map((member) => [member.id, member])), [members]);
   const groupById = useMemo(() => new Map(groups.map((group) => [group.id, group])), [groups]);
 
   const chamberGroups = useMemo(() => {
     const usedGroupIds = new Set([
-      ...individualVotes.flatMap((vote) => (vote.groupId ? [vote.groupId] : [])),
+      ...seatVotes.flatMap((vote) => (vote.groupId ? [vote.groupId] : [])),
       ...groupTotals.map((total) => total.groupId)
     ]);
     return groups
       .filter((group) => group.chamber === chamber && usedGroupIds.has(group.id))
-      .sort((a, b) => countSeats(individualVotes, b.id) - countSeats(individualVotes, a.id) || a.shortName.localeCompare(b.shortName, "ro"));
-  }, [chamber, groupTotals, groups, individualVotes]);
+      .sort((a, b) => countSeats(seatVotes, b.id) - countSeats(seatVotes, a.id) || a.shortName.localeCompare(b.shortName, "ro"));
+  }, [chamber, groupTotals, groups, seatVotes]);
 
   const orderedVotes = useMemo(
     () =>
       orderVotesByGroup({
-        votes: individualVotes,
+        votes: seatVotes,
         groups: chamberGroups,
         members: memberById
       }),
-    [chamberGroups, individualVotes, memberById]
+    [chamberGroups, memberById, seatVotes]
   );
   const seats = useMemo(() => positionSeats(orderedVotes, memberById, groupById), [groupById, memberById, orderedVotes]);
-  const breakdown = useMemo(() => buildBreakdown(individualVotes, chamberGroups), [chamberGroups, individualVotes]);
-  const voteCounts = useMemo(() => countChoices(individualVotes), [individualVotes]);
+  const breakdown = useMemo(() => buildBreakdown(seatVotes, chamberGroups), [chamberGroups, seatVotes]);
+  const groupCounts = useMemo(() => countGroups(seatVotes), [seatVotes]);
+  const voteCounts = useMemo(() => countChoices(seatVotes), [seatVotes]);
+  const filteredNominalVotes = useMemo(
+    () =>
+      nominalVotes.filter((vote) => {
+        const groupMatches = activeGroups.length === 0 || (vote.groupId ? activeGroups.includes(vote.groupId) : false);
+        const choiceMatches = activeChoices.length === 0 || activeChoices.includes(vote.choice);
+        return groupMatches && choiceMatches;
+      }),
+    [activeChoices, activeGroups, nominalVotes]
+  );
   const labels = explorerLabels[locale];
 
   return (
+    <div className="space-y-6">
     <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_430px]">
       <div className="min-w-0 border border-slate-300 bg-white p-4">
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setActiveGroup("all")} className={buttonClass(activeGroup === "all")}>
+          <button type="button" onClick={() => setActiveGroups([])} className={buttonClass(activeGroups.length === 0)}>
             {labels.allGroups}
           </button>
           {chamberGroups.map((group) => (
             <button
               type="button"
               key={group.id}
-              onClick={() => setActiveGroup(activeGroup === group.id ? "all" : group.id)}
-              className={buttonClass(activeGroup === group.id)}
+              onClick={() => setActiveGroups((current) => toggleValue(current, group.id))}
+              className={buttonClass(activeGroups.includes(group.id))}
             >
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: group.color }} />
               {group.shortName}
+              <span className="text-xs opacity-70">{groupCounts[group.id] ?? 0}</span>
             </button>
           ))}
         </div>
 
         <div className="mb-5 flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setActiveChoice("all")} className={buttonClass(activeChoice === "all")}>
+          <button type="button" onClick={() => setActiveChoices([])} className={buttonClass(activeChoices.length === 0)}>
             {labels.allVotes}
+            <span className="text-xs opacity-70">{seatVotes.length}</span>
           </button>
           {choiceOrder.map((choice) => (
             <button
               type="button"
               key={choice}
-              onClick={() => setActiveChoice(activeChoice === choice ? "all" : choice)}
-              className={buttonClass(activeChoice === choice)}
+              onClick={() => setActiveChoices((current) => toggleValue(current, choice))}
+              className={buttonClass(activeChoices.includes(choice))}
             >
               <VoteMark choice={choice} className="h-3.5 w-3.5" />
               {voteChoiceLabels[locale][choice]}
+              <span className="text-xs opacity-70">{voteCounts[choice]}</span>
             </button>
           ))}
         </div>
 
         <div className="relative isolate mx-auto aspect-[2/1] min-h-[250px] w-full max-w-5xl overflow-visible">
           <div className="pointer-events-none absolute left-1/2 top-[77%] z-0 -translate-x-1/2 text-center">
-            <div className="text-5xl font-semibold leading-none tracking-normal text-slate-950 md:text-6xl">{individualVotes.length}</div>
+            <div className="text-5xl font-semibold leading-none tracking-normal text-slate-950 md:text-6xl">{seatVotes.length}</div>
             <div className="mt-1 text-xs font-semibold uppercase text-slate-500">{labels.seats}</div>
           </div>
           {seats.map((seat) => {
             const muted =
-              (activeGroup !== "all" && seat.vote.groupId !== activeGroup) ||
-              (activeChoice !== "all" && seat.vote.choice !== activeChoice);
+              (activeGroups.length > 0 && (!seat.vote.groupId || !activeGroups.includes(seat.vote.groupId))) ||
+              (activeChoices.length > 0 && !activeChoices.includes(seat.vote.choice));
             const pinned = pinnedSeatId === seat.vote.id;
             const memberLabel = seat.member?.displayName ?? seat.vote.memberId;
             const groupLabel = seat.group?.shortName ?? labels.unknownGroup;
             const voteLabel = voteChoiceLabels[locale][seat.vote.choice];
             return (
-              <Link
+              <div
                 key={seat.vote.id}
-                href={seat.member ? `/${locale}/members/${seat.member.slug}` : `/${locale}/votes/${seat.vote.voteId}`}
-                onClick={(event) => {
-                  if (pinnedSeatId !== seat.vote.id) {
-                    event.preventDefault();
-                    setPinnedSeatId(seat.vote.id);
-                  }
-                }}
                 title={`${memberLabel} · ${groupLabel} · ${voteLabel}`}
                 className={[
-                  "group/seat absolute z-10 block rounded-full border border-white shadow-sm outline-offset-2 transition hover:z-[200] focus:z-[200]",
-                  muted ? "opacity-20 hover:opacity-100 focus:opacity-100" : "opacity-100",
+                  "group/seat absolute z-10 block rounded-full border border-white text-left shadow-sm outline-offset-2 transition hover:z-[200] focus-within:z-[200] focus:z-[200]",
+                  muted ? "opacity-20 hover:opacity-100 focus-within:opacity-100" : "opacity-100",
                   pinned ? "z-[210] opacity-100 ring-2 ring-slate-950 ring-offset-2" : ""
                 ].join(" ")}
                 style={{
                   left: percent(seat.left),
                   top: percent(seat.top),
-                  width: seatSize(individualVotes.length),
-                  height: seatSize(individualVotes.length),
+                  width: seatSize(seatVotes.length),
+                  height: seatSize(seatVotes.length),
                   backgroundColor: seat.group?.color ?? "#94a3b8",
                   transform: "translate(-50%, -50%)"
                 }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setPinnedSeatId(pinned ? undefined : seat.vote.id)}
+                  className="block h-full w-full rounded-full p-0"
                 >
                   <span className="absolute bottom-0 right-0 z-10 grid h-[62%] w-[62%] translate-x-1/5 translate-y-1/5 place-items-center rounded-full border border-white bg-white">
                     <VoteMark choice={seat.vote.choice} className="h-[80%] w-[80%]" />
                   </span>
-                <span
+                  <span className="sr-only">
+                    {memberLabel} {groupLabel} {voteLabel}
+                  </span>
+                </button>
+                <div
                   className={[
-                    "pointer-events-none absolute top-0 z-[300] min-w-max -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md",
+                    "absolute top-0 z-[400] min-w-max -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md",
                     tooltipPositionClass(seat.left),
-                    pinned ? "block" : "hidden group-hover/seat:block group-focus-visible/seat:block"
+                    pinned ? "block" : "hidden group-hover/seat:block group-focus-within/seat:block"
                   ].join(" ")}
                 >
                   {memberLabel}
                   <span className="mt-0.5 block font-normal text-slate-600">
                     {groupLabel} · {voteLabel}
                   </span>
-                  {pinned ? <span className="mt-1 block font-normal text-slate-500">{labels.openProfile}</span> : null}
-                </span>
-                <span className="sr-only">
-                  {memberLabel} {groupLabel} {voteLabel}
-                </span>
-              </Link>
+                  {pinned && seat.member ? (
+                    <Link
+                      href={`/${locale}/members/${seat.member.slug}`}
+                      className="mt-1 block font-medium text-blue-700 underline"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {labels.openProfile}
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
             );
           })}
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-600">
-          {choiceOrder.map((choice) => (
-            <span key={choice} className="inline-flex items-center gap-1.5">
-              <VoteMark choice={choice} className="h-3.5 w-3.5" />
-              {voteChoiceLabels[locale][choice]}: {voteCounts[choice]}
-            </span>
-          ))}
         </div>
       </div>
 
       <div className="min-w-0 overflow-hidden border border-slate-300 bg-white">
         <div className="border-b border-slate-300 px-4 py-3 text-sm font-semibold text-slate-950">
           {labels.groupBreakdown}
+        </div>
+        <div className="grid grid-cols-[minmax(0,1fr)_repeat(5,minmax(30px,42px))] items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase text-slate-500">
+          <span>{labels.group}</span>
+          <span className="text-right">{voteChoiceLabels[locale].for}</span>
+          <span className="text-right">{voteChoiceLabels[locale].against}</span>
+          <span className="text-right">{voteChoiceLabels[locale].abstention}</span>
+          <span className="text-right">{voteChoiceLabels[locale].present_not_voting}</span>
+          <span className="text-right">{labels.notVoting}</span>
         </div>
         <div className="divide-y divide-slate-200">
           {breakdown.map((row) => (
@@ -204,6 +225,49 @@ export function VoteExplorer({ locale, chamber, groups, members, individualVotes
         </div>
       </div>
     </section>
+    <section className="max-w-[calc(100vw-2rem)] resize-y overflow-auto border border-slate-300 bg-white" style={{ minHeight: 280, maxHeight: 560 }}>
+      <div className="sticky top-0 z-10 border-b border-slate-300 bg-white px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-slate-950">{labels.nominalVotes}</h2>
+          <span className="text-xs text-slate-500">
+            {filteredNominalVotes.length} / {nominalVotes.length}
+          </span>
+        </div>
+      </div>
+      <table className="min-w-[760px] w-full text-sm">
+        <thead className="sticky top-[45px] z-10 bg-slate-100 text-left text-xs uppercase text-slate-600">
+          <tr>
+            <th className="px-3 py-2">{labels.name}</th>
+            <th className="px-3 py-2">{labels.group}</th>
+            <th className="px-3 py-2">{labels.vote}</th>
+            <th className="px-3 py-2">{labels.method}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-200">
+          {filteredNominalVotes.map((individualVote) => {
+            const member = memberById.get(individualVote.memberId);
+            const group = individualVote.groupId ? groupById.get(individualVote.groupId) : undefined;
+            return (
+              <tr key={individualVote.id}>
+                <td className="px-3 py-3">
+                  {member ? (
+                    <Link className="font-medium underline" href={`/${locale}/members/${member.slug}`}>
+                      {member.displayName}
+                    </Link>
+                  ) : (
+                    individualVote.memberId
+                  )}
+                </td>
+                <td className="px-3 py-3">{group?.shortName ?? "-"}</td>
+                <td className="px-3 py-3">{voteChoiceLabels[locale][individualVote.choice]}</td>
+                <td className="px-3 py-3 text-slate-600">{individualVote.voteMethod ?? "-"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
+    </div>
   );
 }
 
@@ -310,6 +374,18 @@ function countSeats(votes: IndividualVote[], groupId: string): number {
   return votes.filter((vote) => vote.groupId === groupId).length;
 }
 
+function countGroups(votes: IndividualVote[]): Record<string, number> {
+  return votes.reduce<Record<string, number>>((counts, vote) => {
+    if (!vote.groupId) return counts;
+    counts[vote.groupId] = (counts[vote.groupId] ?? 0) + 1;
+    return counts;
+  }, {});
+}
+
+function toggleValue<T>(values: T[], value: T): T[] {
+  return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
+}
+
 function seatSize(total: number): string {
   if (total > 260) return "clamp(6px, 1.45vw, 13px)";
   if (total > 150) return "clamp(7px, 1.75vw, 14px)";
@@ -348,16 +424,28 @@ const explorerLabels = {
     allGroups: "Toate grupurile",
     allVotes: "Toate voturile",
     groupBreakdown: "Distribuție pe grupuri",
+    group: "Grup",
+    method: "Metodă",
+    name: "Nume",
+    nominalVotes: "Voturi nominale",
+    notVoting: "Absent/nec.",
     seats: "mandate",
     unknownGroup: "Grup necunoscut",
-    openProfile: "Apasă din nou pentru profil"
+    openProfile: "Deschide profilul",
+    vote: "Vot"
   },
   en: {
     allGroups: "All groups",
     allVotes: "All votes",
     groupBreakdown: "Breakdown by group",
+    group: "Group",
+    method: "Method",
+    name: "Name",
+    nominalVotes: "Nominal votes",
+    notVoting: "Absent/unk.",
     seats: "seats",
     unknownGroup: "Unknown group",
-    openProfile: "Click again for profile"
+    openProfile: "Open profile",
+    vote: "Vote"
   }
 } satisfies Record<Locale, Record<string, string>>;

@@ -100,9 +100,15 @@ export async function runDailySync(options: SyncOptions = {}): Promise<SyncSumma
     const years = options.years ?? [new Date().getUTCFullYear()];
     const senate = await discoverSenateSources({ ...options, years });
     const deputies = await discoverDeputiesSources({ ...options, years });
+    const deputiesVotes = await discoverDeputiesVoteSources({
+      ...options,
+      years,
+      deputiesVoteMonths: options.deputiesVoteMonths ?? [new Date().getUTCMonth() + 1]
+    });
     addSummary(summary, senate);
     addSummary(summary, deputies);
-    addSummary(summary, await importPendingDiscoveries({ maxImports: options.maxImports ?? 30, maxRetries: options.maxRetries ?? 4 }));
+    addSummary(summary, deputiesVotes);
+    addSummary(summary, await importPendingDiscoveries({ years, maxImports: options.maxImports ?? 10, maxRetries: options.maxRetries ?? 4 }));
     await finishIngestionRun(run.id, statusFromSummary(summary), summary);
     return summary;
   } catch (error) {

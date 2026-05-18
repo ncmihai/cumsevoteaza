@@ -1089,6 +1089,7 @@ function buildVoteSeatRows(input: {
     chamberMemberIds.add(vote.memberId);
   }
 
+  const targetSeats = chamberSeatCount(input.vote.chamber, input.vote.heldOn, input.legislatures);
   const currentMembershipByMember = new Map<string, MemberGroupMembership | undefined>();
   for (const memberId of chamberMemberIds) {
     currentMembershipByMember.set(
@@ -1097,13 +1098,21 @@ function buildVoteSeatRows(input: {
     );
   }
 
-  return [...chamberMemberIds]
+  const orderedMemberIds = [...chamberMemberIds]
     .sort((a, b) => {
       const groupA = votedByMember.get(a)?.groupId ?? currentMembershipByMember.get(a)?.groupId ?? "";
       const groupB = votedByMember.get(b)?.groupId ?? currentMembershipByMember.get(b)?.groupId ?? "";
       return groupA.localeCompare(groupB, "ro") || a.localeCompare(b, "ro");
-    })
-    .map((memberId) => {
+    });
+  const visibleMemberIds =
+    targetSeats && input.individualVotes.length <= targetSeats
+      ? [
+          ...input.individualVotes.map((vote) => vote.memberId),
+          ...orderedMemberIds.filter((memberId) => !votedByMember.has(memberId)).slice(0, Math.max(0, targetSeats - input.individualVotes.length))
+        ]
+      : orderedMemberIds;
+
+  return visibleMemberIds.map((memberId) => {
       const existing = votedByMember.get(memberId);
       const membership = currentMembershipByMember.get(memberId);
       if (existing) {
@@ -1121,6 +1130,22 @@ function buildVoteSeatRows(input: {
       };
     });
 }
+
+function chamberSeatCount(chamber: Vote["chamber"], date: string, legislatures: Legislature[]): number | undefined {
+  const legislature = legislatures.find((item) => item.startsOn <= date && item.endsOn >= date);
+  if (!legislature) return undefined;
+  const counts = chamberSeatCountsByLegislature[legislature.label];
+  return counts?.[chamber as "deputies" | "senate"];
+}
+
+const chamberSeatCountsByLegislature: Record<string, Partial<Record<"deputies" | "senate", number>>> = {
+  "2024-2028": { deputies: 331, senate: 136 },
+  "2020-2024": { deputies: 330, senate: 136 },
+  "2016-2020": { deputies: 329, senate: 136 },
+  "2012-2016": { deputies: 412, senate: 176 },
+  "2008-2012": { deputies: 334, senate: 137 },
+  "2004-2008": { deputies: 332, senate: 137 }
+};
 
 function latestMembership(memberships: MemberGroupMembership[]): MemberGroupMembership | undefined {
   return [...memberships]

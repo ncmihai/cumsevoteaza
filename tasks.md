@@ -186,6 +186,22 @@ implementation steps.
   - force the homepage dynamic
   - use database-side month boundary for reaction aggregates
   - make dashboard aggregates fail independently
+- [x] Fix vote detail page annotation issues:
+  - group filters now support multi-select and deselect
+  - vote-choice filters now support multi-select and deselect
+  - vote buttons include counts, replacing the duplicate legend under the seat map
+  - group distribution includes table headers
+  - nominal vote table is internally scrollable/resizable and shares the same filters as the seat map
+  - seat popups render above the graph and contain the profile link
+- [x] Fix inflated vote seat-map totals for 2024-2028:
+  - synthetic absent seats are capped by known chamber seat counts for the vote date and legislature
+  - the selected 2026 Deputies vote now renders 331 seats instead of 398
+- [x] Patch daily cron behavior after 2026-05-18 check:
+  - moved Vercel Cron from early morning to evening Bucharest time
+  - lowered default daily import batch size
+  - increased the cron route max duration
+  - daily sync now discovers current-month Deputies vote pages in addition to bills
+  - current limitation: Senate final-vote discovery still needs a first-class daily source path
 - [x] Use Senate bill timelines as a complementary lifecycle/vote source by parsing dated lifecycle rows and nested Senate/Deputies vote or bill links.
 - [x] Change source discovery dedupe to canonical official URLs plus official identifiers.
 - [x] Fix member directory search so politician last-name queries work.
@@ -201,6 +217,8 @@ implementation steps.
 - [ ] Tune Chamber seed/discovery URLs against full official 2024-present list pages before running a full backfill.
 - [ ] Add a first-class joint-vote model/parser if joint Chamber/Senate sittings should be visible as their own vote type.
 - [ ] Re-check Vercel Cron suitability after real daily sync runs; move to Render Cron if duration/reliability becomes a problem.
+- [ ] Add first-class Senate final-vote daily discovery so same-day Senate votes do not depend only on bill lifecycle links.
+- [ ] Model party visual identities by legislature/election period using official electoral-sign sources first, then party-site logos only as clearly marked fallback evidence.
 
 ## Proposed Milestone — Public-Ready Explorer UX
 
