@@ -973,3 +973,29 @@ Verification:
 - Smoke-checks after the checkpoint:
   - `/ro/bills` returned `200`;
   - `/ro/votes` returned `200`.
+
+## 2026-05-18 — UI Bug Fix Pass
+
+- Fixed `Compoziții` rendering empty even though government skeleton data was
+  present:
+  - government and composition-event rows without `legislature_id` are now
+    attached to legislatures by date overlap;
+  - local browser verification showed 10 legislatures and 85 events rendering
+    with Chamber/Senate seat maps.
+- Improved vote seat-map interaction:
+  - first click on a seat pins a popup;
+  - second click on the same seat opens the member profile;
+  - muted/unselected seats can still raise their popup above the circles;
+  - edge popups are aligned so they do not clip off the graph container.
+- Fixed homepage public-interest dashboard behavior:
+  - homepage is forced dynamic so reaction counts are not served stale;
+  - monthly aggregate queries use PostgreSQL `date_trunc('month', now())`;
+  - dashboard panels now tolerate partial aggregate failures instead of hiding
+    all trend panels;
+  - local browser verification showed `Voturi cu interes public` populated from
+    stored reactions.
+- Verified production reaction API stores a vote reaction and returns a count.
+- Checks:
+  - `npm run typecheck` passed;
+  - `npm run test` passed;
+  - `npm run build` passed.

@@ -30,7 +30,8 @@ export function HotButton({
             body: JSON.stringify({ entityType, entityId })
           });
           if (!response.ok && response.status !== 202) return;
-          const payload = await response.json().catch(() => undefined) as { count?: number } | undefined;
+          const payload = await response.json().catch(() => undefined) as { count?: number; disabled?: boolean } | undefined;
+          if (payload?.disabled) return;
           if (typeof payload?.count === "number") setCount(payload.count);
           setActive(true);
         });

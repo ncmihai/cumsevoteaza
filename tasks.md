@@ -155,6 +155,17 @@ implementation steps.
   - imported additional Deputies 2025 project batches
   - cleared related Senate bill and Deputies vote side discoveries produced by those batches
   - current 2025 status: 183 Senate bills imported, 57 Senate votes imported / 27 pending, 218 Deputies bills imported / 374 pending, 46 Deputies votes imported, 0 failed
+- [x] Fix `Compoziții` empty timeline:
+  - attach government skeleton rows to legislatures by date when `legislature_id` is missing
+  - verified 10 legislatures and 85 events render locally
+- [x] Fix vote seat-map hover/click behavior:
+  - first click pins the member popup
+  - second click opens the member profile
+  - muted seats can show popups above the graph
+- [x] Fix homepage public-interest panels:
+  - force the homepage dynamic
+  - use database-side month boundary for reaction aggregates
+  - make dashboard aggregates fail independently
 - [x] Use Senate bill timelines as a complementary lifecycle/vote source by parsing dated lifecycle rows and nested Senate/Deputies vote or bill links.
 - [x] Change source discovery dedupe to canonical official URLs plus official identifiers.
 - [x] Fix member directory search so politician last-name queries work.

@@ -4,6 +4,8 @@ import { formatDate, voteChoiceLabels } from "@cumsevoteaza/parliament-model";
 import { getHomeDashboardData, type DashboardItem } from "@/lib/explorer-data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale: AppLocale = isLocale(rawLocale) ? rawLocale : "ro";

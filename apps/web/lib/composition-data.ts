@@ -170,12 +170,13 @@ async function tryDatabaseCompositionTimeline(
       sourceKind: "database",
       stops: legislatures.flatMap((legislature) => {
         const legislatureGovernments = governments
-          .filter((government) => government.legislatureId === legislature.id)
+          .filter((government) => governmentBelongsToLegislature(government, legislature))
           .sort((a, b) => b.startsOn.localeCompare(a.startsOn));
         const legislatureEvents = events.filter((event) => {
           if (event.legislatureId === legislature.id) return true;
           const government = event.governmentId ? governmentsById.get(event.governmentId) : undefined;
-          return government?.legislatureId === legislature.id;
+          if (government) return governmentBelongsToLegislature(government, legislature);
+          return dateInLegislature(event.occurredOn, legislature);
         });
         if (legislatureGovernments.length === 0 && legislatureEvents.length === 0) return [];
 
@@ -619,4 +620,17 @@ function isTimelineEvent(type: CompositionEvent["eventType"]): boolean {
 
 function isActiveGovernment(government: Government, date: string): boolean {
   return activeOn(government.startsOn, government.endsOn, date);
+}
+
+function governmentBelongsToLegislature(government: Government, legislature: Legislature): boolean {
+  if (government.legislatureId) return government.legislatureId === legislature.id;
+  return rangesOverlap(government.startsOn, government.endsOn, legislature.startsOn, legislature.endsOn);
+}
+
+function dateInLegislature(date: string, legislature: Legislature): boolean {
+  return date >= legislature.startsOn && date < legislature.endsOn;
+}
+
+function rangesOverlap(startsOn: string, endsOn: string | undefined, rangeStartsOn: string, rangeEndsOn: string): boolean {
+  return startsOn < rangeEndsOn && (!endsOn || endsOn >= rangeStartsOn);
 }

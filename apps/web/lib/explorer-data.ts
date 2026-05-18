@@ -342,56 +342,58 @@ export async function getHomeDashboardData(locale: string): Promise<HomeDashboar
 
   const session = createDbSession();
   try {
-    const monthStart = new Date();
-    monthStart.setUTCDate(1);
-    monthStart.setUTCHours(0, 0, 0, 0);
     const [viewRows, searchRows, hotVoteRows, hotBillRows] = await Promise.all([
       session.db.execute<AggregateRow>(sql`
         select entity_type, entity_id, count(*)::int as count
         from engagement_events
-        where event_type = 'page_view' and occurred_at >= ${monthStart} and entity_id is not null
+        where event_type = 'page_view' and occurred_at >= date_trunc('month', now()) and entity_id is not null
         group by entity_type, entity_id
         order by count(*) desc
         limit 5
-      `),
+      `).catch(() => []),
       session.db.execute<AggregateRow>(sql`
         select 'member' as entity_type, query_text as entity_id, count(*)::int as count
         from engagement_events
-        where event_type = 'search' and entity_type = 'member' and occurred_at >= ${monthStart} and query_text is not null
+        where event_type = 'search' and entity_type = 'member' and occurred_at >= date_trunc('month', now()) and query_text is not null
         group by query_text
         order by count(*) desc
         limit 5
-      `),
+      `).catch(() => []),
       session.db.execute<AggregateRow>(sql`
         select 'vote' as entity_type, entity_id, count(*)::int as count
         from content_reactions
-        where entity_type = 'vote' and reaction = 'hot' and created_at >= ${monthStart}
+        where entity_type = 'vote' and reaction = 'hot' and created_at >= date_trunc('month', now())
         group by entity_id
         order by count(*) desc
         limit 5
-      `),
+      `).catch(() => []),
       session.db.execute<AggregateRow>(sql`
         select 'bill' as entity_type, entity_id, count(*)::int as count
         from content_reactions
-        where entity_type = 'bill' and reaction = 'hot' and created_at >= ${monthStart}
+        where entity_type = 'bill' and reaction = 'hot' and created_at >= date_trunc('month', now())
         group by entity_id
         order by count(*) desc
         limit 5
-      `)
+      `).catch(() => [])
+    ]);
+    const [mostViewed, trendingVotes, trendingBills] = await Promise.all([
+      resolveDashboardItems(session.db, viewRows, locale).catch(() => []),
+      resolveDashboardItems(session.db, hotVoteRows, locale).catch(() => []),
+      resolveDashboardItems(session.db, hotBillRows, locale).catch(() => [])
     ]);
 
     return {
       latestVotes: votes.items,
       latestBills: bills.items,
-      mostViewed: await resolveDashboardItems(session.db, viewRows, locale),
+      mostViewed,
       mostSearchedMembers: searchRows.map((row) => ({
         entityType: "search",
         title: row.entity_id ?? "",
         href: `/${locale}/members?q=${encodeURIComponent(row.entity_id ?? "")}`,
         count: row.count
       })),
-      trendingVotes: await resolveDashboardItems(session.db, hotVoteRows, locale),
-      trendingBills: await resolveDashboardItems(session.db, hotBillRows, locale),
+      trendingVotes,
+      trendingBills,
       sourceKind: "database"
     };
   } catch {

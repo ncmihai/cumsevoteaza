@@ -43,6 +43,7 @@ interface SeatSlot {
 export function VoteExplorer({ locale, chamber, groups, members, individualVotes, groupTotals }: VoteExplorerProps) {
   const [activeGroup, setActiveGroup] = useState<string>("all");
   const [activeChoice, setActiveChoice] = useState<VoteChoice | "all">("all");
+  const [pinnedSeatId, setPinnedSeatId] = useState<string | undefined>();
   const memberById = useMemo(() => new Map(members.map((member) => [member.id, member])), [members]);
   const groupById = useMemo(() => new Map(groups.map((group) => [group.id, group])), [groups]);
 
@@ -116,6 +117,7 @@ export function VoteExplorer({ locale, chamber, groups, members, individualVotes
             const muted =
               (activeGroup !== "all" && seat.vote.groupId !== activeGroup) ||
               (activeChoice !== "all" && seat.vote.choice !== activeChoice);
+            const pinned = pinnedSeatId === seat.vote.id;
             const memberLabel = seat.member?.displayName ?? seat.vote.memberId;
             const groupLabel = seat.group?.shortName ?? labels.unknownGroup;
             const voteLabel = voteChoiceLabels[locale][seat.vote.choice];
@@ -123,10 +125,17 @@ export function VoteExplorer({ locale, chamber, groups, members, individualVotes
               <Link
                 key={seat.vote.id}
                 href={seat.member ? `/${locale}/members/${seat.member.slug}` : `/${locale}/votes/${seat.vote.voteId}`}
+                onClick={(event) => {
+                  if (pinnedSeatId !== seat.vote.id) {
+                    event.preventDefault();
+                    setPinnedSeatId(seat.vote.id);
+                  }
+                }}
                 title={`${memberLabel} · ${groupLabel} · ${voteLabel}`}
                 className={[
-                  "group/seat absolute z-10 block rounded-full border border-white shadow-sm outline-offset-2 transition",
-                  muted ? "opacity-20" : "opacity-100 hover:z-[200] hover:scale-125 focus:z-[200] focus:scale-125"
+                  "group/seat absolute z-10 block rounded-full border border-white shadow-sm outline-offset-2 transition hover:z-[200] focus:z-[200]",
+                  muted ? "opacity-20 hover:opacity-100 focus:opacity-100" : "opacity-100",
+                  pinned ? "z-[210] opacity-100 ring-2 ring-slate-950 ring-offset-2" : ""
                 ].join(" ")}
                 style={{
                   left: percent(seat.left),
@@ -136,15 +145,22 @@ export function VoteExplorer({ locale, chamber, groups, members, individualVotes
                   backgroundColor: seat.group?.color ?? "#94a3b8",
                   transform: "translate(-50%, -50%)"
                 }}
-              >
-                <span className="absolute bottom-0 right-0 z-10 grid h-[62%] w-[62%] translate-x-1/5 translate-y-1/5 place-items-center rounded-full border border-white bg-white">
-                  <VoteMark choice={seat.vote.choice} className="h-[80%] w-[80%]" />
-                </span>
-                <span className="pointer-events-none absolute left-1/2 top-0 z-[300] hidden min-w-max -translate-x-1/2 -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md group-hover/seat:block group-focus-visible/seat:block">
+                >
+                  <span className="absolute bottom-0 right-0 z-10 grid h-[62%] w-[62%] translate-x-1/5 translate-y-1/5 place-items-center rounded-full border border-white bg-white">
+                    <VoteMark choice={seat.vote.choice} className="h-[80%] w-[80%]" />
+                  </span>
+                <span
+                  className={[
+                    "pointer-events-none absolute top-0 z-[300] min-w-max -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md",
+                    tooltipPositionClass(seat.left),
+                    pinned ? "block" : "hidden group-hover/seat:block group-focus-visible/seat:block"
+                  ].join(" ")}
+                >
                   {memberLabel}
                   <span className="mt-0.5 block font-normal text-slate-600">
                     {groupLabel} · {voteLabel}
                   </span>
+                  {pinned ? <span className="mt-1 block font-normal text-slate-500">{labels.openProfile}</span> : null}
                 </span>
                 <span className="sr-only">
                   {memberLabel} {groupLabel} {voteLabel}
@@ -304,6 +320,12 @@ function percent(value: number): string {
   return `${value.toFixed(4)}%`;
 }
 
+function tooltipPositionClass(left: number): string {
+  if (left < 18) return "left-0 translate-x-0";
+  if (left > 82) return "right-0 translate-x-0";
+  return "left-1/2 -translate-x-1/2";
+}
+
 function VoteMark({ choice, className }: { choice: VoteChoice; className?: string }) {
   const color = voteChoiceColors[choice];
   if (choice === "for") return <Check aria-hidden="true" className={className} color={color} strokeWidth={3.2} />;
@@ -327,13 +349,15 @@ const explorerLabels = {
     allVotes: "Toate voturile",
     groupBreakdown: "Distribuție pe grupuri",
     seats: "mandate",
-    unknownGroup: "Grup necunoscut"
+    unknownGroup: "Grup necunoscut",
+    openProfile: "Apasă din nou pentru profil"
   },
   en: {
     allGroups: "All groups",
     allVotes: "All votes",
     groupBreakdown: "Breakdown by group",
     seats: "seats",
-    unknownGroup: "Unknown group"
+    unknownGroup: "Unknown group",
+    openProfile: "Click again for profile"
   }
 } satisfies Record<Locale, Record<string, string>>;
