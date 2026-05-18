@@ -1043,3 +1043,27 @@ Verification:
   - Deputies votes: 63 imported, 2 skipped;
   - 0 pending;
   - 0 failed.
+
+## 2026-05-18 — Paused 2024 Import Checkpoint
+
+- Started the 2024 backfill pass:
+  - Deputies yearly project discovery returned 684 official projects;
+  - Deputies electronic-vote discovery returned 1,316 raw vote rows, but most
+    raw vote rows are undated in the discovery table, so the import stayed
+    constrained to dated 2024 rows and links produced by project pages.
+- Imported before pause:
+  - 684 Deputies bill rows;
+  - 5 linked Senate bill rows;
+  - 4 linked Senate vote rows;
+  - 126 Deputies vote rows.
+- Paused on request by stopping the active Deputies vote importer.
+- Current dated discovery checkpoint:
+  - 2024: 684 Deputies bills imported, 5 Senate bills imported, 4 Senate votes
+    imported, 126 Deputies votes imported, 29 Deputies votes pending;
+  - 2025: 87 newly discovered Senate bill links pending, 78 newly discovered
+    Deputies vote links pending;
+  - 2026: 10 newly discovered Deputies vote links pending.
+- Next import step:
+  - clear the 29 dated 2024 Deputies votes first;
+  - then inspect the new 2025/2026 lifecycle links produced by the 2024 pages
+    before importing them.

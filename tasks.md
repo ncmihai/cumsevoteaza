@@ -169,6 +169,12 @@ implementation steps.
   - imported 81 linked Senate vote rows and 65 Deputies vote rows
   - skipped 2 Deputies vote pages that were not usable nominal vote pages
   - final 2026 discovery status: 100 Senate bills imported, 85 Senate votes imported, 402 Deputies bills imported, 63 Deputies votes imported, 2 Deputies vote pages skipped, 0 pending, 0 failed
+- [x] Pause 2024 import with a recorded checkpoint:
+  - stopped the active Deputies vote importer on request
+  - 2024 imported so far: 684 Deputies bills, 5 Senate bill cross-links, 4 Senate vote cross-links, 126 Deputies votes
+  - 2024 still pending: 29 dated Deputies vote pages
+  - later lifecycle links discovered during the 2024 pass and still pending: 87 Senate 2025 bills, 78 Deputies 2025 votes, 10 Deputies 2026 votes
+  - next import step: clear the 29 dated 2024 Deputies votes first, then inspect and clear the new cross-year lifecycle links
 - [x] Fix `Compoziții` empty timeline:
   - attach government skeleton rows to legislatures by date when `legislature_id` is missing
   - verified 10 legislatures and 85 events render locally
