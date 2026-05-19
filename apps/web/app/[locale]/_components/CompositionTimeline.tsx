@@ -19,19 +19,29 @@ export function CompositionTimeline({ locale, mode, stops }: CompositionTimeline
   const activeStop = useMemo(() => stops.find((stop) => stop.id === activeId) ?? stops[0], [activeId, stops]);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        const id = visible?.target.getAttribute("data-stop-id");
-        if (id) setActiveId(id);
-      },
-      { rootMargin: "-25% 0px -45% 0px", threshold: [0.2, 0.45, 0.7] }
-    );
-    const nodes = [...itemRefs.current.values()];
-    nodes.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
+    let frame = 0;
+    const updateActiveStop = () => {
+      frame = 0;
+      const markerY = window.innerHeight * 0.38;
+      const entries = [...itemRefs.current.entries()]
+        .map(([id, node]) => ({ id, rect: node.getBoundingClientRect() }))
+        .filter(({ rect }) => rect.height > 0);
+      const containingMarker = entries.find(({ rect }) => rect.top <= markerY && rect.bottom >= markerY);
+      const closest = containingMarker ?? entries.sort((a, b) => Math.abs(a.rect.top - markerY) - Math.abs(b.rect.top - markerY))[0];
+      if (closest) setActiveId(closest.id);
+    };
+    const requestUpdate = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(updateActiveStop);
+    };
+    requestUpdate();
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    window.addEventListener("resize", requestUpdate);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", requestUpdate);
+      window.removeEventListener("resize", requestUpdate);
+    };
   }, [stops]);
 
   if (stops.length === 0) {

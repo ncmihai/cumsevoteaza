@@ -1304,3 +1304,13 @@ Verification:
   - older split legislature pages often include everyone who served during the
     term, including replacements, so they are useful for member history but
     must not be used as raw seat-map counts.
+
+## 2026-05-19 — Compoziții Scroll Activation Fix
+
+- Fixed the desktop `Compoziții` timeline stage so the sticky government and
+  chamber map panels follow the legislature section under a viewport marker.
+- Replaced the prior `IntersectionObserver` ratio selection, which could keep
+  the first/current legislature active while older timeline cards were visible.
+- Verified locally that scrolling to 2020-2024, 2016-2020, 2012-2016, and
+  2008-2012 updates the active stage text and chamber map counts for that
+  legislature.

@@ -542,6 +542,9 @@ implementation steps.
   2000: 140 S / 345 D; 1996: 143 S / 343 D; 1992: 143 S / 341 D;
   1990: 119 S / 396 D.
 - [x] Apply shared seat-count caps to composition and vote-seat helpers.
+- [x] Fix `Compoziții` desktop scroll activation so the sticky chamber maps
+  follow the legislature section under the viewport instead of staying on the
+  first/current legislature.
 - [x] Make the member directory table internally scrollable with a sticky
   header and defensive constituency cleanup.
 - [ ] Add a `party_visual_identities` data model and importer that stores
