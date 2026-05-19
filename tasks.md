@@ -568,6 +568,12 @@ implementation steps.
   cross-checks, not as canonical official data.
 - [x] Add `ingest:wikipedia:roster`, `ingest:wikipedia:roster-index`, and
   `ingest:roster:crosscheck`.
+- [x] Extend Wikipedia roster parsing across all post-1989 legislatures:
+  - 2024 rowspans are normalized so carried county/party cells are not lost;
+  - 2016/2020/2024 election-list pages parse as single combined chamber pages;
+  - 2008/2012 and 1990-2004 use separate Senate/Deputies legislature pages.
+- [x] Add `ingest:wikipedia:roster:all` and
+  `ingest:roster:crosscheck:all` for read-only all-legislature verification.
 - [x] Use the 2020 Wikipedia election roster to cross-check official CDEP
   Deputies rows; fixed the historical CDEP title parser where names like
   `Benga Tudor - Vlad` were being reduced to `Vlad`.
@@ -583,3 +589,8 @@ implementation steps.
   legislature but no longer hold the mandate.
 - [ ] Find/import official historical Senate rosters before claiming complete
   bicameral post-1989 roster coverage.
+- [ ] Add a provenance-aware Wikipedia fallback import/staging flow for
+  historical Senate and missing official rows; do not overwrite official
+  rows without a visible source status.
+- [ ] Model coalitions/electoral alliances such as `USL`, `ARD`, `PSD+PC`,
+  `CDR`, and `DA PNL-PD` separately from parties.

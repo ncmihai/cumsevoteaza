@@ -291,6 +291,15 @@ Commands:
 - `npm run ingest:wikipedia:roster -- --legislature=2020 --no-files`
 - `npm run ingest:wikipedia:roster-index -- --chamber=deputies --no-files`
 - `npm run ingest:roster:crosscheck -- --legislature=2020 --no-files`
+- `npm run ingest:wikipedia:roster:all -- --no-files`
+- `npm run ingest:roster:crosscheck:all -- --no-files`
+
+Default roster URL policy:
+- `2016-2020`, `2020-2024`, and `2024-2028`: use the combined Wikipedia
+  election-list pages because they expose parseable Senate and Deputies tables.
+- `1990-1992` through `2012-2016`: use split legislature pages for
+  `Camera Deputaților` and `Senat`; the 2008/2012 election-list pages do not
+  have the same stable combined table structure.
 
 Current 2020 observations:
 - The Wikipedia election page text says 330 Deputies and 136 Senators.
@@ -301,3 +310,14 @@ Current 2020 observations:
   differences, not automatic errors.
 - Wikipedia’s elected-list pages do not necessarily include every later
   replacement or mandate movement that official CDEP profile ranges expose.
+
+All-legislature observations:
+- Split legislature pages often list everyone who served during the term, not
+  only the elected seats at the start of the legislature.
+- Use fixed legislature seat counts for seat maps and composition rendering;
+  use the larger split-page member lists for Transfermarkt-style parliamentary
+  career history.
+- Several labels from Wikipedia are coalitions, electoral alliances, minority
+  organizations, or non-affiliation states (`USL`, `ARD`, `PSD+PC`, `CDR`,
+  `independent`, `neafiliat`) and should be modeled separately from political
+  parties before any fallback import writes them to DB.

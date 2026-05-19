@@ -19,6 +19,7 @@ export interface WikipediaRosterRow {
 
 export interface WikipediaRosterPage {
   sourceSnapshot: SourceSnapshot;
+  sourceSnapshots?: SourceSnapshot[];
   sourceUrl: string;
   legislatureId: string;
   legislatureLabel: string;
@@ -31,6 +32,11 @@ export interface WikipediaRosterIndexLink {
   legislatureLabel: string;
   url: string;
   title: string;
+}
+
+interface NormalizedCell {
+  text: string;
+  href?: string;
 }
 
 export function parseWikipediaElectionRoster(
@@ -52,47 +58,44 @@ export function parseWikipediaElectionRoster(
   });
 
   $("table.wikitable").each((_, table) => {
-    const headerCells = $(table)
-      .find("tr")
-      .first()
-      .find("th")
-      .map((__, cell) => normalize($(cell).text()))
-      .get();
+    const tableRows = normalizedTableRows($, table);
+    const headerRowIndex = tableRows.findIndex((row) =>
+      row.some((cell) => normalize(cell.text).includes("prenume") || normalize(cell.text) === "nume")
+    );
+    if (headerRowIndex < 0) return;
+    const headerCells = tableRows[headerRowIndex]!.map((cell) => normalize(cell.text));
     const nameIndex = headerCells.findIndex((header) => header.includes("prenume") || header === "nume");
-    const constituencyIndex = headerCells.findIndex((header) => header.includes("denumire") || header.includes("circumscript"));
+    const constituencyIndex = headerCells.findIndex(
+      (header) => header.includes("denumire") || header.includes("circumscript") || header.includes("judet")
+    );
     const partyIndex = headerCells.findIndex((header) => header.includes("grup") || header.includes("partid"));
     if (nameIndex < 0 || partyIndex < 0) return;
 
-    const chamber = chamberForTable($, table);
+    const chamber = chamberForTable($, table) ?? chamberFromSource(sourceUrl);
     if (!chamber) return;
 
-    $(table)
-      .find("tr")
-      .slice(1)
-      .each((__, row) => {
-        const cells = $(row).find("td");
-        if (cells.length <= Math.max(nameIndex, partyIndex)) return;
-        const numberText = cleanText($(cells[0]).text());
-        const displayName = cleanText($(cells[nameIndex]).text().replace(/\[[^\]]+\]/g, ""));
-        if (!displayName) return;
-        const partyLabel = cleanText($(cells[partyIndex]).text().replace(/\[[^\]]+\]/g, ""));
-        const party = partyLabel ? partyFromText(partyLabel) : undefined;
-        const profileHref = $(cells[nameIndex]).find("a").first().attr("href");
-        const observationIndex = headerCells.findIndex((header) => header.includes("observ"));
-        rows.push({
-          chamber,
-          legislatureId: legislature.id,
-          legislatureLabel: legislature.label,
-          rowNumber: /^\d+$/.test(numberText) ? Number(numberText) : undefined,
-          displayName,
-          normalizedName: normalize(displayName),
-          constituency: cleanConstituency(constituencyIndex >= 0 ? $(cells[constituencyIndex]).text() : undefined),
-          partyLabel: partyLabel || undefined,
-          partyId: party?.id,
-          observation: observationIndex >= 0 ? cleanText($(cells[observationIndex]).text()) || undefined : undefined,
-          wikiProfileUrl: profileHref ? absoluteWikipediaUrl(profileHref) : undefined
-        });
+    for (const row of tableRows.slice(headerRowIndex + 1)) {
+      if (row.length <= Math.max(nameIndex, partyIndex)) continue;
+      const numberText = cleanText(row[0]?.text ?? "");
+      const displayName = cleanCellText(row[nameIndex]?.text);
+      if (!displayName) continue;
+      const partyLabel = cleanCellText(row[partyIndex]?.text);
+      const party = partyLabel ? partyFromText(partyLabel) : undefined;
+      const observationIndex = headerCells.findIndex((header) => header.includes("observ"));
+      rows.push({
+        chamber,
+        legislatureId: legislature.id,
+        legislatureLabel: legislature.label,
+        rowNumber: /^\d+$/.test(numberText) ? Number(numberText) : undefined,
+        displayName,
+        normalizedName: normalize(displayName),
+        constituency: cleanConstituency(constituencyIndex >= 0 ? row[constituencyIndex]?.text : undefined),
+        partyLabel: partyLabel || undefined,
+        partyId: party?.id,
+        observation: observationIndex >= 0 ? cleanCellText(row[observationIndex]?.text) || undefined : undefined,
+        wikiProfileUrl: row[nameIndex]?.href ? absoluteWikipediaUrl(row[nameIndex]!.href!) : undefined
       });
+    }
   });
 
   return {
@@ -101,6 +104,28 @@ export function parseWikipediaElectionRoster(
     legislatureId: legislature.id,
     legislatureLabel: legislature.label,
     rows,
+    counts
+  };
+}
+
+export function mergeWikipediaRosterPages(pages: WikipediaRosterPage[]): WikipediaRosterPage {
+  if (pages.length === 0) {
+    throw new Error("Cannot merge an empty Wikipedia roster page list.");
+  }
+  const first = pages[0]!;
+  const counts: Partial<Record<ChamberId, number>> = {};
+  for (const page of pages) {
+    for (const [chamber, count] of Object.entries(page.counts)) {
+      counts[chamber as ChamberId] = count;
+    }
+  }
+  return {
+    sourceSnapshot: first.sourceSnapshot,
+    sourceSnapshots: pages.map((page) => page.sourceSnapshot),
+    sourceUrl: pages.map((page) => page.sourceUrl).join(", "),
+    legislatureId: first.legislatureId,
+    legislatureLabel: first.legislatureLabel,
+    rows: pages.flatMap((page) => page.rows),
     counts
   };
 }
@@ -137,8 +162,68 @@ export function parseWikipediaRosterIndex(html: string, sourceUrl: string, chamb
 
 export function defaultWikipediaElectionRosterUrl(legislatureLabel: string): string | undefined {
   const year = legislatureLabel.slice(0, 4);
-  if (!["2008", "2012", "2016", "2020", "2024"].includes(year)) return undefined;
+  if (!["2016", "2020", "2024"].includes(year)) return undefined;
   return `https://ro.wikipedia.org/wiki/Lista_parlamentarilor_aleși_la_alegerile_din_România_din_${year}`;
+}
+
+export function defaultWikipediaRosterUrls(legislatureLabel: string): string[] {
+  const electionUrl = defaultWikipediaElectionRosterUrl(legislatureLabel);
+  if (electionUrl) return [electionUrl];
+  const label = legislatureLabel;
+  return [
+    `https://ro.wikipedia.org/wiki/Legislatura_${label}_(Camera_Deputa%C8%9Bilor)`,
+    `https://ro.wikipedia.org/wiki/Legislatura_${label}_(Senat)`
+  ];
+}
+
+function normalizedTableRows($: cheerio.CheerioAPI, table: Parameters<cheerio.CheerioAPI>[0]): NormalizedCell[][] {
+  const rows: NormalizedCell[][] = [];
+  const carried = new Map<number, { remaining: number; cell: NormalizedCell }>();
+
+  $(table)
+    .find("tr")
+    .each((_, row) => {
+      const output: NormalizedCell[] = [];
+      let column = 0;
+
+      const fillCarried = () => {
+        while (carried.has(column)) {
+          const current = carried.get(column)!;
+          output[column] = current.cell;
+          current.remaining -= 1;
+          if (current.remaining <= 0) {
+            carried.delete(column);
+          } else {
+            carried.set(column, current);
+          }
+          column += 1;
+        }
+      };
+
+      fillCarried();
+      $(row)
+        .children("th,td")
+        .each((__, element) => {
+          fillCarried();
+          const cell: NormalizedCell = {
+            text: cleanText($(element).text()),
+            href: $(element).find("a[href]").first().attr("href")
+          };
+          const rowspan = Math.max(1, Number($(element).attr("rowspan") ?? "1") || 1);
+          const colspan = Math.max(1, Number($(element).attr("colspan") ?? "1") || 1);
+          for (let offset = 0; offset < colspan; offset += 1) {
+            output[column + offset] = cell;
+            if (rowspan > 1) {
+              carried.set(column + offset, { remaining: rowspan - 1, cell });
+            }
+          }
+          column += colspan;
+        });
+      fillCarried();
+      rows.push(output);
+    });
+
+  return rows;
 }
 
 function chamberForTable($: cheerio.CheerioAPI, table: Parameters<cheerio.CheerioAPI>[0]): ChamberId | undefined {
@@ -151,11 +236,22 @@ function chamberForTable($: cheerio.CheerioAPI, table: Parameters<cheerio.Cheeri
   return undefined;
 }
 
+function chamberFromSource(sourceUrl: string): ChamberId | undefined {
+  const normalized = normalize(decodeURIComponent(sourceUrl));
+  if (normalized.includes("senat")) return "senate";
+  if (normalized.includes("camera deputa") || normalized.includes("camera_deputa")) return "deputies";
+  return undefined;
+}
+
 function chamberFromText(text: string): ChamberId | undefined {
   const normalized = normalize(text);
   if (normalized.includes("deputat")) return "deputies";
   if (normalized.includes("senator")) return "senate";
   return undefined;
+}
+
+function cleanCellText(value: string | undefined): string {
+  return cleanText(value?.replace(/\[[^\]]+\]/g, "") ?? "");
 }
 
 function cleanConstituency(value: string | undefined): string | undefined {

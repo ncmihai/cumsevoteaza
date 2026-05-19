@@ -3,12 +3,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseChamberNominalVote } from "./parsers/chamber-vote";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "./parsers/deputies-roster";
-import { legislatureFromFlag, partyCatalog, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
+import { legislatureCatalog, legislatureFromFlag, partyCatalog, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
 import { parseSenateBill } from "./parsers/senate-bill";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "./parsers/senate-roster";
 import { parseSenateVote } from "./parsers/senate-vote";
 import {
-  defaultWikipediaElectionRosterUrl,
+  defaultWikipediaRosterUrls,
+  mergeWikipediaRosterPages,
   parseWikipediaElectionRoster,
   parseWikipediaRosterIndex
 } from "./parsers/wikipedia-roster";
@@ -139,6 +140,17 @@ async function main() {
     return;
   }
 
+  if (command === "wikipedia:roster:all") {
+    const summaries = [];
+    for (const legislature of allLegislaturesNewestFirst()) {
+      const parsed = await importWikipediaRosterPage(legislature);
+      await writeImport(`wikipedia-roster-${legislature.label}`, parsed, JSON.stringify(parsed, null, 2));
+      summaries.push(wikipediaRosterSummary(parsed));
+    }
+    console.log(JSON.stringify(summaries, null, 2));
+    return;
+  }
+
   if (command === "wikipedia:roster-index") {
     const chamber = chamberFlag() ?? "deputies";
     const url =
@@ -157,6 +169,18 @@ async function main() {
     const result = await crosscheckWikipediaRoster(parsed);
     await writeImport("roster-crosscheck", result, JSON.stringify(result, null, 2));
     console.log(JSON.stringify(hasFlag("full") ? result : compactCrosscheckResult(result), null, 2));
+    return;
+  }
+
+  if (command === "roster:crosscheck:all") {
+    const results = [];
+    for (const legislature of allLegislaturesNewestFirst()) {
+      const parsed = await importWikipediaRosterPage(legislature);
+      const result = await crosscheckWikipediaRoster(parsed);
+      await writeImport(`roster-crosscheck-${legislature.label}`, result, JSON.stringify(result, null, 2));
+      results.push(hasFlag("full") ? result : compactCrosscheckResult(result));
+    }
+    console.log(JSON.stringify(results, null, 2));
     return;
   }
 
@@ -505,16 +529,16 @@ function looksLikeParsedDeputiesMember(profile: ParsedMemberProfile): boolean {
   ].includes(profile.member.slug);
 }
 
-async function importWikipediaRosterPage() {
-  const legislature = rosterLegislature();
-  const url = flag("url") ?? defaultWikipediaElectionRosterUrl(legislature.label);
-  if (!url) {
-    throw new Error(
-      `No default Wikipedia election roster URL for ${legislature.label}. Pass --url=... for legislature-specific pages.`
-    );
+async function importWikipediaRosterPage(overrideLegislature?: ReturnType<typeof rosterLegislature>) {
+  const legislature = overrideLegislature ?? rosterLegislature();
+  const explicitUrl = overrideLegislature ? undefined : flag("url");
+  const urls = explicitUrl ? [explicitUrl] : defaultWikipediaRosterUrls(legislature.label);
+  const pages = [];
+  for (const url of urls) {
+    const html = await loadHtml(url);
+    pages.push(parseWikipediaElectionRoster(html, url, { legislature }));
   }
-  const html = await loadHtml(url);
-  return parseWikipediaElectionRoster(html, url, { legislature });
+  return pages.length === 1 ? pages[0]! : mergeWikipediaRosterPages(pages);
 }
 
 function wikipediaRosterSummary(parsed: Awaited<ReturnType<typeof importWikipediaRosterPage>>) {
@@ -566,6 +590,10 @@ function compactCrosscheckResult(result: Awaited<ReturnType<typeof crosscheckWik
       ])
     )
   };
+}
+
+function allLegislaturesNewestFirst() {
+  return uniqueBy(Object.values(legislatureCatalog), (legislature) => legislature.id).sort((a, b) => b.startsOn.localeCompare(a.startsOn));
 }
 
 async function loadHtml(url: string): Promise<string> {

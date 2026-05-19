@@ -249,8 +249,8 @@ export function partyFromText(value: string): Party | undefined {
   if (text.includes("national liberal") || /\bpnl\b/.test(text)) return partyCatalog.pnl;
   if (text.includes("salvati romania") || /\busr\b/.test(text)) return partyCatalog.usr;
   if (text.includes("alianta pentru unirea romanilor") || /\baur\b/.test(text)) return partyCatalog.aur;
-  if (text.includes("democrate maghiare") || /\budmr\b/.test(text)) return partyCatalog.udmr;
-  if (text.includes("sos romania")) return partyCatalog["sos-ro"];
+  if (text.includes("democrate maghiare") || text.includes("democrata maghiara") || /\budmr\b/.test(text)) return partyCatalog.udmr;
+  if (text.includes("sos romania") || /\bs\.?\s*o\.?\s*s\.?\s*romania\b/.test(text)) return partyCatalog["sos-ro"];
   if (text.includes("oamenilor tineri") || /\bpot\b/.test(text)) return partyCatalog.pot;
   if (text.includes("pace") || text.includes("intai romania")) return partyCatalog.pace;
   if (text.includes("uniti pentru romania")) return partyCatalog.upr;

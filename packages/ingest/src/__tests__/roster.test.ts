@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "../parsers/deputies-roster";
 import { legislature2020, legislature2024 } from "../parsers/roster";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "../parsers/senate-roster";
-import { parseWikipediaElectionRoster, parseWikipediaRosterIndex } from "../parsers/wikipedia-roster";
+import { defaultWikipediaRosterUrls, parseWikipediaElectionRoster, parseWikipediaRosterIndex } from "../parsers/wikipedia-roster";
 
 const fixtures = path.join(__dirname, "../fixtures");
 
@@ -100,6 +100,56 @@ describe("roster parsers", () => {
     expect(parsed.rows.find((row) => row.displayName === "Florin-Vasile Cîțu")?.wikiProfileUrl).toBe(
       "https://ro.wikipedia.org/wiki/Florin-Vasile_Cîțu"
     );
+  });
+
+  it("parses Wikipedia 2024-style rowspans without losing carried party and county cells", () => {
+    const parsed = parseWikipediaElectionRoster(
+      `<h2>Camera Deputaților</h2>
+       <table class="wikitable">
+        <tr><th>Număr</th><th>Prenume și Nume</th><th colspan="2">Circumscripția electorală</th><th>Partid</th></tr>
+        <tr><td>1</td><td><a href="/wiki/Deputat_A">Deputat A</a></td><td rowspan="2">Alba</td><td rowspan="2">1</td><td rowspan="2">Uniunea Democrată Maghiară din România</td></tr>
+        <tr><td>2</td><td>Deputat B</td></tr>
+       </table>`,
+      "https://ro.wikipedia.org/wiki/Lista_parlamentarilor_aleși_la_alegerile_din_România_din_2024",
+      { legislature: legislature2024 }
+    );
+
+    expect(parsed.rows).toHaveLength(2);
+    expect(parsed.rows.map((row) => row.constituency)).toEqual(["Alba", "Alba"]);
+    expect(parsed.rows.map((row) => row.partyId)).toEqual(["party-udmr", "party-udmr"]);
+    expect(parsed.rows[0]?.wikiProfileUrl).toBe("https://ro.wikipedia.org/wiki/Deputat_A");
+  });
+
+  it("parses older separate Wikipedia chamber legislature pages", () => {
+    const parsed = parseWikipediaElectionRoster(
+      `<table class="wikitable">
+        <tr><th>Nume si Prenume</th><th>Județ</th><th>Partid</th></tr>
+        <tr><td>Deputat Istoric</td><td>Iași</td><td>Frontul Salvării Naționale</td></tr>
+       </table>`,
+      "https://ro.wikipedia.org/wiki/Legislatura_1990-1992_(Camera_Deputaților)"
+    );
+
+    expect(parsed.legislatureLabel).toBe("1990-1992");
+    expect(parsed.rows).toEqual([
+      expect.objectContaining({
+        chamber: "deputies",
+        displayName: "Deputat Istoric",
+        constituency: "Iași",
+        partyId: "party-fsn"
+      })
+    ]);
+  });
+
+  it("knows when Wikipedia rosters are single election pages or split by chamber", () => {
+    expect(defaultWikipediaRosterUrls("2020-2024")).toHaveLength(1);
+    expect(defaultWikipediaRosterUrls("2012-2016")).toEqual([
+      "https://ro.wikipedia.org/wiki/Legislatura_2012-2016_(Camera_Deputa%C8%9Bilor)",
+      "https://ro.wikipedia.org/wiki/Legislatura_2012-2016_(Senat)"
+    ]);
+    expect(defaultWikipediaRosterUrls("1990-1992")).toEqual([
+      "https://ro.wikipedia.org/wiki/Legislatura_1990-1992_(Camera_Deputa%C8%9Bilor)",
+      "https://ro.wikipedia.org/wiki/Legislatura_1990-1992_(Senat)"
+    ]);
   });
 
   it("discovers Wikipedia legislature links from index pages", () => {

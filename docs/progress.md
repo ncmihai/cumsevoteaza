@@ -1268,3 +1268,39 @@ Verification:
     reports `USR`;
   - Senate: 136 Wikipedia rows are available, but official historical Senate
     rows are not imported yet.
+
+## 2026-05-19 — Wikipedia Roster Cross-Checks Across All Legislatures
+
+- Extended the Wikipedia roster parser so it can handle every post-1989 page
+  family needed for cross-checking:
+  - normalized `rowspan` / `colspan` tables, fixing 2024-style carried
+    party/county cells;
+  - inferred chamber from split legislature-page URLs such as
+    `Legislatura_1990-1992_(Senat)`;
+  - parsed older `Nume si Prenume` / `Județ` / `Partid` tables;
+  - widened party recognition for current labels such as `S.O.S. România` and
+    `Uniunea Democrată Maghiară din România`.
+- Added all-legislature commands:
+  - `npm run ingest:wikipedia:roster:all -- --no-files`;
+  - `npm run ingest:roster:crosscheck:all -- --no-files`.
+- Changed Wikipedia defaults:
+  - 2016, 2020, and 2024 use the election-list page;
+  - 2008, 2012, and 1990-2004 use split Senate/Deputies legislature pages,
+    because the 2008/2012 election-list pages do not expose the same robust
+    combined table format.
+- Live parse counts after the change:
+  - 2024-2028: 465 rows, 331 Deputies / 134 Senate;
+  - 2020-2024: 467 rows, 331 Deputies / 136 Senate;
+  - 2016-2020: 469 rows, 333 Deputies / 136 Senate;
+  - 2012-2016: 591 rows, 412 Deputies / 179 Senate;
+  - 2008-2012: 470 rows, 333 Deputies / 137 Senate;
+  - 2004-2008: 552 rows, 386 Deputies / 166 Senate;
+  - 2000-2004: 555 rows, 393 Deputies / 162 Senate;
+  - 1996-2000: 521 rows, 367 Deputies / 154 Senate;
+  - 1992-1996: 539 rows, 381 Deputies / 158 Senate;
+  - 1990-1992: 576 rows, 448 Deputies / 128 Senate.
+- Important interpretation:
+  - newer election-list pages are close to elected seat counts;
+  - older split legislature pages often include everyone who served during the
+    term, including replacements, so they are useful for member history but
+    must not be used as raw seat-map counts.
