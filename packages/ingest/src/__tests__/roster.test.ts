@@ -49,13 +49,13 @@ describe("roster parsers", () => {
     expect(profile.mandate?.constituency).toBe("HUNEDOARA");
     expect(profile.partyAffiliations).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ partyId: "party-pot", startsOn: "2024-12-21", endsOn: "2026-05-31" }),
+        expect.objectContaining({ partyId: "party-pot", startsOn: "2024-12-21", endsOn: "2026-04-30" }),
         expect.objectContaining({ partyId: "party-upr", startsOn: "2026-05-01" })
       ])
     );
     expect(profile.groupMemberships).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ groupId: "group-deputies-pot", startsOn: "2024-12-21", endsOn: "2026-05-31" }),
+        expect.objectContaining({ groupId: "group-deputies-pot", startsOn: "2024-12-21", endsOn: "2026-04-30" }),
         expect.objectContaining({ groupId: "group-deputies-upr", startsOn: "2026-05-01" })
       ])
     );

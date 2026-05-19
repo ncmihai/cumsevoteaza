@@ -324,7 +324,9 @@ function parseDeputiesPeriod(line: string, legislature: Legislature): { startsOn
   const fullDate = parseRomanianDate(line);
   const startsOn = parseMonthReference(line, "din") ?? fullDate ?? legislature.startsOn;
   const endsOn = parseMonthReference(line, "pana");
-  return endsOn ? { startsOn, endsOn: endOfMonth(endsOn) } : { startsOn };
+  if (!endsOn) return { startsOn };
+  const boundedEndsOn = endOfPreviousMonth(endsOn);
+  return boundedEndsOn >= startsOn ? { startsOn, endsOn: boundedEndsOn } : { startsOn };
 }
 
 function parseMonthReference(value: string, keyword: "din" | "pana"): string | undefined {
@@ -371,10 +373,10 @@ function deputyMonthNumber(value: string): string | undefined {
   return months[key];
 }
 
-function endOfMonth(date: string): string {
+function endOfPreviousMonth(date: string): string {
   const [year, month] = date.split("-").map(Number);
   if (!year || !month) return date;
-  return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+  return new Date(Date.UTC(year, month - 1, 0)).toISOString().slice(0, 10);
 }
 
 function parseDeputiesCommittees(

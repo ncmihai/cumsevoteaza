@@ -1180,3 +1180,50 @@ Verification:
     `/aleg/upr2026.jpg`;
   - the next durable step is a `party_visual_identities` model keyed by
     party/election period/legislature, not a single permanent party logo.
+
+## 2026-05-19 — Roster Spring Cleaning
+
+- Paused bills/votes work and reset the roster layer because old importer and
+  vote-derived rows had polluted member pages and composition counts.
+- Added `ingest:roster:reset`:
+  - dry-run by default;
+  - `--confirm` clears rebuildable roster/read-model tables only;
+  - leaves bills, votes, individual vote rows, parties, groups, member identity
+    rows, and source snapshots intact.
+- Ran the reset against Neon. Deleted/rebuildable rows before reset:
+  - 4,219 mandates;
+  - 5,319 group memberships;
+  - 4,033 party affiliations;
+  - 8,341 committee memberships;
+  - 91 member roles;
+  - 4,219 member-legislature activity rows.
+- Reimported official current rosters:
+  - 2024 Deputies: 330 members, 330 mandates, 389 group memberships, 354 party
+    affiliations, 817 committee memberships, 24 roles;
+  - 2024 Senate: 134 members, 134 mandates, 134 group memberships, 135 party
+    affiliations, 403 committee memberships, 36 roles.
+- Reimported official CDEP Deputies profiles for historical legislatures:
+  - 2020-2024: 354 Deputies who served;
+  - 2016-2020: 361;
+  - 2012-2016: 417;
+  - 2008-2012: 339;
+  - 2004-2008: 378;
+  - 2000-2004: 393;
+  - 1996-2000: 367;
+  - 1992-1996: 381;
+  - 1990-1992: 448.
+- Rebuilt people links and read models after the reset:
+  - 4,111 members read;
+  - 2,724 people upserted;
+  - 4,111 members linked;
+  - 6,891 search index rows refreshed.
+- Verification:
+  - every imported mandate/chamber has `dirty_constituencies = 0`;
+  - 2024 current counts now show 134 Senate mandates and 330 Deputies mandates
+    from official active roster imports;
+  - impossible membership periods with `ends_on < starts_on` were cleaned.
+- Remaining roster gap:
+  - historical Senate rosters are not yet imported from official sources;
+  - CDEP mandate end-date parsing is still needed so people who served earlier
+    in a legislature but later left the mandate do not appear as active in
+    current composition views.

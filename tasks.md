@@ -546,3 +546,26 @@ implementation steps.
   header and defensive constituency cleanup.
 - [ ] Add a `party_visual_identities` data model and importer that stores
   official logo/electoral-sign assets by party and legislature/election period.
+
+## Roster Spring Cleaning
+
+- [x] Add `ingest:roster:reset` as a dry-run-first command for clearing
+  rebuildable roster/member-history tables without deleting bills, votes,
+  nominal votes, parties, groups, source snapshots, or member identity rows.
+- [x] Run `ingest:roster:reset -- --confirm` against Neon.
+- [x] Reimport current official rosters:
+  - 2024 Deputies: 330 active CDEP members parsed from official group/profile
+    pages, with all advertised group counts matching parsed counts.
+  - 2024 Senate: 134 active Senate members parsed from official group/profile
+    pages, with all advertised group counts matching parsed counts.
+- [x] Reimport official CDEP Deputies profile rosters for 2020, 2016, 2012,
+  2008, 2004, 2000, 1996, 1992, and 1990 legislatures.
+- [x] Rebuild people links and read models after roster cleanup.
+- [x] Verify all imported mandate constituency fields are clean:
+  `dirty_constituencies = 0` for every imported legislature/chamber.
+- [x] Fix impossible imported periods where `ends_on < starts_on`.
+- [ ] Add mandate end-date parsing for CDEP profiles so current compositions can
+  distinguish active members from people who served earlier in the same
+  legislature but no longer hold the mandate.
+- [ ] Find/import official historical Senate rosters before claiming complete
+  bicameral post-1989 roster coverage.

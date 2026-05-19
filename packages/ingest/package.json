@@ -15,6 +15,7 @@
     "senate:roster": "tsx src/cli.ts senate:roster",
     "deputies:roster": "tsx src/cli.ts deputies:roster",
     "roster:all": "tsx src/cli.ts roster:all",
+    "roster:reset": "tsx src/cli.ts roster:reset",
     "people:backfill": "tsx src/cli.ts people:backfill",
     "governments:skeleton": "tsx src/cli.ts governments:skeleton",
     "discover:senate": "tsx src/cli.ts discover:senate",

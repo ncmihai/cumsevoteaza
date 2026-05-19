@@ -13,6 +13,7 @@ import { canonicalizeOfficialUrl } from "./official-urls";
 import { backfillPeopleFromMembers, persistChamberVote, persistGovernmentSkeleton, persistRoster, persistSenateBill, persistSenateVote } from "./persist";
 import { snapshotFor } from "./parsers/utils";
 import { refreshReadModels } from "./read-models";
+import { resetRosterData } from "./roster-reset";
 import {
   discoverDeputiesSources,
   discoverDeputiesVoteSources,
@@ -115,6 +116,16 @@ async function main() {
     return;
   }
 
+  if (command === "roster:reset") {
+    const confirm = hasFlag("confirm");
+    const summary = await resetRosterData({ dryRun: !confirm });
+    console.log(JSON.stringify(summary, null, 2));
+    if (!confirm) {
+      console.log("Dry run only. Re-run with --confirm to delete roster-derived rows.");
+    }
+    return;
+  }
+
   if (command === "people:backfill") {
     console.log(JSON.stringify(await backfillPeopleFromMembers(), null, 2));
     return;
@@ -196,8 +207,6 @@ async function importSenateRoster(): Promise<ParsedRoster> {
       }))
     );
   }
-  const profiledMemberIds = new Set(profiles.map((profile) => profile.member.id));
-
   return {
     chamber: "senate",
     legislature,
@@ -225,17 +234,12 @@ async function importSenateRoster(): Promise<ParsedRoster> {
     ),
     mandates: uniqueBy(profiles.flatMap((profile) => (profile.mandate ? [profile.mandate] : [])), (mandate) => mandate.id),
     groupMemberships: uniqueBy(
-      [
-        ...groupParts.flatMap((group) => group.members.filter((member) => !profiledMemberIds.has(member.member.id)).map((member) => member.membership)),
-        ...profiles.flatMap((profile) => profile.groupMemberships)
-      ],
+      [...groupParts.flatMap((group) => group.members.map((member) => member.membership)), ...profiles.flatMap((profile) => profile.groupMemberships)],
       (membership) => membership.id
     ),
     partyAffiliations: uniqueBy(
       [
-        ...groupParts.flatMap((group) =>
-          group.members.flatMap((member) => (!profiledMemberIds.has(member.member.id) && member.partyAffiliation ? [member.partyAffiliation] : []))
-        ),
+        ...groupParts.flatMap((group) => group.members.flatMap((member) => (member.partyAffiliation ? [member.partyAffiliation] : []))),
         ...profiles.flatMap((profile) => profile.partyAffiliations)
       ],
       (affiliation) => affiliation.id
@@ -292,7 +296,8 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
       }))
     );
   }
-  const profiledMemberIds = new Set(profiles.map((profile) => profile.member.id));
+  const profiledMemberIdsWithGroups = new Set(profiles.filter((profile) => profile.groupMemberships.length > 0).map((profile) => profile.member.id));
+  const profiledMemberIdsWithParties = new Set(profiles.filter((profile) => profile.partyAffiliations.length > 0).map((profile) => profile.member.id));
 
   return {
     chamber: "deputies",
@@ -333,7 +338,9 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
     mandates: uniqueBy(profiles.flatMap((profile) => (profile.mandate ? [profile.mandate] : [])), (mandate) => mandate.id),
     groupMemberships: uniqueBy(
       [
-        ...groupParts.flatMap((group) => group.members.filter((member) => !profiledMemberIds.has(member.member.id)).map((member) => member.membership)),
+        ...groupParts.flatMap((group) =>
+          group.members.filter((member) => !profiledMemberIdsWithGroups.has(member.member.id)).map((member) => member.membership)
+        ),
         ...profiles.flatMap((profile) => profile.groupMemberships)
       ],
       (membership) => membership.id
@@ -341,7 +348,9 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
     partyAffiliations: uniqueBy(
       [
         ...groupParts.flatMap((group) =>
-          group.members.flatMap((member) => (!profiledMemberIds.has(member.member.id) && member.partyAffiliation ? [member.partyAffiliation] : []))
+          group.members.flatMap((member) =>
+            !profiledMemberIdsWithParties.has(member.member.id) && member.partyAffiliation ? [member.partyAffiliation] : []
+          )
         ),
         ...profiles.flatMap((profile) => profile.partyAffiliations)
       ],
