@@ -277,3 +277,27 @@ Modelling rule:
 Open source-discovery task:
 - Build a small official-source matrix for 2024, 2020, 2016, 2012, 2008, and
   2004 before importing visual identities broadly.
+
+## Wikipedia Roster Cross-Checks
+
+Use:
+- Wikipedia can be used as a secondary cross-check and fallback seed when
+  official historical pages are incomplete, slow, or hard to discover.
+- Official CDEP/Senate pages remain canonical when available.
+- Wikipedia-derived rows must not overwrite official rows without a visible
+  provenance/verification state.
+
+Commands:
+- `npm run ingest:wikipedia:roster -- --legislature=2020 --no-files`
+- `npm run ingest:wikipedia:roster-index -- --chamber=deputies --no-files`
+- `npm run ingest:roster:crosscheck -- --legislature=2020 --no-files`
+
+Current 2020 observations:
+- The Wikipedia election page text says 330 Deputies and 136 Senators.
+- The parsed Wikipedia tables currently expose 331 Deputies rows and 136
+  Senate rows. Keep this discrepancy visible instead of slicing the list.
+- Wikipedia keeps several 2020 USR PLUS elected members as `PLUS`; CDEP profile
+  pages store them under `USR`. Treat those as party/source framing
+  differences, not automatic errors.
+- Wikipedia’s elected-list pages do not necessarily include every later
+  replacement or mandate movement that official CDEP profile ranges expose.

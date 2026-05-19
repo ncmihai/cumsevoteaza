@@ -1227,3 +1227,44 @@ Verification:
   - CDEP mandate end-date parsing is still needed so people who served earlier
     in a legislature but later left the mandate do not appear as active in
     current composition views.
+
+## 2026-05-19 — Wikipedia Roster Cross-Check Start
+
+- Added Wikipedia roster parsing as a secondary evidence layer:
+  - `ingest:wikipedia:roster` parses election pages such as the 2020 list;
+  - `ingest:wikipedia:roster-index` discovers legislature links from the
+    Deputies/Senate index pages;
+  - `ingest:roster:crosscheck` compares parsed Wikipedia rows with official
+    DB roster rows without overwriting official data.
+- Added `PLUS` to the party catalog so 2020 USR PLUS-era rows can be
+  represented instead of being collapsed silently.
+- Added parser fixtures/tests for:
+  - Wikipedia election pages containing both chamber tables;
+  - Wikipedia legislature index links;
+  - CDEP historical profile titles with spaced hyphens.
+- Live 2020 Wikipedia roster parse:
+  - 467 rows parsed;
+  - expected text counts: 330 Deputies and 136 Senators;
+  - actual parsed tables: 331 Deputies and 136 Senators;
+  - unknown party labels: `Independent`.
+- First cross-check exposed malformed official CDEP historical names caused by
+  titles like `Benga Tudor - Vlad` being parsed as only `Vlad`.
+- Fixed the CDEP profile parser to preserve the full spaced-hyphen name, then
+  reimported the official 2020 Deputies profile range into Neon:
+  - 354 members;
+  - 354 mandates;
+  - 441 group memberships;
+  - 369 party affiliations;
+  - 1,000 committee memberships.
+- Rebuilt people links and read models:
+  - 4,111 members read;
+  - 2,726 people upserted;
+  - 4,111 members linked;
+  - 6,892 search-index rows refreshed.
+- 2020 cross-check after repair:
+  - Deputies: 330 matches against Wikipedia, 1 Wikipedia row not matched
+    (`Vlad Popescu`), 24 official CDEP rows not present in Wikipedia’s elected
+    list, 11 party mismatches where Wikipedia keeps `PLUS` and official CDEP
+    reports `USR`;
+  - Senate: 136 Wikipedia rows are available, but official historical Senate
+    rows are not imported yet.

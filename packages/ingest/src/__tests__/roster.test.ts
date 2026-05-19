@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "../parsers/deputies-roster";
 import { legislature2020, legislature2024 } from "../parsers/roster";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "../parsers/senate-roster";
+import { parseWikipediaElectionRoster, parseWikipediaRosterIndex } from "../parsers/wikipedia-roster";
 
 const fixtures = path.join(__dirname, "../fixtures");
 
@@ -61,6 +62,18 @@ describe("roster parsers", () => {
     );
   });
 
+  it("keeps full Deputies historical names when CDEP titles contain spaced hyphens", () => {
+    const profile = parseDeputiesMemberProfile(
+      read("deputies-member-profile-hyphen-title.html"),
+      "https://www.cdep.ro/ords/pls/parlam/structura2015.mp?idm=38&leg=2020",
+      { legislature: legislature2020 }
+    );
+
+    expect(profile.member.displayName).toBe("Benga Tudor-Vlad");
+    expect(profile.member.slug).toBe("benga-tudor-vlad");
+    expect(profile.mandate?.constituency).toBe("BRAŞOV");
+  });
+
   it("keeps historical roster mandates in their own legislature", () => {
     const profile = parseDeputiesMemberProfile("<html><body><h1>Deputat Istoric</h1></body></html>", "https://www.cdep.ro/ords/pls/parlam/structura2015.mp?idm=294&leg=2020", {
       legislature: legislature2020
@@ -70,6 +83,41 @@ describe("roster parsers", () => {
     expect(profile.mandate?.id).toBe("mandate-member-deputies-2020-294-2020-2024-deputies");
     expect(profile.mandate?.legislatureId).toBe("leg-2020-2024");
     expect(profile.mandate?.startsOn).toBe("2020-12-21");
+  });
+
+  it("parses Wikipedia election roster tables for both chambers as secondary evidence", () => {
+    const parsed = parseWikipediaElectionRoster(
+      read("wikipedia-election-roster.html"),
+      "https://ro.wikipedia.org/wiki/Lista_parlamentarilor_aleși_la_alegerile_din_România_din_2020",
+      { legislature: legislature2020 }
+    );
+
+    expect(parsed.counts.deputies).toBe(330);
+    expect(parsed.counts.senate).toBe(136);
+    expect(parsed.rows).toHaveLength(3);
+    expect(parsed.rows.filter((row) => row.chamber === "deputies")).toHaveLength(2);
+    expect(parsed.rows.find((row) => row.displayName === "Cristian-Paul Ichim")?.partyId).toBe("party-plus");
+    expect(parsed.rows.find((row) => row.displayName === "Florin-Vasile Cîțu")?.wikiProfileUrl).toBe(
+      "https://ro.wikipedia.org/wiki/Florin-Vasile_Cîțu"
+    );
+  });
+
+  it("discovers Wikipedia legislature links from index pages", () => {
+    const parsed = parseWikipediaRosterIndex(
+      `<a href="/wiki/Legislatura_2020-2024_(Senat)" title="Legislatura 2020-2024 (Senat)">2020-2024</a>
+       <a href="/wiki/Legislatura_2020-2024_(Camera_Deputaților)" title="Legislatura 2020-2024 (Camera Deputaților)">2020-2024</a>`,
+      "https://ro.wikipedia.org/wiki/Listă_de_senatori_români",
+      "senate"
+    );
+
+    expect(parsed.links).toEqual([
+      {
+        chamber: "senate",
+        legislatureLabel: "2020-2024",
+        title: "2020-2024",
+        url: "https://ro.wikipedia.org/wiki/Legislatura_2020-2024_(Senat)"
+      }
+    ]);
   });
 });
 

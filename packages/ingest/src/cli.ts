@@ -7,6 +7,11 @@ import { legislatureFromFlag, partyCatalog, uniqueBy, type ParsedMemberProfile, 
 import { parseSenateBill } from "./parsers/senate-bill";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "./parsers/senate-roster";
 import { parseSenateVote } from "./parsers/senate-vote";
+import {
+  defaultWikipediaElectionRosterUrl,
+  parseWikipediaElectionRoster,
+  parseWikipediaRosterIndex
+} from "./parsers/wikipedia-roster";
 import { fetchOfficialSource } from "./fetch-source";
 import { governmentSkeletonData } from "./government-skeleton";
 import { canonicalizeOfficialUrl } from "./official-urls";
@@ -14,6 +19,7 @@ import { backfillPeopleFromMembers, persistChamberVote, persistGovernmentSkeleto
 import { snapshotFor } from "./parsers/utils";
 import { refreshReadModels } from "./read-models";
 import { resetRosterData } from "./roster-reset";
+import { crosscheckWikipediaRoster } from "./roster-crosscheck";
 import {
   discoverDeputiesSources,
   discoverDeputiesVoteSources,
@@ -123,6 +129,34 @@ async function main() {
     if (!confirm) {
       console.log("Dry run only. Re-run with --confirm to delete roster-derived rows.");
     }
+    return;
+  }
+
+  if (command === "wikipedia:roster") {
+    const parsed = await importWikipediaRosterPage();
+    await writeImport("wikipedia-roster", parsed, JSON.stringify(parsed, null, 2));
+    console.log(JSON.stringify(wikipediaRosterSummary(parsed), null, 2));
+    return;
+  }
+
+  if (command === "wikipedia:roster-index") {
+    const chamber = chamberFlag() ?? "deputies";
+    const url =
+      flag("url") ??
+      (chamber === "senate"
+        ? "https://ro.wikipedia.org/wiki/List%C4%83_de_senatori_rom%C3%A2ni"
+        : "https://ro.wikipedia.org/wiki/List%C4%83_de_deputa%C8%9Bi_rom%C3%A2ni");
+    const parsed = parseWikipediaRosterIndex(await loadHtml(url), url, chamber);
+    await writeImport("wikipedia-roster-index", parsed, JSON.stringify(parsed, null, 2));
+    console.log(JSON.stringify({ chamber, links: parsed.links.length, rows: parsed.links }, null, 2));
+    return;
+  }
+
+  if (command === "roster:crosscheck") {
+    const parsed = await importWikipediaRosterPage();
+    const result = await crosscheckWikipediaRoster(parsed);
+    await writeImport("roster-crosscheck", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(hasFlag("full") ? result : compactCrosscheckResult(result), null, 2));
     return;
   }
 
@@ -469,6 +503,69 @@ function looksLikeParsedDeputiesMember(profile: ParsedMemberProfile): boolean {
     "declaratia-de-interese",
     "votul-electronic"
   ].includes(profile.member.slug);
+}
+
+async function importWikipediaRosterPage() {
+  const legislature = rosterLegislature();
+  const url = flag("url") ?? defaultWikipediaElectionRosterUrl(legislature.label);
+  if (!url) {
+    throw new Error(
+      `No default Wikipedia election roster URL for ${legislature.label}. Pass --url=... for legislature-specific pages.`
+    );
+  }
+  const html = await loadHtml(url);
+  return parseWikipediaElectionRoster(html, url, { legislature });
+}
+
+function wikipediaRosterSummary(parsed: Awaited<ReturnType<typeof importWikipediaRosterPage>>) {
+  const byChamber = {
+    deputies: parsed.rows.filter((row) => row.chamber === "deputies").length,
+    senate: parsed.rows.filter((row) => row.chamber === "senate").length
+  };
+  const unknownParties = [...new Set(parsed.rows.filter((row) => row.partyLabel && !row.partyId).map((row) => row.partyLabel))].sort();
+  return {
+    sourceUrl: parsed.sourceUrl,
+    legislature: parsed.legislatureLabel,
+    rows: parsed.rows.length,
+    expectedCounts: parsed.counts,
+    byChamber,
+    unknownParties
+  };
+}
+
+function compactCrosscheckResult(result: Awaited<ReturnType<typeof crosscheckWikipediaRoster>>) {
+  return {
+    source: result.source,
+    legislature: result.legislatureLabel,
+    totals: result.totals,
+    byChamber: Object.fromEntries(
+      Object.entries(result.byChamber).map(([chamber, value]) => [
+        chamber,
+        {
+          wikipediaRows: value.wikipediaRows,
+          officialRows: value.officialRows,
+          expectedCount: value.expectedCount,
+          matched: value.matched,
+          missingOfficial: value.missingOfficial.length,
+          missingWikipedia: value.missingWikipedia.length,
+          partyMismatches: value.partyMismatches.length,
+          examples: {
+            missingOfficial: value.missingOfficial.slice(0, 5).map((row) => ({
+              name: row.displayName,
+              party: row.partyLabel,
+              constituency: row.constituency
+            })),
+            missingWikipedia: value.missingWikipedia.slice(0, 5).map((row) => ({
+              name: row.displayName,
+              party: row.partyShortName,
+              constituency: row.constituency
+            })),
+            partyMismatches: value.partyMismatches.slice(0, 5)
+          }
+        }
+      ])
+    )
+  };
 }
 
 async function loadHtml(url: string): Promise<string> {

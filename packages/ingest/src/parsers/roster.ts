@@ -203,6 +203,7 @@ export const partyCatalog: Record<string, Party> = {
   "pl-93": { id: "party-pl-93", slug: "pl-93", shortName: "PL '93", name: "Partidul Liberal 1993", color: "#f59e0b" },
   "pp-dd": { id: "party-pp-dd", slug: "pp-dd", shortName: "PP-DD", name: "Partidul Poporului - Dan Diaconescu", color: "#7c3aed" },
   pc: { id: "party-pc", slug: "pc", shortName: "PC", name: "Partidul Conservator", color: "#0f766e" },
+  plus: { id: "party-plus", slug: "plus", shortName: "PLUS", name: "Partidul Libertate, Unitate și Solidaritate", color: "#00a8e8" },
   unpr: { id: "party-unpr", slug: "unpr", shortName: "UNPR", name: "Uniunea Națională pentru Progresul României", color: "#0ea5e9" },
   "pro-romania": { id: "party-pro-romania", slug: "pro-romania", shortName: "PRO România", name: "PRO România", color: "#0e7490" },
   "sos-ro": { id: "party-sos-ro", slug: "sos-ro", shortName: "SOS RO", name: "SOS România", color: "#7f1d1d" },
@@ -241,6 +242,7 @@ export function partyFromText(value: string): Party | undefined {
   if (text.includes("partidul umanist") || /\bpur\b/.test(text)) return partyCatalog.pur;
   if (text.includes("partidul poporului") || /\bpp-?dd\b/.test(text)) return partyCatalog["pp-dd"];
   if (text.includes("partidul conservator") || /\bpc\b/.test(text)) return partyCatalog.pc;
+  if (text.includes("libertate unitate") || /\bplus\b/.test(text)) return partyCatalog.plus;
   if (text.includes("progresul romaniei") || /\bunpr\b/.test(text)) return partyCatalog.unpr;
   if (text.includes("pro romania")) return partyCatalog["pro-romania"];
   if (text.includes("social democrat") || /\bpsd\b/.test(text)) return partyCatalog.psd;

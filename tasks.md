@@ -564,6 +564,20 @@ implementation steps.
 - [x] Verify all imported mandate constituency fields are clean:
   `dirty_constituencies = 0` for every imported legislature/chamber.
 - [x] Fix impossible imported periods where `ends_on < starts_on`.
+- [x] Add Wikipedia election-page roster parsing as secondary evidence for
+  cross-checks, not as canonical official data.
+- [x] Add `ingest:wikipedia:roster`, `ingest:wikipedia:roster-index`, and
+  `ingest:roster:crosscheck`.
+- [x] Use the 2020 Wikipedia election roster to cross-check official CDEP
+  Deputies rows; fixed the historical CDEP title parser where names like
+  `Benga Tudor - Vlad` were being reduced to `Vlad`.
+- [x] Reimport official 2020 CDEP Deputies profiles into Neon after the name
+  parser fix, then rerun people backfill and read-model refresh.
+- [ ] Inspect the remaining 2020 Deputies cross-check differences:
+  Wikipedia has 331 Deputies rows while its own text says 330; one row
+  (`Vlad Popescu`) still does not match the official CDEP imported rows; 24
+  official rows are likely replacement/term movement rows not present in the
+  elected-list page.
 - [ ] Add mandate end-date parsing for CDEP profiles so current compositions can
   distinguish active members from people who served earlier in the same
   legislature but no longer hold the mandate.

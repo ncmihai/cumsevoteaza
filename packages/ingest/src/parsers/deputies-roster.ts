@@ -156,13 +156,13 @@ export function parseDeputiesMemberProfile(
   const $ = cheerio.load(html);
   const sourceSnapshot = snapshotFor("deputies-member-profile", sourceUrl, html, "parsed");
   const officialId = sourceUrl.match(/idm=(\d+)/i)?.[1] ?? slugify(sourceUrl);
-  const headingName = cleanText(
+  const headingName = cleanDeputiesProfileName(
     $("h1")
       .filter((_, node) => !/activitate parlamentara|mandate parlamentar|informatii personale/i.test(normalize($(node).text())))
       .first()
       .text()
   );
-  const titleName = cleanText($("title").text()).replace(/^.* - /, "");
+  const titleName = cleanDeputiesProfileName($("title").text());
   const name = titleName || headingName;
   const member = buildMember(officialId, name, legislature);
   const bodyText = cleanText($("body").text());
@@ -235,6 +235,17 @@ function buildMember(officialId: string, displayName: string, legislature: Legis
     displayName: parsedName.displayName,
     sourceIds: { deputies: officialId, [`deputies:${legislatureYear}`]: officialId }
   };
+}
+
+function cleanDeputiesProfileName(value: string): string {
+  const text = cleanText(value)
+    .replace(/\s+-\s+/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text || /camera deputatilor|camera deputaților|activitate parlamentara|sinteza activitatii/i.test(normalize(text))) {
+    return "";
+  }
+  return text;
 }
 
 function parseDeputiesPartyAffiliations(
