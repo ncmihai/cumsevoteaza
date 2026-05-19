@@ -15,6 +15,7 @@ import type {
   MemberCommitteeMembership,
   MemberGroupMembership,
   MemberMandate,
+  MemberMandateRelation,
   MemberPartyAffiliation,
   MemberRole,
   ParliamentaryGroup,
@@ -152,6 +153,12 @@ export async function persistRoster(parsed: ParsedRoster) {
     await Promise.all(parsed.groups.map((group) => upsertGroup(session.db, group)));
     await Promise.all(parsed.members.map((member) => upsertMember(session.db, member)));
     await Promise.all(parsed.mandates.map((mandate) => upsertMemberMandate(session.db, mandate)));
+    await deleteRosterMandateRelations(
+      session.db,
+      parsed.mandates.map((mandate) => mandate.id)
+    );
+    await Promise.all((parsed.mandateRelations ?? []).map((relation) => upsertMemberMandateRelation(session.db, relation)));
+    await applyReplacementEndDates(session.db, parsed);
     await deleteRosterMemberDetails(
       session.db,
       parsed.members.map((member) => member.id)
@@ -168,6 +175,7 @@ export async function persistRoster(parsed: ParsedRoster) {
       groups: parsed.groups.length,
       members: parsed.members.length,
       mandates: parsed.mandates.length,
+      mandateRelations: parsed.mandateRelations?.length ?? 0,
       groupMemberships: parsed.groupMemberships.length,
       partyAffiliations: parsed.partyAffiliations.length,
       committeeMemberships: parsed.committeeMemberships.length,
@@ -185,6 +193,11 @@ async function deleteRosterMemberDetails(db: Db, memberIds: string[]) {
   await db.delete(schema.memberPartyAffiliations).where(inArray(schema.memberPartyAffiliations.memberId, memberIds));
   await db.delete(schema.memberCommitteeMemberships).where(inArray(schema.memberCommitteeMemberships.memberId, memberIds));
   await db.delete(schema.memberRoles).where(inArray(schema.memberRoles.memberId, memberIds));
+}
+
+async function deleteRosterMandateRelations(db: Db, mandateIds: string[]) {
+  if (mandateIds.length === 0) return;
+  await db.delete(schema.memberMandateRelations).where(inArray(schema.memberMandateRelations.mandateId, mandateIds));
 }
 
 async function upsertDefaultLegislature(db: Db) {
@@ -574,6 +587,55 @@ async function upsertMemberMandate(db: Db, mandate: MemberMandate) {
     });
 }
 
+async function upsertMemberMandateRelation(db: Db, relation: MemberMandateRelation) {
+  const relatedMemberId = relation.relatedMemberId && (await memberExists(db, relation.relatedMemberId)) ? relation.relatedMemberId : undefined;
+  await db
+    .insert(schema.memberMandateRelations)
+    .values({ ...relation, relatedMemberId })
+    .onConflictDoUpdate({
+      target: schema.memberMandateRelations.id,
+      set: {
+        mandateId: relation.mandateId,
+        relation: relation.relation,
+        relatedMemberId,
+        relatedName: relation.relatedName,
+        relatedOfficialUrl: relation.relatedOfficialUrl,
+        sourceSnapshotId: relation.sourceSnapshotId
+      }
+    });
+}
+
+async function memberExists(db: Db, memberId: string): Promise<boolean> {
+  const rows = await db.select({ id: schema.members.id }).from(schema.members).where(eq(schema.members.id, memberId)).limit(1);
+  return rows.length > 0;
+}
+
+async function applyReplacementEndDates(db: Db, parsed: ParsedRoster) {
+  const mandateById = new Map(parsed.mandates.map((mandate) => [mandate.id, mandate]));
+  for (const relation of parsed.mandateRelations ?? []) {
+    if (relation.relation !== "replaces" || !relation.relatedMemberId) continue;
+    const mandate = mandateById.get(relation.mandateId);
+    if (!mandate) continue;
+    const inferredEnd = previousDay(mandate.startsOn);
+    await db
+      .update(schema.memberMandates)
+      .set({ endsOn: inferredEnd, status: "ended" })
+      .where(sql`
+        ${schema.memberMandates.memberId} = ${relation.relatedMemberId}
+        and ${schema.memberMandates.legislatureId} = ${mandate.legislatureId}
+        and ${schema.memberMandates.chamber} = ${mandate.chamber}
+        and ${schema.memberMandates.startsOn} < ${mandate.startsOn}
+        and (${schema.memberMandates.endsOn} is null or ${schema.memberMandates.endsOn} > ${inferredEnd})
+      `);
+  }
+}
+
+function previousDay(date: string): string {
+  const value = new Date(`${date}T00:00:00.000Z`);
+  value.setUTCDate(value.getUTCDate() - 1);
+  return value.toISOString().slice(0, 10);
+}
+
 async function upsertMemberGroupMembership(db: Db, membership: MemberGroupMembership) {
   await db
     .insert(schema.memberGroupMemberships)
@@ -585,6 +647,7 @@ async function upsertMemberGroupMembership(db: Db, membership: MemberGroupMember
         groupId: membership.groupId,
         startsOn: membership.startsOn,
         endsOn: membership.endsOn,
+        logoUrl: membership.logoUrl,
         sourceSnapshotId: membership.sourceSnapshotId
       }
     });
@@ -601,6 +664,7 @@ async function upsertMemberPartyAffiliation(db: Db, affiliation: MemberPartyAffi
         partyId: affiliation.partyId,
         startsOn: affiliation.startsOn,
         endsOn: affiliation.endsOn,
+        logoUrl: affiliation.logoUrl,
         sourceSnapshotId: affiliation.sourceSnapshotId
       }
     });

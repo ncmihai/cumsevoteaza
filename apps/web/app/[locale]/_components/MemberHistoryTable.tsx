@@ -45,8 +45,24 @@ export function MemberHistoryTable({
               <td className="px-3 py-3">{chamberLabels[locale][row.chamber]}</td>
               <td className="px-3 py-3 capitalize">{row.type}</td>
               <td className="px-3 py-3">
-                <div className="font-medium text-slate-950">{row.label}</div>
-                <div className="text-slate-600">{row.details}</div>
+                <div className="flex items-start gap-2">
+                  {row.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={row.logoUrl} alt="" className="mt-0.5 h-6 w-6 shrink-0 border border-slate-200 object-contain" />
+                  ) : null}
+                  <div>
+                    <div className="font-medium text-slate-950">{row.label}</div>
+                    <div className="text-slate-600">
+                      {row.sourceUrl ? (
+                        <a className="underline underline-offset-2" href={row.sourceUrl} target="_blank" rel="noreferrer">
+                          {row.details}
+                        </a>
+                      ) : (
+                        row.details
+                      )}
+                    </div>
+                  </div>
+                </div>
               </td>
               <td className="px-3 py-3 text-right">{row.votesFor}</td>
               <td className="px-3 py-3 text-right">{row.votesAgainst}</td>

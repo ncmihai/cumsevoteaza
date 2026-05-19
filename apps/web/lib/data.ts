@@ -14,6 +14,7 @@ import {
   type MemberGroupMembership,
   type MemberHistoryRow,
   type MemberMandate,
+  type MemberMandateRelation,
   type MemberPartyAffiliation,
   type MemberRole,
   type ParliamentaryGroup,
@@ -526,6 +527,11 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
       .from(schema.memberCommitteeMemberships)
       .where(inArray(schema.memberCommitteeMemberships.memberId, memberIds));
     const roleRows = await session.db.select().from(schema.memberRoles).where(inArray(schema.memberRoles.memberId, memberIds));
+    const mandateIds = mandateRows.map((item) => item.id);
+    const relationRows =
+      mandateIds.length > 0
+        ? await session.db.select().from(schema.memberMandateRelations).where(inArray(schema.memberMandateRelations.mandateId, mandateIds))
+        : [];
     const groups = (await session.db.select().from(schema.parliamentaryGroups)).map(mapGroup);
     const parties = (await session.db.select().from(schema.parties)).map(mapParty);
     const memberships = membershipRows.map(mapMemberGroupMembership);
@@ -570,6 +576,7 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
       mandates,
       groupMemberships: memberships,
       partyAffiliations: partyAffiliationRows.map(mapMemberPartyAffiliation),
+      mandateRelations: relationRows.map(mapMemberMandateRelation),
       committees: committeeRows.map(mapMemberCommitteeMembership),
       roles: roleRows.map(mapMemberRole),
       groups,
@@ -760,6 +767,7 @@ function mapMemberGroupMembership(row: typeof schema.memberGroupMemberships.$inf
     groupId: row.groupId,
     startsOn: row.startsOn,
     endsOn: row.endsOn ?? undefined,
+    logoUrl: row.logoUrl ?? undefined,
     sourceSnapshotId: row.sourceSnapshotId ?? undefined
   };
 }
@@ -771,6 +779,19 @@ function mapMemberPartyAffiliation(row: typeof schema.memberPartyAffiliations.$i
     partyId: row.partyId,
     startsOn: row.startsOn,
     endsOn: row.endsOn ?? undefined,
+    logoUrl: row.logoUrl ?? undefined,
+    sourceSnapshotId: row.sourceSnapshotId ?? undefined
+  };
+}
+
+function mapMemberMandateRelation(row: typeof schema.memberMandateRelations.$inferSelect) {
+  return {
+    id: row.id,
+    mandateId: row.mandateId,
+    relation: "replaces" as const,
+    relatedMemberId: row.relatedMemberId ?? undefined,
+    relatedName: row.relatedName,
+    relatedOfficialUrl: row.relatedOfficialUrl ?? undefined,
     sourceSnapshotId: row.sourceSnapshotId ?? undefined
   };
 }
@@ -1250,6 +1271,7 @@ function normalizeSearch(value?: string): string {
 
 function buildMemberHistory(input: {
   mandates: MemberMandate[];
+  mandateRelations: MemberMandateRelation[];
   groupMemberships: MemberGroupMembership[];
   partyAffiliations: MemberPartyAffiliation[];
   committees: MemberCommitteeMembership[];
@@ -1274,6 +1296,23 @@ function buildMemberHistory(input: {
       details: cleanHistoryDetail(mandate.constituency) ?? mandate.status,
       ...counts
     })),
+    ...input.mandateRelations.flatMap((relation) => {
+      const mandate = input.mandates.find((item) => item.id === relation.mandateId);
+      if (!mandate) return [];
+      return [
+        {
+          id: `history-${relation.id}`,
+          startsOn: mandate.startsOn,
+          endsOn: mandate.endsOn,
+          chamber: mandate.chamber,
+          type: "relation" as const,
+          label: "Înlocuire mandat",
+          details: `Înlocuiește pe ${relation.relatedName}`,
+          sourceUrl: relation.relatedOfficialUrl,
+          ...counts
+        }
+      ];
+    }),
     ...input.groupMemberships.map((membership) => {
       const group = input.groups.find((item) => item.id === membership.groupId);
       return {
@@ -1284,6 +1323,7 @@ function buildMemberHistory(input: {
         type: "group" as const,
         label: group?.shortName ?? membership.groupId,
         details: group?.name ?? "Grup parlamentar",
+        logoUrl: membership.logoUrl,
         ...counts
       };
     }),
@@ -1297,6 +1337,7 @@ function buildMemberHistory(input: {
         type: "party" as const,
         label: party?.shortName ?? affiliation.partyId,
         details: party?.name ?? "Formațiune politică",
+        logoUrl: affiliation.logoUrl,
         ...counts
       };
     }),

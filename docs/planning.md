@@ -26,6 +26,15 @@ The product has two core surfaces:
 - A person identity is separate from chamber-specific member records. This lets
   the same individual connect across multiple legislatures, chambers, and
   government roles without overwriting source-specific parliamentary records.
+- Official CDEP historical profile pages are the canonical backbone for
+  post-1989 parliamentary career history when available. Wikipedia remains a
+  fallback/cross-check source, not a replacement for official profile snapshots.
+- Alliances, parliamentary formations, non-affiliation states, and minority
+  groupings must not be forced into legal party rows. They can be stored as
+  historical formations/groups with source and period context.
+- Party logos and electoral signs are temporal visual evidence. They must be
+  attached to a legislature/period/source context, not treated as one permanent
+  party property.
 - V1 avoids political scoring, ideological labels, or editorial conclusions.
 - Romanian is default; English exists from the beginning.
 

@@ -52,6 +52,7 @@ export interface CompositionTimelineStop {
   governments: Government[];
   primeMinister?: Person;
   primeMinisterRole?: GovernmentRole;
+  primeMinisters: Array<{ person: Person; days: number }>;
   events: CompositionEvent[];
   sourceStatus: "manual" | "verified";
   chambers: ChamberComposition[];
@@ -183,13 +184,19 @@ async function tryDatabaseCompositionTimeline(
 
         const compositionDate = today >= legislature.startsOn && today < legislature.endsOn
           ? today
-          : legislatureGovernments[0]?.startsOn ?? legislature.startsOn;
+          : legislature.startsOn;
         const activeGovernment =
           legislatureGovernments.find((government) => isActiveGovernment(government, compositionDate)) ?? legislatureGovernments[0];
         const primeMinister = activeGovernment?.primeMinisterPersonId ? peopleById.get(activeGovernment.primeMinisterPersonId) : undefined;
         const primeMinisterRole = activeGovernment
           ? roles.find((role) => role.governmentId === activeGovernment.id && role.personId === activeGovernment.primeMinisterPersonId)
           : undefined;
+        const primeMinisters = rankedPrimeMinistersForLegislature({
+          governments: legislatureGovernments,
+          roles,
+          peopleById,
+          legislature
+        });
         const stopComposition = buildComposition({
           mode,
           asOf: compositionDate,
@@ -204,6 +211,7 @@ async function tryDatabaseCompositionTimeline(
             governments: legislatureGovernments,
             primeMinister,
             primeMinisterRole,
+            primeMinisters,
             events: legislatureEvents,
             sourceStatus: legislatureGovernments.some((government) => government.sourceSnapshotId) || legislatureEvents.some((event) => event.sourceSnapshotId) ? "verified" : "manual",
             chambers: hasCompositionSeats(stopComposition) ? stopComposition.chambers : []
@@ -394,6 +402,38 @@ function compactParty(party: Party): Pick<Party, "id" | "slug" | "shortName" | "
 
 function hasCompositionSeats(composition: CompositionPageData): boolean {
   return composition.chambers.some((chamber) => chamber.seats.length > 0);
+}
+
+function rankedPrimeMinistersForLegislature(input: {
+  governments: Government[];
+  roles: GovernmentRole[];
+  peopleById: Map<string, Person>;
+  legislature: Legislature;
+}): Array<{ person: Person; days: number }> {
+  const daysByPerson = new Map<string, number>();
+  for (const government of input.governments) {
+    const role = input.roles.find((item) => item.governmentId === government.id && item.personId === government.primeMinisterPersonId);
+    if (!government.primeMinisterPersonId || /interimar/i.test(`${government.name} ${role?.title ?? ""}`)) continue;
+    const startsOn = latestDate(government.startsOn, input.legislature.startsOn);
+    const endsOn = earliestDate(government.endsOn, input.legislature.endsOn) ?? input.legislature.endsOn;
+    daysByPerson.set(government.primeMinisterPersonId, (daysByPerson.get(government.primeMinisterPersonId) ?? 0) + daysBetweenInclusive(startsOn, endsOn));
+  }
+  return [...daysByPerson.entries()]
+    .flatMap(([personId, days]) => {
+      const person = input.peopleById.get(personId);
+      return person ? [{ person, days }] : [];
+    })
+    .sort((a, b) => b.days - a.days || a.person.displayName.localeCompare(b.person.displayName, "ro"));
+}
+
+function daysBetweenInclusive(start: string, end: string): number {
+  const startTime = Date.parse(`${start}T00:00:00.000Z`);
+  const endTime = Date.parse(`${end}T00:00:00.000Z`);
+  return Math.max(0, Math.round((endTime - startTime) / 86_400_000) + 1);
+}
+
+function latestDate(...dates: Array<string | undefined | null>): string {
+  return dates.filter((date): date is string => Boolean(date)).sort((a, b) => b.localeCompare(a))[0] ?? "0000-01-01";
 }
 
 function resolveAlignment(input: {

@@ -5,6 +5,7 @@ import type {
   MemberCommitteeMembership,
   MemberGroupMembership,
   MemberMandate,
+  MemberMandateRelation,
   MemberPartyAffiliation,
   MemberRole,
   ParliamentaryGroup,
@@ -21,6 +22,7 @@ export interface ParsedRoster {
   groups: ParliamentaryGroup[];
   members: Member[];
   mandates: MemberMandate[];
+  mandateRelations?: MemberMandateRelation[];
   groupMemberships: MemberGroupMembership[];
   partyAffiliations: MemberPartyAffiliation[];
   committeeMemberships: MemberCommitteeMembership[];
@@ -55,13 +57,23 @@ export interface ParsedRosterGroup {
 export interface ParsedMemberProfile {
   sourceSnapshot: SourceSnapshot;
   member: Member;
+  careerLinks?: OfficialCareerLink[];
   parties?: Party[];
   groups?: ParliamentaryGroup[];
   mandate?: MemberMandate;
+  mandateRelations?: MemberMandateRelation[];
   partyAffiliations: MemberPartyAffiliation[];
   groupMemberships: MemberGroupMembership[];
   committeeMemberships: MemberCommitteeMembership[];
   roles: MemberRole[];
+}
+
+export interface OfficialCareerLink {
+  url: string;
+  officialId: string;
+  chamber: ChamberId;
+  legislature: Legislature;
+  label: string;
 }
 
 export const legislature2024: Legislature = {
@@ -236,7 +248,7 @@ export function partyFromText(value: string): Party | undefined {
   if (text.includes("partidul alianta civica") || /\bpac\b/.test(text)) return partyCatalog.pac;
   if (text.includes("liberal 1993") || /\bpl\s*'?93\b/.test(text)) return partyCatalog["pl-93"];
   if (text.includes("miscarea populara") || /\bpmp\b/.test(text)) return partyCatalog.pmp;
-  if (text.includes("democrat liberal") || /\bpdl\b/.test(text)) return partyCatalog.pdl;
+  if (/democrat[-\s]+liberal/.test(text) || /\bpdl\b/.test(text)) return partyCatalog.pdl;
   if (text.includes("partidul democrat") || /\bpd\b/.test(text)) return partyCatalog.pd;
   if (text.includes("romania mare") || /\bprm\b/.test(text)) return partyCatalog.prm;
   if (text.includes("partidul umanist") || /\bpur\b/.test(text)) return partyCatalog.pur;

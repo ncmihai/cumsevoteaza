@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "../parsers/deputies-roster";
-import { legislature2020, legislature2024 } from "../parsers/roster";
+import { legislature2020, legislature2024, legislatureFromFlag, partyFromText } from "../parsers/roster";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "../parsers/senate-roster";
 import { defaultWikipediaRosterUrls, parseWikipediaElectionRoster, parseWikipediaRosterIndex } from "../parsers/wikipedia-roster";
 import { wikipediaRosterToParsedRoster } from "../wikipedia-roster-import";
@@ -84,6 +84,76 @@ describe("roster parsers", () => {
     expect(profile.mandate?.id).toBe("mandate-member-deputies-2020-294-2020-2024-deputies");
     expect(profile.mandate?.legislatureId).toBe("leg-2020-2024");
     expect(profile.mandate?.startsOn).toBe("2020-12-21");
+  });
+
+  it("recognizes historical hyphenated party names", () => {
+    expect(partyFromText("Grupul parlamentar al Partidului Democrat-Liberal")?.id).toBe("party-pdl");
+  });
+
+  it("parses official CDEP cross-chamber career links, replacements, and party logos", () => {
+    const profile = parseDeputiesMemberProfile(
+      `<html><head><title>STRUCTURA PARLAMENTULUI ROMÂNIEI 2004-2008</title></head><body>
+        <table><tr><td><img src="/parlamentari/l2004/Rotaru_Ion.jpg" alt="Ion Rotaru"></td></tr></table>
+        <table>
+          <tr><td><font><b>Activitate parlamentară</b></font></td></tr>
+          <tr><td><a href="/ords/pls/parlam/structura.mp?idm=143&cam=1&leg=2012&pag=1&idl=1"><b>2012-2016 (sen.)</b></a></td></tr>
+          <tr><td><a href="/ords/pls/parlam/structura.mp?idm=64&cam=2&leg=2004&pag=1&idl=1"><b>2004-2008 (dep.)</b></a></td></tr>
+        </table>
+        <td class="headline">Ion ROTARU<br>Sinteza activitatii parlamentare în legislatura 2004-2008</td>
+        <table><tr><td>SENATOR</td></tr><tr><td>
+          ales senator în circumscriptia electorala nr.9 <a href="structura.ce?cir=9&cam=1">BRĂILA</a><br>
+          pe listele Uniunii Naţionale PSD+PUR<br>
+          data validarii: 30 iunie 2008<br>
+          înlocuieste pe: <a href="/ords/pls/parlam/structura.mp?idm=103&cam=1&leg=2004&pag=1&idl=1"><b>Aurel Gabriel Simionescu</b></a>
+        </td></tr></table>
+        <table><tr><td><b>Formatiunea politica:</b></td></tr><tr><td>
+          <img src="/aleg/psd2004.jpg"><a href="structura.fp?idp=40&cam=1&leg=2004&idl=1">PSD</a> - Partidul Social Democrat
+        </td></tr></table>
+        <table><tr><td><b>Grupul parlamentar:</b></td></tr><tr><td>
+          <a href="/ords/pls/parlam/structura.gp?idg=2&cam=1&leg=2004">Grupul parlamentar al Partidului Social Democrat</a>
+        </td></tr></table>
+      </body></html>`,
+      "https://www.cdep.ro/ords/pls/parlam/structura.mp?idm=152&cam=1&leg=2004&pag=1&idl=1",
+      { legislature: legislatureFromFlag("2004"), chamber: "senate" }
+    );
+
+    expect(profile.member.id).toBe("member-senate-2004-152");
+    expect(profile.member.displayName).toBe("Ion Rotaru");
+    expect(profile.member.sourceIds.profilePhoto).toBe("https://www.cdep.ro/parlamentari/l2004/Rotaru_Ion.jpg");
+    expect(profile.careerLinks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ officialId: "143", chamber: "senate", legislature: expect.objectContaining({ label: "2012-2016" }) }),
+        expect.objectContaining({ officialId: "64", chamber: "deputies", legislature: expect.objectContaining({ label: "2004-2008" }) })
+      ])
+    );
+    expect(profile.mandate).toEqual(expect.objectContaining({ chamber: "senate", startsOn: "2008-06-30", constituency: "BRĂILA" }));
+    expect(profile.mandateRelations?.[0]).toEqual(
+      expect.objectContaining({
+        relation: "replaces",
+        relatedMemberId: "member-senate-2004-103",
+        relatedName: "Aurel Gabriel Simionescu"
+      })
+    );
+    expect(profile.partyAffiliations[0]).toEqual(
+      expect.objectContaining({ partyId: "party-psd", logoUrl: "https://www.cdep.ro/aleg/psd2004.jpg" })
+    );
+  });
+
+  it("scopes historical non-party CDEP group ids by legislature", () => {
+    const profile = parseDeputiesMemberProfile(
+      `<html><body>
+        <td class="headline">Deputat Test<br>Sinteza activitatii parlamentare în legislatura 2008-2012</td>
+        <table><tr><td>DEPUTAT</td></tr><tr><td>data validarii: 15 decembrie 2008</td></tr></table>
+        <table><tr><td><b>Grupul parlamentar:</b></td></tr><tr><td>
+          <a href="/ords/pls/parlam/structura.gp?idg=1&cam=2&leg=2008">Grupul parlamentar al Alianței PSD+PC</a>
+        </td></tr></table>
+      </body></html>`,
+      "https://www.cdep.ro/ords/pls/parlam/structura.mp?idm=1&cam=2&leg=2008&pag=1&idl=1",
+      { legislature: legislatureFromFlag("2008"), chamber: "deputies" }
+    );
+
+    expect(profile.groupMemberships[0]?.groupId).toBe("group-deputies-2008-2012-1");
+    expect(profile.groups?.[0]?.name).toBe("Grupul parlamentar al Alianței PSD+PC");
   });
 
   it("parses Wikipedia election roster tables for both chambers as secondary evidence", () => {

@@ -1352,3 +1352,50 @@ Verification:
   during a term, not only exact simultaneous seat holders. The UI therefore
   uses fixed formal seat counts for chamber maps while preserving the larger
   member lists for parliamentary history.
+
+## 2026-05-19 — Official CDEP Career Importer + Compoziții Repairs
+
+- Added an official CDEP career importer:
+  - `npm run ingest:official-careers -- --url=<structura.mp URL> --persist`;
+  - supports CDEP Deputies profiles and CDEP-hosted Senate profiles through
+    `cam=2` and `cam=1`;
+  - follows the old-profile `Activitate parlamentară` links across chambers and
+    legislatures.
+- Added `member_mandate_relations` for official replacement relationships:
+  - relation type `replaces`;
+  - related member name;
+  - related official profile URL;
+  - source snapshot traceability.
+- Added `logo_url` to party and group membership rows so official CDEP
+  `/aleg/...` period logos can appear on Transfermarkt-style member history
+  rows without pretending one current party logo applies to every period.
+- Fixed old CDEP profile name parsing:
+  - generic titles like `STRUCTURA PARLAMENTULUI ROMÂNIEI 2004-2008` are now
+    ignored as member names;
+  - historical all-caps surnames are normalized for display, e.g.
+    `Ion ROTARU` -> `Ion Rotaru`.
+- Fixed historical CDEP group identity parsing:
+  - non-party fallback group IDs now include the legislature;
+  - `Partidul Democrat-Liberal` with a hyphen is recognized as PDL;
+  - repaired existing Neon 2008 Deputies memberships that had inherited
+    `group-deputies-1` / FSN, moving the 2008-2012 rows to
+    `group-deputies-pdl`.
+- Imported and verified official sample careers in Neon:
+  - `member-senate-2004-152` now displays `Ion Rotaru`;
+  - Ion Rotaru's 2004 Senate mandate stores the official replacement relation
+    to Aurel Gabriel Simionescu;
+  - `member-deputies-2004-64` now displays `Constantin Tămagă`.
+- Refreshed people links and read models after the official imports:
+  - people backfill: 5,474 members read, 3,613 people upserted, 5,473 members linked;
+  - read models: 2,196 bill/vote summaries, 553 vote coverage summaries,
+    5,265 member legislature activity rows, 8,256 search-index rows.
+- Updated `Compoziții` behavior:
+  - latest legislature keeps the current PM as the primary PM;
+  - older legislatures summarize non-interim PMs by longest service;
+  - seat map popups can be pinned with one click and opened by clicking the
+    popup itself.
+- Verification:
+  - `npm run test` passed, 30 tests;
+  - `npm run typecheck` passed;
+  - `npm run build` passed after rerunning outside the sandbox because
+    Turbopack needs local IPC/port binding.

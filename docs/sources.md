@@ -326,3 +326,44 @@ All-legislature observations:
   organizations, or non-affiliation states (`USL`, `ARD`, `PSD+PC`, `CDR`,
   `independent`, `neafiliat`) and should be modeled separately from political
   parties before any fallback import writes them to DB.
+
+## Official CDEP Historical Profile Pages
+
+Canonical source family:
+- `https://cdep.ro/ords/pls/parlam/structura.mp?idm=<id>&cam=2&leg=<year>`
+  for Deputies profiles.
+- `https://cdep.ro/ords/pls/parlam/structura.mp?idm=<id>&cam=1&leg=<year>`
+  for Senate profiles exposed through the CDEP historical profile system.
+
+Examples used for parser verification:
+- `https://cdep.ro/ords/pls/parlam/structura.mp?idm=152&cam=1&leg=2004`
+  - Ion Rotaru, Senate 2004-2008.
+  - Contains `Activitate parlamentară` links to other Senate mandates.
+  - Contains `înlocuiește pe` relation to Aurel Gabriel Simionescu.
+  - Contains official profile photo and period party logo `/aleg/psd2004.jpg`.
+- `https://cdep.ro/ords/pls/parlam/structura.mp?idm=64&cam=2&leg=2004&pag=1&idl=1`
+  - Constantin Tămagă, Deputies 2004-2008.
+
+Parser notes:
+- Old CDEP pages can have generic `<title>` values such as
+  `STRUCTURA PARLAMENTULUI ROMÂNIEI 2004-2008`; these must not be used as
+  member names.
+- Old profile names often appear in `.headline` with uppercase surnames; display
+  casing should be normalized without changing official source traceability.
+- The left-side `Activitate parlamentară` block is the official career spine for
+  linking the same person across legislatures and chambers.
+- `înlocuiește pe` / `inlocuieste pe` text is reliable enough to store a
+  replacement relation and, where the replaced member row exists, infer the
+  replaced mandate end date inside the same official source context.
+- CDEP period logos under `/aleg/...` are time-scoped visual cues. Store them on
+  membership rows or future temporal visual-identity rows, not as permanent
+  party logos.
+
+Historical group identity notes:
+- CDEP numeric group IDs such as `idg=1` are not globally stable across
+  legislatures.
+- Non-party fallback group IDs must be legislature-scoped.
+- Party-recognized groups can use stable party IDs only when the official label
+  clearly maps to a real party.
+- `Partidul Democrat-Liberal` appears with a hyphen in official 2008 CDEP
+  labels and should map to PDL.

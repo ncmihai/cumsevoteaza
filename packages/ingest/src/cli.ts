@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
+import type { ChamberId } from "@cumsevoteaza/parliament-model";
 import { parseChamberNominalVote } from "./parsers/chamber-vote";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "./parsers/deputies-roster";
 import { legislatureCatalog, legislatureFromFlag, partyCatalog, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
@@ -102,6 +103,16 @@ async function main() {
   if (command === "deputies:roster") {
     const parsed = await importDeputiesRoster();
     await writeImport("deputies-roster", parsed, JSON.stringify(parsed, null, 2));
+    logRosterSummary(parsed);
+    if (hasFlag("persist")) {
+      console.log(JSON.stringify(await persistRoster(parsed), null, 2));
+    }
+    return;
+  }
+
+  if (command === "official-careers") {
+    const parsed = await importOfficialCareers();
+    await writeImport("official-careers", parsed, JSON.stringify(parsed, null, 2));
     logRosterSummary(parsed);
     if (hasFlag("persist")) {
       console.log(JSON.stringify(await persistRoster(parsed), null, 2));
@@ -323,6 +334,7 @@ async function importSenateRoster(): Promise<ParsedRoster> {
       (member) => member.id
     ),
     mandates: uniqueBy(profiles.flatMap((profile) => (profile.mandate ? [profile.mandate] : [])), (mandate) => mandate.id),
+    mandateRelations: uniqueBy(profiles.flatMap((profile) => profile.mandateRelations ?? []), (relation) => relation.id),
     groupMemberships: uniqueBy(
       [...groupParts.flatMap((group) => group.members.map((member) => member.membership)), ...profiles.flatMap((profile) => profile.groupMemberships)],
       (membership) => membership.id
@@ -359,7 +371,7 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
   const indexUrl = flag("url") ?? defaultDeputiesRosterUrl(legislature.label);
   const index = groupUrls
     ? undefined
-    : parseDeputiesRosterIndex(await loadHtml(indexUrl), indexUrl);
+    : parseDeputiesRosterIndex(await loadHtml(indexUrl), indexUrl, { legislature });
   const limitValue = Number(flag("limit") ?? "0");
   const groupRefs: RosterGroupRef[] = groupUrls
     ? groupUrls.map((url) => ({ url }))
@@ -426,6 +438,7 @@ async function importDeputiesRoster(): Promise<ParsedRoster> {
       (member) => member.id
     ),
     mandates: uniqueBy(profiles.flatMap((profile) => (profile.mandate ? [profile.mandate] : [])), (mandate) => mandate.id),
+    mandateRelations: uniqueBy(profiles.flatMap((profile) => profile.mandateRelations ?? []), (relation) => relation.id),
     groupMemberships: uniqueBy(
       [
         ...groupParts.flatMap((group) =>
@@ -485,12 +498,87 @@ async function importDeputiesRosterByMemberIds(
     groups: uniqueBy(profiles.flatMap((profile) => profile.groups ?? []), (group) => group.id),
     members: uniqueBy(profiles.map((profile) => profile.member), (member) => member.id),
     mandates: uniqueBy(profiles.flatMap((profile) => (profile.mandate ? [profile.mandate] : [])), (mandate) => mandate.id),
+    mandateRelations: uniqueBy(profiles.flatMap((profile) => profile.mandateRelations ?? []), (relation) => relation.id),
     groupMemberships: uniqueBy(profiles.flatMap((profile) => profile.groupMemberships), (membership) => membership.id),
     partyAffiliations: uniqueBy(profiles.flatMap((profile) => profile.partyAffiliations), (affiliation) => affiliation.id),
     committeeMemberships: uniqueBy(profiles.flatMap((profile) => profile.committeeMemberships), (membership) => membership.id),
     roles: uniqueBy(profiles.flatMap((profile) => profile.roles), (role) => role.id),
     groupCounts: []
   };
+}
+
+async function importOfficialCareers(): Promise<ParsedRoster> {
+  const seedUrls = listFlag("urls") ?? (flag("url") ? [flag("url")!] : undefined);
+  const requestedChamber = chamberFlag();
+  const legislature = rosterLegislature();
+  const from = numberFlag("member-id-from");
+  const to = numberFlag("member-id-to");
+  const limit = Number(flag("limit") ?? "0");
+  const concurrency = Number(flag("concurrency") ?? "4");
+  const chamber = requestedChamber ?? (seedUrls?.[0] ? chamberFromCdepUrl(seedUrls[0]) : "deputies");
+  const seeds = seedUrls ?? (from && to ? Array.from({ length: Math.max(0, to - from + 1) }, (_, index) => defaultCdepMemberProfileUrl(legislature.label, from + index, chamber)) : []);
+  if (seeds.length === 0) throw new Error("official-careers requires --url=... or --member-id-from/--member-id-to");
+
+  const profilesByUrl = new Map<string, ParsedMemberProfile>();
+  const queue = [...seeds.map(canonicalizeOfficialUrl)];
+  const seen = new Set<string>();
+
+  while (queue.length > 0 && (limit <= 0 || profilesByUrl.size < limit)) {
+    const batch = queue.splice(0, concurrency).filter((url) => {
+      if (seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
+    const profiles = await mapLimit(batch, concurrency, async (url) => {
+      const profileLegislature = legislatureFromProfileUrl(url) ?? legislature;
+      const html = await fetchOptional(url, "deputies-member-profile");
+      if (!html) return undefined;
+      const profile = parseDeputiesMemberProfile(html, url, { legislature: profileLegislature, chamber: chamberFromCdepUrl(url) });
+      return looksLikeParsedDeputiesMember(profile) ? profile : undefined;
+    });
+    for (const profile of profiles) {
+      profilesByUrl.set(profile.sourceSnapshot.sourceUrl, profile);
+      for (const link of profile.careerLinks ?? []) {
+        const url = canonicalizeOfficialUrl(link.url);
+        if (!seen.has(url)) queue.push(url);
+      }
+    }
+  }
+
+  const profiles = [...profilesByUrl.values()];
+  const primaryLegislature = profiles[0]?.mandate ? legislatureFromFlag(profiles[0].mandate.legislatureId.replace(/^leg-/, "")) : legislature;
+  return {
+    chamber,
+    legislature: primaryLegislature,
+    sourceSnapshots: uniqueBy(profiles.map((profile) => profile.sourceSnapshot), (source) => source.id),
+    parties: uniqueBy(
+      [...profiles.flatMap((profile) => profile.parties ?? []), ...partiesFromGroups(profiles.flatMap((profile) => profile.groups ?? []))],
+      (party) => party.id
+    ),
+    groups: uniqueBy(profiles.flatMap((profile) => profile.groups ?? []), (group) => group.id),
+    members: uniqueBy(profiles.map((profile) => profile.member), (member) => member.id),
+    mandates: uniqueBy(profiles.flatMap((profile) => (profile.mandate ? [profile.mandate] : [])), (mandate) => mandate.id),
+    mandateRelations: uniqueBy(profiles.flatMap((profile) => profile.mandateRelations ?? []), (relation) => relation.id),
+    groupMemberships: uniqueBy(profiles.flatMap((profile) => profile.groupMemberships), (membership) => membership.id),
+    partyAffiliations: uniqueBy(profiles.flatMap((profile) => profile.partyAffiliations), (affiliation) => affiliation.id),
+    committeeMemberships: uniqueBy(profiles.flatMap((profile) => profile.committeeMemberships), (membership) => membership.id),
+    roles: uniqueBy(profiles.flatMap((profile) => profile.roles), (role) => role.id),
+    groupCounts: []
+  };
+}
+
+function defaultCdepMemberProfileUrl(label: string, officialId: number, chamber: ChamberId): string {
+  const cam = chamber === "senate" ? 1 : 2;
+  return `https://www.cdep.ro/ords/pls/parlam/structura.mp?idm=${officialId}&cam=${cam}&leg=${label.slice(0, 4)}&pag=1&idl=1`;
+}
+
+function chamberFromCdepUrl(url: string): ChamberId {
+  return /[?&]cam=1\b/i.test(url) ? "senate" : "deputies";
+}
+
+function legislatureFromProfileUrl(url: string): ParsedRoster["legislature"] | undefined {
+  const year = url.match(/[?&]leg=(\d{4})/i)?.[1];
+  return year ? legislatureFromFlag(year) : undefined;
 }
 
 function flag(name: string): string | undefined {
@@ -521,6 +609,7 @@ function logRosterSummary(parsed: ParsedRoster) {
         groups: parsed.groups.length,
         members: parsed.members.length,
         mandates: parsed.mandates.length,
+        mandateRelations: parsed.mandateRelations?.length ?? 0,
         groupMemberships: parsed.groupMemberships.length,
         committeeMemberships: parsed.committeeMemberships.length,
         groupCounts: parsed.groupCounts

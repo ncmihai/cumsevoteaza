@@ -14,6 +14,7 @@
     "chamber:vote": "tsx src/cli.ts chamber:vote",
     "senate:roster": "tsx src/cli.ts senate:roster",
     "deputies:roster": "tsx src/cli.ts deputies:roster",
+    "official-careers": "tsx src/cli.ts official-careers",
     "roster:all": "tsx src/cli.ts roster:all",
     "roster:reset": "tsx src/cli.ts roster:reset",
     "wikipedia:roster": "tsx src/cli.ts wikipedia:roster",

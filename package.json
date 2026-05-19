@@ -25,6 +25,7 @@
     "ingest:chamber:vote": "npm --workspace @cumsevoteaza/ingest run chamber:vote --",
     "ingest:senate:roster": "npm --workspace @cumsevoteaza/ingest run senate:roster --",
     "ingest:deputies:roster": "npm --workspace @cumsevoteaza/ingest run deputies:roster --",
+    "ingest:official-careers": "npm --workspace @cumsevoteaza/ingest run official-careers --",
     "ingest:roster:all": "npm --workspace @cumsevoteaza/ingest run roster:all --",
     "ingest:roster:reset": "npm --workspace @cumsevoteaza/ingest run roster:reset --",
     "ingest:wikipedia:roster": "npm --workspace @cumsevoteaza/ingest run wikipedia:roster --",

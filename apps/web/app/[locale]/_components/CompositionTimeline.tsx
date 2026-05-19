@@ -93,6 +93,7 @@ export function CompositionTimeline({ locale, mode, stops }: CompositionTimeline
 
 function GovernmentStage({ locale, mode, stop }: { locale: Locale; mode: CompositionMode; stop: CompositionTimelineStop }) {
   const labels = timelineLabels[locale];
+  const pmSummary = primeMinisterSummary(stop);
   return (
     <div className="grid gap-4">
       <section className="border border-slate-300 bg-white p-5">
@@ -101,14 +102,14 @@ function GovernmentStage({ locale, mode, stop }: { locale: Locale; mode: Composi
             <p className="text-xs font-semibold uppercase text-slate-500">{labels.stage}</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-normal text-slate-950">{stop.legislature.label}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              {stop.activeGovernment?.name ?? labels.noGovernment}
+              {pmSummary || stop.activeGovernment?.name || labels.noGovernment}
             </p>
           </div>
           <SourceBadge locale={locale} status={stop.sourceStatus} />
         </div>
         <div className="mt-4 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
           <Metric label={labels.period} value={periodLabel(stop.legislature.startsOn, stop.legislature.endsOn, labels.present)} />
-          <Metric label={labels.pm} value={stop.primeMinister?.displayName ?? labels.unknown} />
+          <Metric label={labels.pm} value={pmSummary || stop.primeMinister?.displayName || labels.unknown} />
           <Metric label={labels.mode} value={mode === "computed" ? labels.computedMode : labels.officialMode} />
           <Metric label={labels.role} value={stop.primeMinisterRole?.title ?? labels.unknown} />
         </div>
@@ -193,7 +194,7 @@ function TimelineCard({ locale, stop, active, compact }: { locale: Locale; stop:
         <SourceBadge locale={locale} status={stop.sourceStatus} />
       </div>
       <p className="mt-2 text-sm text-slate-700">
-        {labels.pm}: {stop.primeMinister?.displayName ?? labels.unknown}
+        {labels.pm}: {primeMinisterSummary(stop) || stop.primeMinister?.displayName || labels.unknown}
       </p>
       <p className="mt-1 text-sm text-slate-600">{periodLabel(stop.legislature.startsOn, stop.legislature.endsOn, labels.present)}</p>
       <div className="mt-3 grid gap-2">
@@ -222,6 +223,15 @@ function SourceBadge({ locale, status }: { locale: Locale; status: CompositionTi
       {status === "verified" ? labels.verified : labels.manual}
     </span>
   );
+}
+
+function primeMinisterSummary(stop: CompositionTimelineStop): string {
+  if (stop.activeGovernment && !stop.activeGovernment.endsOn && stop.primeMinister?.displayName) {
+    return stop.primeMinister.displayName;
+  }
+  const names = stop.primeMinisters.map((item) => item.person.displayName);
+  if (names.length === 0) return "";
+  return names.slice(0, 4).join(", ");
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

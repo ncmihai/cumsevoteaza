@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { chamberLabels, type ChamberId, type GovernanceAlignment, type Locale } from "@cumsevoteaza/parliament-model";
 import type { CompositionSeat } from "@/lib/composition-data";
 
@@ -33,6 +36,7 @@ const alignmentRing: Record<GovernanceAlignment, string> = {
 export function CompositionSeatMap({ locale, chamber, seats }: CompositionSeatMapProps) {
   const labels = compositionMapLabels[locale];
   const positionedSeats = positionSeats(seats);
+  const [pinnedSeatId, setPinnedSeatId] = useState<string | undefined>();
 
   return (
     <section className="border border-slate-300 bg-white p-4">
@@ -61,34 +65,49 @@ export function CompositionSeatMap({ locale, chamber, seats }: CompositionSeatMa
         {positionedSeats.map(({ seat, left, top }) => {
           const groupLabel = seat.group?.shortName ?? labels.unknownGroup;
           const alignmentLabel = labels.alignments[seat.alignment];
+          const pinned = pinnedSeatId === seat.member.id;
+          const profileHref = `/${locale}/members/${seat.member.slug}`;
           return (
-            <Link
+            <div
               key={seat.member.id}
-              href={`/${locale}/members/${seat.member.slug}`}
-              title={`${seat.member.displayName} · ${groupLabel} · ${alignmentLabel}`}
-              className={[
-                "group/seat absolute z-10 block rounded-full border border-white shadow-sm outline-offset-2 transition hover:z-[200] hover:scale-125 focus-visible:z-[200] focus-visible:scale-125",
-                alignmentRing[seat.alignment]
-              ].join(" ")}
+              className={["group/seat absolute", pinned ? "z-[500]" : "z-10 hover:z-[200]"].join(" ")}
               style={{
                 left: percent(left),
                 top: percent(top),
-                width: seatSize(seats.length),
-                height: seatSize(seats.length),
-                backgroundColor: seat.group?.color ?? "#94a3b8",
                 transform: "translate(-50%, -50%)"
               }}
             >
-              <span className="pointer-events-none absolute left-1/2 top-0 z-[300] hidden min-w-max -translate-x-1/2 -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md group-hover/seat:block group-focus-visible/seat:block">
+              <button
+                type="button"
+                title={`${seat.member.displayName} · ${groupLabel} · ${alignmentLabel}`}
+                onClick={() => setPinnedSeatId(pinned ? undefined : seat.member.id)}
+                className={[
+                  "block rounded-full border border-white shadow-sm outline-offset-2 transition hover:scale-125 focus-visible:scale-125",
+                  alignmentRing[seat.alignment]
+                ].join(" ")}
+                style={{
+                  width: seatSize(seats.length),
+                  height: seatSize(seats.length),
+                  backgroundColor: seat.group?.color ?? "#94a3b8"
+                }}
+              >
+                <span className="sr-only">
+                  {seat.member.displayName} {groupLabel} {alignmentLabel}
+                </span>
+              </button>
+              <Link
+                href={profileHref}
+                className={[
+                  "absolute left-1/2 top-0 z-[600] min-w-max -translate-x-1/2 -translate-y-[calc(100%+8px)] border border-slate-300 bg-white px-2 py-1 text-left text-[11px] font-medium leading-tight text-slate-950 shadow-md",
+                  pinned ? "block" : "pointer-events-none hidden group-hover/seat:block group-focus-within/seat:block"
+                ].join(" ")}
+              >
                 {seat.member.displayName}
                 <span className="mt-0.5 block font-normal text-slate-600">
                   {groupLabel} · {alignmentLabel}
                 </span>
-              </span>
-              <span className="sr-only">
-                {seat.member.displayName} {groupLabel} {alignmentLabel}
-              </span>
-            </Link>
+              </Link>
+            </div>
           );
         })}
       </div>

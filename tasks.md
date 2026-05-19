@@ -71,6 +71,38 @@ implementation steps.
 - [x] Import verified rosters into Neon.
 - [x] Smoke-check DB-backed member directory, member profile, and party page locally.
 
+## Active Milestone — Official Member Careers + Compoziții Repairs
+
+- [x] Add official CDEP career importer command:
+  - `npm run ingest:official-careers -- --url=<structura.mp URL> --persist`
+  - supports CDEP Deputies and CDEP-hosted Senate profiles via `cam=2` / `cam=1`
+  - follows `Activitate parlamentară` links across legislatures and chambers
+- [x] Parse and persist replacement relations:
+  - `înlocuiește pe` / `inlocuieste pe`
+  - replaced member name
+  - replaced member official profile URL
+  - source snapshot ID
+- [x] Add `member_mandate_relations` table.
+- [x] Add period-specific `logo_url` on group and party membership rows for official `/aleg/...` CDEP logo/sign images.
+- [x] Fix old CDEP profile name parsing so generic page titles do not overwrite member names.
+- [x] Normalize all-caps historical CDEP names, for example `Ion ROTARU` -> `Ion Rotaru`.
+- [x] Scope non-party historical CDEP group fallback IDs by legislature for future imports.
+- [x] Fix historical `Partidul Democrat-Liberal` recognition so 2008 PDL rows do not fall through to numeric fallback groups.
+- [x] Repair existing Neon 2008 Deputies `group-deputies-1` memberships to `group-deputies-pdl` for the 2008-2012 legislature.
+- [x] Update member history UI to show official logo cues and relation rows when available.
+- [x] Update `Compoziții` PM summary:
+  - latest legislature shows current PM first
+  - older legislatures show non-interim PMs sorted by service length
+  - 2012-2016 summary includes Ponta and Cioloș when data is present
+- [x] Update `Compoziții` seat-map interaction:
+  - hover previews a member
+  - first click pins the popup
+  - clicking the popup opens the member profile
+- [x] Verify official sample imports against Neon:
+  - Ion Rotaru Senate 2004 profile with replacement relation
+  - Constantin Tămagă Deputies 2004 profile
+- [x] Refresh people links and read models after official sample imports.
+
 ## Active Milestone — Chamber Vote Map
 
 - [x] Add reusable semicircle chamber seat map for vote pages.

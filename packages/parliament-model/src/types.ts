@@ -193,6 +193,7 @@ export interface MemberGroupMembership {
   groupId: string;
   startsOn: string;
   endsOn?: string;
+  logoUrl?: string;
   sourceSnapshotId?: string;
 }
 
@@ -202,6 +203,17 @@ export interface MemberPartyAffiliation {
   partyId: string;
   startsOn: string;
   endsOn?: string;
+  logoUrl?: string;
+  sourceSnapshotId?: string;
+}
+
+export interface MemberMandateRelation {
+  id: string;
+  mandateId: string;
+  relation: "replaces";
+  relatedMemberId?: string;
+  relatedName: string;
+  relatedOfficialUrl?: string;
   sourceSnapshotId?: string;
 }
 
@@ -304,9 +316,11 @@ export interface MemberHistoryRow {
   startsOn: string;
   endsOn?: string;
   chamber: ChamberId;
-  type: "mandate" | "group" | "party" | "committee" | "role";
+  type: "mandate" | "group" | "party" | "committee" | "role" | "relation";
   label: string;
   details: string;
+  logoUrl?: string;
+  sourceUrl?: string;
   votesFor: number;
   votesAgainst: number;
   abstentions: number;
