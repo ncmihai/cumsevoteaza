@@ -32,10 +32,13 @@ For DB-backed pages later:
 
 ```text
 DATABASE_URL=<pooled-postgres-connection-string>
+DATABASE_MAX_CONNECTIONS=3
 ```
 
 If `DATABASE_URL` is missing, the app deploys with bundled demo data. When Neon
 is added, use the pooled connection string for serverless deployments.
+`DATABASE_MAX_CONNECTIONS` is optional; keep it low on Vercel/Neon unless
+traffic or Neon compute size justifies increasing it.
 
 For the daily Vercel Cron importer:
 
@@ -61,6 +64,15 @@ Use a separate random value from the site password and cron secret. The app uses
 it to hash anonymous visitor cookies before writing page views, searches, and
 `hot` reactions. If it is missing, pages still render and analytics endpoints
 disable tracking.
+
+Optional local performance logging:
+
+```text
+CUMSEVOTEAZA_PERF_LOG=1
+```
+
+Use this only while profiling. It logs server data-function timings and is not
+needed in production.
 
 ## Current Deploy Mode
 

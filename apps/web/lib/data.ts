@@ -1,5 +1,6 @@
 import { eq, ilike, inArray, or, sql } from "drizzle-orm";
-import { createDbSession } from "@cumsevoteaza/db";
+import { unstable_cache } from "next/cache";
+import type { DbClient } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import {
   demoDataset,
@@ -23,6 +24,8 @@ import {
   type Vote
 } from "@cumsevoteaza/parliament-model";
 import { chamberSeatCount } from "./chamber-seat-counts";
+import { getBillExplorerData, getVoteExplorerData } from "./explorer-data";
+import { CACHE_TAGS, createWebDbSession, timed } from "./server-db";
 
 export interface VotePageData {
   vote: Vote;
@@ -131,7 +134,55 @@ export interface PartyPageData {
   sourceKind: "database" | "demo";
 }
 
+const getCachedVoteDirectoryData = unstable_cache(
+  async (limit: number) => timed("data.vote-directory", () => getVoteDirectoryDataUncached(limit)),
+  ["vote-directory-data"],
+  { revalidate: 600, tags: [CACHE_TAGS.votes] }
+);
+
+const getCachedBillDirectoryData = unstable_cache(
+  async (limit: number) => timed("data.bill-directory", () => getBillDirectoryDataUncached(limit)),
+  ["bill-directory-data"],
+  { revalidate: 600, tags: [CACHE_TAGS.bills] }
+);
+
+const getCachedVotePageData = unstable_cache(
+  async (id: string) => timed(`data.vote.${id}`, () => getVotePageDataUncached(id)),
+  ["vote-page-data"],
+  { revalidate: 900, tags: [CACHE_TAGS.votes] }
+);
+
+const getCachedBillPageData = unstable_cache(
+  async (id: string) => timed(`data.bill.${id}`, () => getBillPageDataUncached(id)),
+  ["bill-page-data"],
+  { revalidate: 900, tags: [CACHE_TAGS.bills] }
+);
+
+const getCachedMemberDirectoryData = unstable_cache(
+  async (filters?: { chamber?: string; group?: string; q?: string; legislature?: string }) =>
+    timed("data.member-directory", () => getMemberDirectoryDataUncached(filters)),
+  ["member-directory-data"],
+  { revalidate: 600, tags: [CACHE_TAGS.members, CACHE_TAGS.search] }
+);
+
+const getCachedMemberPageData = unstable_cache(
+  async (slug: string, options: { legislature?: string } = {}) =>
+    timed(`data.member.${slug}`, () => getMemberPageDataUncached(slug, options)),
+  ["member-page-data"],
+  { revalidate: 900, tags: [CACHE_TAGS.members] }
+);
+
+const getCachedPartyPageData = unstable_cache(
+  async (slug: string) => timed(`data.party.${slug}`, () => getPartyPageDataUncached(slug)),
+  ["party-page-data"],
+  { revalidate: 900, tags: [CACHE_TAGS.parties, CACHE_TAGS.members] }
+);
+
 export async function getVoteDirectoryData(limit = 30): Promise<VoteDirectoryData> {
+  return getCachedVoteDirectoryData(limit);
+}
+
+async function getVoteDirectoryDataUncached(limit = 30): Promise<VoteDirectoryData> {
   const dbData = await tryDatabaseVoteDirectory(limit);
   if (dbData) return dbData;
 
@@ -149,6 +200,10 @@ export async function getVoteDirectoryData(limit = 30): Promise<VoteDirectoryDat
 }
 
 export async function getBillDirectoryData(limit = 30): Promise<BillDirectoryData> {
+  return getCachedBillDirectoryData(limit);
+}
+
+async function getBillDirectoryDataUncached(limit = 30): Promise<BillDirectoryData> {
   const dbData = await tryDatabaseBillDirectory(limit);
   if (dbData) return dbData;
 
@@ -167,6 +222,10 @@ export async function getBillDirectoryData(limit = 30): Promise<BillDirectoryDat
 }
 
 export async function getVotePageData(id: string): Promise<VotePageData | undefined> {
+  return getCachedVotePageData(id);
+}
+
+async function getVotePageDataUncached(id: string): Promise<VotePageData | undefined> {
   const dbData = await tryDatabaseVote(id);
   if (dbData) return dbData;
 
@@ -187,6 +246,10 @@ export async function getVotePageData(id: string): Promise<VotePageData | undefi
 }
 
 export async function getBillPageData(id: string): Promise<BillPageData | undefined> {
+  return getCachedBillPageData(id);
+}
+
+async function getBillPageDataUncached(id: string): Promise<BillPageData | undefined> {
   const dbData = await tryDatabaseBill(id);
   if (dbData) return dbData;
 
@@ -204,6 +267,10 @@ export async function getBillPageData(id: string): Promise<BillPageData | undefi
 }
 
 export async function getMemberDirectoryData(filters?: { chamber?: string; group?: string; q?: string; legislature?: string }): Promise<MemberDirectoryData> {
+  return getCachedMemberDirectoryData(filters);
+}
+
+async function getMemberDirectoryDataUncached(filters?: { chamber?: string; group?: string; q?: string; legislature?: string }): Promise<MemberDirectoryData> {
   const dbData = await tryDatabaseMemberDirectory(filters);
   if (dbData) return dbData;
 
@@ -225,6 +292,10 @@ export async function getMemberDirectoryData(filters?: { chamber?: string; group
 }
 
 export async function getMemberPageData(slug: string, options: { legislature?: string } = {}): Promise<MemberPageData | undefined> {
+  return getCachedMemberPageData(slug, options);
+}
+
+async function getMemberPageDataUncached(slug: string, options: { legislature?: string } = {}): Promise<MemberPageData | undefined> {
   const dbData = await tryDatabaseMember(slug, options);
   if (dbData) return dbData;
 
@@ -273,6 +344,10 @@ export async function getMemberPageData(slug: string, options: { legislature?: s
 }
 
 export async function getPartyPageData(slug: string): Promise<PartyPageData | undefined> {
+  return getCachedPartyPageData(slug);
+}
+
+async function getPartyPageDataUncached(slug: string): Promise<PartyPageData | undefined> {
   const dbData = await tryDatabaseParty(slug);
   if (dbData) return dbData;
 
@@ -291,7 +366,7 @@ export async function getPartyPageData(slug: string): Promise<PartyPageData | un
 async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     const [voteRow] = await session.db.select().from(schema.votes).where(eq(schema.votes.id, id)).limit(1);
     if (!voteRow) return undefined;
@@ -304,11 +379,6 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
       .from(schema.sourceSnapshots)
       .where(eq(schema.sourceSnapshots.id, voteRow.sourceSnapshotId))
       .limit(1);
-    const groupRows = await session.db.select().from(schema.parliamentaryGroups);
-    const memberRows = await session.db.select().from(schema.members);
-    const mandateRows = await session.db.select().from(schema.memberMandates);
-    const membershipRows = await session.db.select().from(schema.memberGroupMemberships);
-    const legislatureRows = await session.db.select().from(schema.legislatures);
     const groupTotalRows = await session.db
       .select()
       .from(schema.groupVoteTotals)
@@ -318,6 +388,65 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
       .from(schema.individualVotes)
       .where(eq(schema.individualVotes.voteId, voteRow.id));
     const individualVotes = individualVoteRows.map(mapIndividualVote);
+    const rosterRows = await session.db.execute<VoteRosterRow>(sql`
+      select
+        mm.id as mandate_id,
+        mm.member_id as mandate_member_id,
+        mm.legislature_id as mandate_legislature_id,
+        mm.chamber as mandate_chamber,
+        mm.starts_on as mandate_starts_on,
+        mm.ends_on as mandate_ends_on,
+        mm.constituency as mandate_constituency,
+        mm.status as mandate_status,
+        mm.source_snapshot_id as mandate_source_snapshot_id,
+        l.id as legislature_id,
+        l.label as legislature_label,
+        l.starts_on as legislature_starts_on,
+        l.ends_on as legislature_ends_on,
+        mgm.id as membership_id,
+        mgm.member_id as membership_member_id,
+        mgm.group_id as membership_group_id,
+        mgm.starts_on as membership_starts_on,
+        mgm.ends_on as membership_ends_on,
+        mgm.logo_url as membership_logo_url,
+        mgm.source_snapshot_id as membership_source_snapshot_id
+      from member_mandates mm
+      join legislatures l on l.id = mm.legislature_id
+      left join lateral (
+        select mgm.*
+        from member_group_memberships mgm
+        where mgm.member_id = mm.member_id
+          and mgm.starts_on <= ${voteRow.heldOn}::date
+          and coalesce(mgm.ends_on, date '9999-12-31') >= ${voteRow.heldOn}::date
+        order by mgm.starts_on desc, mgm.id desc
+        limit 1
+      ) mgm on true
+      where mm.chamber = ${voteRow.chamber}
+        and mm.starts_on <= ${voteRow.heldOn}::date
+        and coalesce(mm.ends_on, l.ends_on) >= ${voteRow.heldOn}::date
+        and ${voteRow.heldOn}::date >= l.starts_on
+        and ${voteRow.heldOn}::date < l.ends_on
+    `);
+    const scopedMemberIds = uniqueStrings([
+      ...individualVoteRows.map((row) => row.memberId),
+      ...rosterRows.map((row) => row.mandate_member_id)
+    ]);
+    const scopedGroupIds = uniqueStrings([
+      ...individualVoteRows.map((row) => row.groupId ?? ""),
+      ...groupTotalRows.map((row) => row.groupId),
+      ...rosterRows.map((row) => row.membership_group_id ?? "")
+    ]);
+    const [memberRows, groupRows] = await Promise.all([
+      scopedMemberIds.length > 0
+        ? session.db.select().from(schema.members).where(inArray(schema.members.id, scopedMemberIds))
+        : [],
+      scopedGroupIds.length > 0
+        ? session.db.select().from(schema.parliamentaryGroups).where(inArray(schema.parliamentaryGroups.id, scopedGroupIds))
+        : []
+    ]);
+    const mandates = rosterRows.map(mapVoteRosterMandate);
+    const memberships = rosterRows.flatMap((row) => row.membership_id ? [mapVoteRosterMembership(row)] : []);
+    const legislatures = uniqueBy(rosterRows.map(mapVoteRosterLegislature), (legislature) => legislature.id);
 
     return {
       vote: mapVote(voteRow),
@@ -330,9 +459,9 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
       seatVotes: buildVoteSeatRows({
         vote: mapVote(voteRow),
         individualVotes,
-        mandates: mandateRows.map(mapMemberMandate),
-        memberships: membershipRows.map(mapMemberGroupMembership),
-        legislatures: legislatureRows.map(mapLegislature)
+        mandates,
+        memberships,
+        legislatures
       }),
       sourceKind: "database"
     };
@@ -346,72 +475,43 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
 async function tryDatabaseVoteDirectory(limit: number): Promise<VoteDirectoryData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
-  const session = createDbSession();
   try {
-    const voteRows = await session.db.select().from(schema.votes);
-    const billRows = await session.db.select().from(schema.bills);
-    const sourceRows = await session.db.select().from(schema.sourceSnapshots);
-    const bills = billRows.map(mapBill);
-    const sources = sourceRows.map(mapSource);
-
+    const data = await getVoteExplorerData({ limit });
+    if (data.sourceKind !== "database") return undefined;
     return {
-      items: voteRows
-        .map(mapVote)
-        .sort((a, b) => b.heldOn.localeCompare(a.heldOn))
-        .slice(0, limit)
-        .map((vote) => ({
-          vote,
-          bill: bills.find((bill) => bill.id === vote.billId),
-          source: sources.find((source) => source.id === vote.sourceSnapshotId)
-        })),
+      items: data.items.map(({ vote, bill, source }) => ({ vote, bill, source })),
       sourceKind: "database"
     };
   } catch {
     return undefined;
-  } finally {
-    await session.close();
   }
 }
 
 async function tryDatabaseBillDirectory(limit: number): Promise<BillDirectoryData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
-  const session = createDbSession();
   try {
-    const billRows = await session.db.select().from(schema.bills);
-    const eventRows = await session.db.select().from(schema.billEvents);
-    const voteRows = await session.db.select().from(schema.votes);
-    const sourceRows = await session.db.select().from(schema.sourceSnapshots);
-    const events = eventRows.map(mapBillEvent);
-    const votes = voteRows.map(mapVote);
-    const sources = sourceRows.map(mapSource);
-
+    const data = await getBillExplorerData({ limit });
+    if (data.sourceKind !== "database") return undefined;
     return {
-      items: billRows
-        .map(mapBill)
-        .map((bill) =>
-          directoryBillItem({
-            bill,
-            events: events.filter((event) => event.billId === bill.id),
-            votes: votes.filter((vote) => vote.billId === bill.id),
-            sources
-          })
-        )
-        .sort((a, b) => (b.submittedOn ?? b.latestEventOn ?? "").localeCompare(a.submittedOn ?? a.latestEventOn ?? ""))
-        .slice(0, limit),
+      items: data.items.map(({ bill, submittedOn, latestEventOn, source, voteCount }) => ({
+        bill,
+        submittedOn,
+        latestEventOn,
+        source,
+        voteCount
+      })),
       sourceKind: "database"
     };
   } catch {
     return undefined;
-  } finally {
-    await session.close();
   }
 }
 
 async function tryDatabaseBill(id: string): Promise<BillPageData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     const [billRow] = await session.db
       .select()
@@ -446,42 +546,75 @@ async function tryDatabaseBill(id: string): Promise<BillPageData | undefined> {
 async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: string; q?: string; legislature?: string }): Promise<MemberDirectoryData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
-    const memberRows = await session.db.select().from(schema.members);
-    const mandateRows = await session.db.select().from(schema.memberMandates);
-    const membershipRows = await session.db.select().from(schema.memberGroupMemberships);
-    const legislatureRows = await session.db.select().from(schema.legislatures);
-    const groupRows = await session.db.select().from(schema.parliamentaryGroups);
-    const partyRows = await session.db.select().from(schema.parties);
+    const conditions = memberDirectoryConditions(filters);
+    const where = conditions.length ? sql`where ${sql.join(conditions, sql` and `)}` : sql``;
+    const [memberRows, groupRows, partyRows, legislatureRows] = await Promise.all([
+      session.db.execute<MemberDirectoryRow>(sql`
+        with scoped as (
+          select
+            m.id as member_id,
+            m.person_id as member_person_id,
+            m.slug as member_slug,
+            m.first_name as member_first_name,
+            m.last_name as member_last_name,
+            m.display_name as member_display_name,
+            m.source_ids as member_source_ids,
+            mm.id as mandate_id,
+            mm.member_id as mandate_member_id,
+            mm.legislature_id as mandate_legislature_id,
+            mm.chamber as mandate_chamber,
+            mm.starts_on as mandate_starts_on,
+            mm.ends_on as mandate_ends_on,
+            mm.constituency as mandate_constituency,
+            mm.status as mandate_status,
+            mm.source_snapshot_id as mandate_source_snapshot_id,
+            pg.id as group_id,
+            pg.party_id as group_party_id,
+            pg.chamber as group_chamber,
+            pg.short_name as group_short_name,
+            pg.name as group_name,
+            pg.color as group_color,
+            p.id as party_id,
+            p.slug as party_slug,
+            p.short_name as party_short_name,
+            p.name as party_name,
+            p.color as party_color,
+            row_number() over (partition by m.id order by mm.starts_on desc, mm.id desc) as rn
+          from member_mandates mm
+          join members m on m.id = mm.member_id
+          left join lateral (
+            select mgm.*
+            from member_group_memberships mgm
+            join parliamentary_groups pg_filter on pg_filter.id = mgm.group_id
+            where mgm.member_id = mm.member_id
+              and mgm.starts_on <= coalesce(mm.ends_on, date '9999-12-31')
+              and coalesce(mgm.ends_on, date '9999-12-31') >= mm.starts_on
+              and pg_filter.chamber = mm.chamber
+            order by mgm.starts_on desc, mgm.id desc
+            limit 1
+          ) mgm on true
+          left join parliamentary_groups pg on pg.id = mgm.group_id
+          left join parties p on p.id = pg.party_id
+          ${where}
+        )
+        select *
+        from scoped
+        where rn = 1
+        order by member_display_name asc, member_id asc
+        limit 500
+      `),
+      session.db.execute<typeof schema.parliamentaryGroups.$inferSelect>(memberDirectoryGroupsSql(filters)),
+      session.db.select().from(schema.parties),
+      session.db.select().from(schema.legislatures)
+    ]);
     const groups = groupRows.map(mapGroup);
     const parties = partyRows.map(mapParty);
     const legislatures = legislatureRows.map(mapLegislature).sort((a, b) => b.startsOn.localeCompare(a.startsOn));
-    const legislatureById = new Map(legislatures.map((legislature) => [legislature.id, legislature]));
-    const mandates = mandateRows.map(mapMemberMandate);
-    const memberships = membershipRows.map(mapMemberGroupMembership);
-    const items = memberRows.map((memberRow) => {
-      const member = mapMember(memberRow);
-      const memberMandates = mandates.filter(
-        (item) =>
-          item.memberId === member.id &&
-          (!filters?.chamber || item.chamber === filters.chamber) &&
-          (!filters?.legislature || item.legislatureId === filters.legislature)
-      );
-      const mandate = latestMandate(memberMandates);
-      const legislature = mandate ? legislatureById.get(mandate.legislatureId) : undefined;
-      const memberMemberships = memberships.filter((item) => item.memberId === member.id);
-      const membership =
-        mandate && filters?.legislature
-          ? latestMembershipDuring(memberMemberships, mandate.startsOn, earliestDate(mandate.endsOn, legislature?.endsOn))
-          : latestMembership(memberMemberships);
-      const group = groups.find((item) => item.id === membership?.groupId);
-      const party = parties.find((item) => item.id === group?.partyId);
-      return { member, mandate, group, party };
-    });
     return {
-      members: filterDirectoryItems(items, filters),
-      groups: filterMemberDirectoryGroups(groups, mandates, memberships, legislatures, filters),
+      members: memberRows.map(mapMemberDirectoryRow),
+      groups,
       parties,
       legislatures,
       sourceKind: "database"
@@ -496,7 +629,7 @@ async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: 
 async function tryDatabaseMember(slug: string, options: { legislature?: string } = {}): Promise<MemberPageData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     let [memberRow] = await session.db
       .select()
@@ -610,7 +743,7 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
 async function tryDatabaseParty(slug: string): Promise<PartyPageData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     const [partyRow] = await session.db
       .select()
@@ -619,15 +752,52 @@ async function tryDatabaseParty(slug: string): Promise<PartyPageData | undefined
       .limit(1);
     if (!partyRow) return undefined;
     const party = mapParty(partyRow);
-    const groups = (await session.db.select().from(schema.parliamentaryGroups)).map(mapGroup).filter((group) => group.partyId === party.id);
-    const groupIds = new Set(groups.map((group) => group.id));
-    const memberships = (await session.db.select().from(schema.memberGroupMemberships)).map(mapMemberGroupMembership);
-    const memberIds = new Set(memberships.filter((membership) => groupIds.has(membership.groupId)).map((membership) => membership.memberId));
-    const members = (await session.db.select().from(schema.members)).map(mapMember).filter((member) => memberIds.has(member.id));
-    const groupTotals = (await session.db.select().from(schema.groupVoteTotals))
-      .map(mapGroupVoteTotal)
-      .filter((total) => groupIds.has(total.groupId));
-    const votes = (await session.db.select().from(schema.votes)).map(mapVote).filter((vote) => groupTotals.some((total) => total.voteId === vote.id));
+    const groups = (await session.db.select().from(schema.parliamentaryGroups).where(eq(schema.parliamentaryGroups.partyId, party.id))).map(mapGroup);
+    const groupIds = groups.map((group) => group.id);
+    const [memberRows, totalRows, voteRows] = groupIds.length > 0
+      ? await Promise.all([
+          session.db.execute<typeof schema.members.$inferSelect>(sql`
+            select distinct
+              m.id,
+              m.person_id as "personId",
+              m.slug,
+              m.first_name as "firstName",
+              m.last_name as "lastName",
+              m.display_name as "displayName",
+              m.source_ids as "sourceIds"
+            from members m
+            join member_group_memberships mgm on mgm.member_id = m.id
+            where mgm.group_id in (${sql.join(groupIds.map((groupId) => sql`${groupId}`), sql`, `)})
+            order by m.display_name asc
+            limit 500
+          `),
+          session.db.select().from(schema.groupVoteTotals).where(inArray(schema.groupVoteTotals.groupId, groupIds)).limit(200),
+          session.db.execute<typeof schema.votes.$inferSelect>(sql`
+            select distinct
+              v.id,
+              v.bill_id as "billId",
+              v.chamber,
+              v.title,
+              v.held_on as "heldOn",
+              v.vote_type as "voteType",
+              v.present,
+              v.for_count as "forCount",
+              v.against,
+              v.abstention,
+              v.present_not_voting as "presentNotVoting",
+              v.absent,
+              v.source_snapshot_id as "sourceSnapshotId"
+            from votes v
+            join group_vote_totals gvt on gvt.vote_id = v.id
+            where gvt.group_id in (${sql.join(groupIds.map((groupId) => sql`${groupId}`), sql`, `)})
+            order by v.held_on desc, v.id desc
+            limit 200
+          `)
+        ])
+      : [[], [], []];
+    const members = memberRows.map(mapMember);
+    const groupTotals = totalRows.map(mapGroupVoteTotal);
+    const votes = voteRows.map(mapVote);
     return { party, groups, members, groupTotals, votes, sourceKind: "database" };
   } catch {
     return undefined;
@@ -711,6 +881,85 @@ function mapMember(row: typeof schema.members.$inferSelect): Member {
     lastName: row.lastName,
     displayName: row.displayName,
     sourceIds: row.sourceIds
+  };
+}
+
+function mapMemberDirectoryRow(row: MemberDirectoryRow): MemberDirectoryItem {
+  return {
+    member: {
+      id: row.member_id,
+      personId: row.member_person_id ?? undefined,
+      slug: row.member_slug,
+      firstName: row.member_first_name,
+      lastName: row.member_last_name,
+      displayName: row.member_display_name,
+      sourceIds: jsonRecord(row.member_source_ids)
+    },
+    mandate: {
+      id: row.mandate_id,
+      memberId: row.mandate_member_id,
+      legislatureId: row.mandate_legislature_id,
+      chamber: row.mandate_chamber,
+      startsOn: dateString(row.mandate_starts_on),
+      endsOn: row.mandate_ends_on ? dateString(row.mandate_ends_on) : undefined,
+      constituency: row.mandate_constituency ?? undefined,
+      status: row.mandate_status === "active" || row.mandate_status === "ended" || row.mandate_status === "unknown" ? row.mandate_status : "unknown",
+      sourceSnapshotId: row.mandate_source_snapshot_id ?? undefined
+    },
+    group: row.group_id
+      ? {
+          id: row.group_id,
+          partyId: row.group_party_id ?? undefined,
+          chamber: row.group_chamber!,
+          shortName: row.group_short_name!,
+          name: row.group_name!,
+          color: row.group_color!
+        }
+      : undefined,
+    party: row.party_id
+      ? {
+          id: row.party_id,
+          slug: row.party_slug!,
+          shortName: row.party_short_name!,
+          name: row.party_name!,
+          color: row.party_color!
+        }
+      : undefined
+  };
+}
+
+function mapVoteRosterMandate(row: VoteRosterRow): MemberMandate {
+  return {
+    id: row.mandate_id,
+    memberId: row.mandate_member_id,
+    legislatureId: row.mandate_legislature_id,
+    chamber: row.mandate_chamber,
+    startsOn: dateString(row.mandate_starts_on),
+    endsOn: row.mandate_ends_on ? dateString(row.mandate_ends_on) : undefined,
+    constituency: row.mandate_constituency ?? undefined,
+    status: row.mandate_status === "active" || row.mandate_status === "ended" || row.mandate_status === "unknown" ? row.mandate_status : "unknown",
+    sourceSnapshotId: row.mandate_source_snapshot_id ?? undefined
+  };
+}
+
+function mapVoteRosterMembership(row: VoteRosterRow): MemberGroupMembership {
+  return {
+    id: row.membership_id!,
+    memberId: row.membership_member_id!,
+    groupId: row.membership_group_id!,
+    startsOn: dateString(row.membership_starts_on!),
+    endsOn: row.membership_ends_on ? dateString(row.membership_ends_on) : undefined,
+    logoUrl: row.membership_logo_url ?? undefined,
+    sourceSnapshotId: row.membership_source_snapshot_id ?? undefined
+  };
+}
+
+function mapVoteRosterLegislature(row: VoteRosterRow): Legislature {
+  return {
+    id: row.legislature_id,
+    label: row.legislature_label,
+    startsOn: dateString(row.legislature_starts_on),
+    endsOn: dateString(row.legislature_ends_on)
   };
 }
 
@@ -845,7 +1094,7 @@ function mapDocument(row: typeof schema.documents.$inferSelect): DocumentSource 
 }
 
 async function getMemberVotesForLegislature(
-  db: ReturnType<typeof createDbSession>["db"],
+  db: DbClient,
   memberIds: string[],
   legislatureId: string
 ): Promise<{ individualVotes: IndividualVote[]; voteRecords: Vote[] }> {
@@ -897,7 +1146,7 @@ async function getMemberVotesForLegislature(
 }
 
 async function getMemberSponsoredBillsForLegislature(
-  db: ReturnType<typeof createDbSession>["db"],
+  db: DbClient,
   memberIds: string[],
   legislatureId: string
 ): Promise<Bill[]> {
@@ -940,7 +1189,7 @@ async function getMemberSponsoredBillsForLegislature(
 }
 
 async function getMemberLegislatureActivity(
-  db: ReturnType<typeof createDbSession>["db"],
+  db: DbClient,
   memberIds: string[],
   legislatureId: string
 ): Promise<MemberLegislatureActivityData | undefined> {
@@ -983,7 +1232,7 @@ async function getMemberLegislatureActivity(
   }
 }
 
-async function getVoteCoverage(db: ReturnType<typeof createDbSession>["db"], voteIds: string[]): Promise<Record<string, VoteCoverageData>> {
+async function getVoteCoverage(db: DbClient, voteIds: string[]): Promise<Record<string, VoteCoverageData>> {
   if (voteIds.length === 0) return {};
   try {
     const rows = await db.execute<VoteCoverageRow>(sql`
@@ -1192,6 +1441,20 @@ function earliestDate(...dates: Array<string | undefined | null>): string | unde
   return dates.filter((date): date is string => Boolean(date)).sort()[0];
 }
 
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function uniqueBy<T>(values: T[], key: (value: T) => string): T[] {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const itemKey = key(value);
+    if (seen.has(itemKey)) return false;
+    seen.add(itemKey);
+    return true;
+  });
+}
+
 function latestMandate(mandates: MemberMandate[]): MemberMandate | undefined {
   return [...mandates]
     .sort((a, b) => {
@@ -1218,6 +1481,80 @@ function filterDirectoryItems(
         .some((value) => value.includes(query));
     })
     .sort((a, b) => a.member.displayName.localeCompare(b.member.displayName, "ro"));
+}
+
+function memberDirectoryConditions(filters?: { chamber?: string; group?: string; q?: string; legislature?: string }) {
+  const conditions = [];
+  if (filters?.chamber === "senate" || filters?.chamber === "deputies") {
+    conditions.push(sql`mm.chamber = ${filters.chamber}`);
+  }
+  if (filters?.legislature) {
+    conditions.push(sql`mm.legislature_id = ${filters.legislature}`);
+  }
+  if (filters?.q?.trim()) {
+    const pattern = `%${normalizeSearch(filters.q)}%`;
+    conditions.push(sql`(
+      ${normalizedSql(sql`m.display_name || ' ' || m.slug || ' ' || coalesce(pg.short_name, '') || ' ' || coalesce(p.short_name, '')`)} like ${pattern}
+      or exists (
+        select 1
+        from entity_search_index esi
+        where esi.entity_type = 'member'
+          and esi.entity_id = m.id
+          and esi.search_text like ${pattern}
+      )
+    )`);
+  }
+  if (filters?.group) {
+    conditions.push(memberGroupCondition(filters.group));
+  }
+  return conditions;
+}
+
+function memberDirectoryGroupsSql(filters?: { chamber?: string; legislature?: string }) {
+  const conditions = [];
+  if (filters?.chamber === "senate" || filters?.chamber === "deputies") {
+    conditions.push(sql`pg.chamber = ${filters.chamber}`);
+  }
+  if (filters?.legislature) {
+    conditions.push(sql`exists (
+      select 1
+      from member_group_memberships mgm
+      join member_mandates mm on mm.member_id = mgm.member_id and mm.chamber = pg.chamber
+      where mgm.group_id = pg.id
+        and mm.legislature_id = ${filters.legislature}
+        and mgm.starts_on <= coalesce(mm.ends_on, date '9999-12-31')
+        and coalesce(mgm.ends_on, date '9999-12-31') >= mm.starts_on
+    )`);
+  }
+  const where = conditions.length ? sql`where ${sql.join(conditions, sql` and `)}` : sql``;
+  return sql`
+    select distinct
+      pg.id,
+      pg.party_id as "partyId",
+      pg.chamber,
+      pg.short_name as "shortName",
+      pg.name,
+      pg.color
+    from parliamentary_groups pg
+    ${where}
+    order by pg.chamber, pg.short_name
+  `;
+}
+
+function memberGroupCondition(groupFilter: string) {
+  if (groupFilter.startsWith("group-name:")) {
+    const key = groupFilter.replace(/^group-name:/, "");
+    return sql`${normalizedGroupSql(sql`coalesce(p.short_name, pg.short_name)`)} = ${key}`;
+  }
+  return sql`(pg.id = ${groupFilter} or p.id = ${groupFilter})`;
+}
+
+function normalizedSql(value: ReturnType<typeof sql>) {
+  return sql`lower(translate(${value}, 'ăâîșşțţĂÂÎȘŞȚŢ', 'aaissttAAISSTT'))`;
+}
+
+function normalizedGroupSql(value: ReturnType<typeof sql>) {
+  return sql`regexp_replace(${normalizedSql(value)}, '[^a-z0-9]', '', 'g')`;
 }
 
 function matchesMemberGroupFilter(item: MemberDirectoryItem, groupFilter: string): boolean {
@@ -1365,7 +1702,7 @@ function buildMemberHistory(input: {
 }
 
 async function findMemberByLegacySlug(
-  db: ReturnType<typeof createDbSession>["db"],
+  db: DbClient,
   slug: string
 ): Promise<typeof schema.members.$inferSelect | undefined> {
   const baseSlug = slug.replace(/-(deputies|senate)-[a-z0-9-]+$/i, "");
@@ -1405,6 +1742,59 @@ function chamberForMemberPeriod(mandates: MemberMandate[], memberId: string, dat
 }
 
 type DateValue = Date | string;
+
+type MemberDirectoryRow = {
+  member_id: string;
+  member_person_id: string | null;
+  member_slug: string;
+  member_first_name: string;
+  member_last_name: string;
+  member_display_name: string;
+  member_source_ids: unknown;
+  mandate_id: string;
+  mandate_member_id: string;
+  mandate_legislature_id: string;
+  mandate_chamber: MemberMandate["chamber"];
+  mandate_starts_on: DateValue;
+  mandate_ends_on: DateValue | null;
+  mandate_constituency: string | null;
+  mandate_status: string;
+  mandate_source_snapshot_id: string | null;
+  group_id: string | null;
+  group_party_id: string | null;
+  group_chamber: ParliamentaryGroup["chamber"] | null;
+  group_short_name: string | null;
+  group_name: string | null;
+  group_color: string | null;
+  party_id: string | null;
+  party_slug: string | null;
+  party_short_name: string | null;
+  party_name: string | null;
+  party_color: string | null;
+};
+
+type VoteRosterRow = {
+  mandate_id: string;
+  mandate_member_id: string;
+  mandate_legislature_id: string;
+  mandate_chamber: MemberMandate["chamber"];
+  mandate_starts_on: DateValue;
+  mandate_ends_on: DateValue | null;
+  mandate_constituency: string | null;
+  mandate_status: string;
+  mandate_source_snapshot_id: string | null;
+  legislature_id: string;
+  legislature_label: string;
+  legislature_starts_on: DateValue;
+  legislature_ends_on: DateValue;
+  membership_id: string | null;
+  membership_member_id: string | null;
+  membership_group_id: string | null;
+  membership_starts_on: DateValue | null;
+  membership_ends_on: DateValue | null;
+  membership_logo_url: string | null;
+  membership_source_snapshot_id: string | null;
+};
 
 type MemberVoteRow = {
   individual_vote_id: string;

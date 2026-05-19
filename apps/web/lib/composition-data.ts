@@ -1,4 +1,4 @@
-import { createDbSession } from "@cumsevoteaza/db";
+import { unstable_cache } from "next/cache";
 import * as schema from "@cumsevoteaza/db";
 import {
   type CompositionEvent,
@@ -17,6 +17,7 @@ import {
   type Person
 } from "@cumsevoteaza/parliament-model";
 import { chamberSeatCount } from "./chamber-seat-counts";
+import { CACHE_TAGS, createWebDbSession, timed } from "./server-db";
 
 export type CompositionMode = "official" | "computed";
 
@@ -86,13 +87,33 @@ interface CompositionSourceRows {
   partyAlignments: AlignmentRow[];
 }
 
+const getCachedCurrentCompositionData = unstable_cache(
+  async (mode: CompositionMode) => timed(`composition.current.${mode}`, () => getCurrentCompositionDataUncached(mode)),
+  ["current-composition-data"],
+  { revalidate: 900, tags: [CACHE_TAGS.composition, CACHE_TAGS.members, CACHE_TAGS.parties] }
+);
+
+const getCachedCompositionTimelineData = unstable_cache(
+  async (mode: CompositionMode) => timed(`composition.timeline.${mode}`, () => getCompositionTimelineDataUncached(mode)),
+  ["composition-timeline-data"],
+  { revalidate: 3600, tags: [CACHE_TAGS.composition, CACHE_TAGS.members, CACHE_TAGS.parties] }
+);
+
 export async function getCurrentCompositionData(mode: CompositionMode): Promise<CompositionPageData> {
+  return getCachedCurrentCompositionData(mode);
+}
+
+async function getCurrentCompositionDataUncached(mode: CompositionMode): Promise<CompositionPageData> {
   const dbData = await tryDatabaseCurrentComposition(mode);
   if (dbData) return dbData;
   return demoComposition(mode);
 }
 
 export async function getCompositionTimelineData(mode: CompositionMode): Promise<CompositionTimelineData> {
+  return getCachedCompositionTimelineData(mode);
+}
+
+async function getCompositionTimelineDataUncached(mode: CompositionMode): Promise<CompositionTimelineData> {
   const currentComposition = await getCurrentCompositionData(mode);
   const dbData = await tryDatabaseCompositionTimeline(mode, currentComposition);
   if (dbData) return dbData;
@@ -111,7 +132,7 @@ async function tryDatabaseCompositionTimeline(
 ): Promise<CompositionTimelineData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     const [
       governmentRows,
@@ -229,7 +250,7 @@ async function tryDatabaseCompositionTimeline(
 async function tryDatabaseCurrentComposition(mode: CompositionMode): Promise<CompositionPageData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     const today = new Date().toISOString().slice(0, 10);
     const [memberRows, mandateRows, membershipRows, legislatureRows, groupRows, partyRows, memberAlignmentRows, groupAlignmentRows, partyAlignmentRows] =

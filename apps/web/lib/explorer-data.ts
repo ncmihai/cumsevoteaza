@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
-import { createDbSession } from "@cumsevoteaza/db";
+import { unstable_cache } from "next/cache";
+import type { DbClient } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import {
   demoDataset,
@@ -12,6 +13,7 @@ import {
   type SourceSnapshot,
   type Vote
 } from "@cumsevoteaza/parliament-model";
+import { CACHE_TAGS, createWebDbSession, timed } from "./server-db";
 
 export type SourceStatusFilter = "parsed" | "partial" | "failed";
 
@@ -116,7 +118,36 @@ export function decodeCursor(cursor?: string): { date: string; id: string } | un
   }
 }
 
+const getCachedDirectoryFilterOptions = unstable_cache(
+  async (filters: Pick<ExplorerFilters, "chamber" | "legislature"> = {}) =>
+    timed("explorer.filter-options", () => getDirectoryFilterOptionsUncached(filters)),
+  ["directory-filter-options"],
+  { revalidate: 600, tags: [CACHE_TAGS.members, CACHE_TAGS.search] }
+);
+
+const getCachedVoteExplorerData = unstable_cache(
+  async (query: ExplorerQuery = {}) => timed("explorer.votes", () => getVoteExplorerDataUncached(query)),
+  ["vote-explorer-data"],
+  { revalidate: 600, tags: [CACHE_TAGS.votes] }
+);
+
+const getCachedBillExplorerData = unstable_cache(
+  async (query: ExplorerQuery = {}) => timed("explorer.bills", () => getBillExplorerDataUncached(query)),
+  ["bill-explorer-data"],
+  { revalidate: 600, tags: [CACHE_TAGS.bills] }
+);
+
+const getCachedHomeDashboardData = unstable_cache(
+  async (locale: string) => timed(`explorer.home.${locale}`, () => getHomeDashboardDataUncached(locale)),
+  ["home-dashboard-data"],
+  { revalidate: 300, tags: [CACHE_TAGS.home, CACHE_TAGS.votes, CACHE_TAGS.bills, CACHE_TAGS.members, CACHE_TAGS.parties] }
+);
+
 export async function getDirectoryFilterOptions(filters: Pick<ExplorerFilters, "chamber" | "legislature"> = {}): Promise<DirectoryFilterOptions> {
+  return getCachedDirectoryFilterOptions(filters);
+}
+
+async function getDirectoryFilterOptionsUncached(filters: Pick<ExplorerFilters, "chamber" | "legislature"> = {}): Promise<DirectoryFilterOptions> {
   if (!process.env.DATABASE_URL) {
     return {
       groups: filterGroupsForPeriod(demoDataset.groups, demoDataset.mandates, demoDataset.groupMemberships, demoDataset.legislatures, filters),
@@ -124,30 +155,20 @@ export async function getDirectoryFilterOptions(filters: Pick<ExplorerFilters, "
     };
   }
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
-    const [groupRows, legislatureRows, mandateRows, membershipRows] = await Promise.all([
+    const [groupRows, legislatureRows] = await Promise.all([
       session.db.execute<GroupRow>(groupOptionsSql(filters)),
       session.db.execute<LegislatureRow>(sql`
         select id, label, starts_on, ends_on
         from legislatures
         order by starts_on desc
-      `),
-      session.db.select().from(schema.memberMandates),
-      session.db.select().from(schema.memberGroupMemberships)
+      `)
     ]);
     const legislatures = legislatureRows.map(mapLegislatureRow);
     const groups = groupRows.map(mapGroupRow);
     return {
-      groups: filters.legislature
-        ? filterGroupsForPeriod(
-            groups,
-            mandateRows.map(mapMemberMandateForFilters),
-            membershipRows.map(mapMemberGroupMembershipForFilters),
-            legislatures,
-            filters
-          )
-        : groups,
+      groups,
       legislatures
     };
   } catch {
@@ -161,10 +182,14 @@ export async function getDirectoryFilterOptions(filters: Pick<ExplorerFilters, "
 }
 
 export async function getVoteExplorerData(query: ExplorerQuery = {}): Promise<ExplorerPageData<VoteExplorerItem>> {
+  return getCachedVoteExplorerData(query);
+}
+
+async function getVoteExplorerDataUncached(query: ExplorerQuery = {}): Promise<ExplorerPageData<VoteExplorerItem>> {
   const limit = normalizedLimit(query.limit);
   if (!process.env.DATABASE_URL) return demoVoteExplorerData(limit, query.cursor);
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     const filters = query.filters ?? {};
     const cursor = decodeCursor(query.cursor);
@@ -231,28 +256,21 @@ export async function getVoteExplorerData(query: ExplorerQuery = {}): Promise<Ex
 }
 
 export async function getBillExplorerData(query: ExplorerQuery = {}): Promise<ExplorerPageData<BillExplorerItem>> {
+  return getCachedBillExplorerData(query);
+}
+
+async function getBillExplorerDataUncached(query: ExplorerQuery = {}): Promise<ExplorerPageData<BillExplorerItem>> {
   const limit = normalizedLimit(query.limit);
   if (!process.env.DATABASE_URL) return demoBillExplorerData(limit, query.cursor);
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     const filters = query.filters ?? {};
     const cursor = decodeCursor(query.cursor);
     const conditions = billConditions(filters, cursor);
     const where = conditions.length ? sql`where ${sql.join(conditions, sql` and `)}` : sql``;
     const rows = await session.db.execute<BillDirectoryRow>(sql`
-      with event_bounds as (
-        select bill_id, min(occurred_on) as submitted_on, max(occurred_on) as latest_event_on
-        from bill_events
-        group by bill_id
-      ),
-      vote_counts as (
-        select bill_id, count(*)::int as vote_count
-        from votes
-        where bill_id is not null
-        group by bill_id
-      ),
-      hot_counts as (
+      with hot_counts as (
         select entity_id, count(*)::int as hot_count
         from content_reactions
         where entity_type = 'bill' and reaction = 'hot'
@@ -266,9 +284,9 @@ export async function getBillExplorerData(query: ExplorerQuery = {}): Promise<Ex
         b.chamber_of_origin as bill_chamber_of_origin,
         b.status as bill_status,
         b.source_snapshot_ids as bill_source_snapshot_ids,
-        eb.submitted_on as submitted_on,
-        eb.latest_event_on as latest_event_on,
-        coalesce(vc.vote_count, 0)::int as vote_count,
+        bvs.submitted_on as submitted_on,
+        bvs.latest_event_on as latest_event_on,
+        coalesce(bvs.vote_count, 0)::int as vote_count,
         coalesce(hc.hot_count, 0)::int as hot_count,
         ss.id as source_id,
         ss.source_url as source_url,
@@ -279,12 +297,11 @@ export async function getBillExplorerData(query: ExplorerQuery = {}): Promise<Ex
         ss.status as source_status,
         ss.notes as source_notes
       from bills b
-      left join event_bounds eb on eb.bill_id = b.id
-      left join vote_counts vc on vc.bill_id = b.id
+      left join bill_vote_summaries bvs on bvs.bill_id = b.id
       left join hot_counts hc on hc.entity_id = b.id
       left join source_snapshots ss on ss.id = b.source_snapshot_ids->>0
       ${where}
-      order by coalesce(eb.submitted_on, eb.latest_event_on, date '0001-01-01') desc, b.id desc
+      order by coalesce(bvs.submitted_on, bvs.latest_event_on, date '0001-01-01') desc, b.id desc
       limit ${limit + 1}
     `);
 
@@ -307,7 +324,7 @@ export async function getBillExplorerData(query: ExplorerQuery = {}): Promise<Ex
 export async function getHotCount(entityType: "bill" | "vote", entityId: string): Promise<number> {
   if (!process.env.DATABASE_URL) return 0;
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     const rows = await session.db.execute<{ count: number }>(sql`
       select count(*)::int as count
@@ -323,6 +340,10 @@ export async function getHotCount(entityType: "bill" | "vote", entityId: string)
 }
 
 export async function getHomeDashboardData(locale: string): Promise<HomeDashboardData> {
+  return getCachedHomeDashboardData(locale);
+}
+
+async function getHomeDashboardDataUncached(locale: string): Promise<HomeDashboardData> {
   const [votes, bills] = await Promise.all([
     getVoteExplorerData({ limit: 5 }),
     getBillExplorerData({ limit: 5 })
@@ -340,7 +361,7 @@ export async function getHomeDashboardData(locale: string): Promise<HomeDashboar
     };
   }
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     const [viewRows, searchRows, hotVoteRows, hotBillRows] = await Promise.all([
       session.db.execute<AggregateRow>(sql`
@@ -447,7 +468,7 @@ function voteConditions(filters: ExplorerFilters, cursor?: { date: string; id: s
 
 function billConditions(filters: ExplorerFilters, cursor?: { date: string; id: string }) {
   const conditions = [];
-  const sortDate = sql`coalesce(eb.submitted_on, eb.latest_event_on, date '0001-01-01')`;
+  const sortDate = sql`coalesce(bvs.submitted_on, bvs.latest_event_on, date '0001-01-01')`;
   const range = dateRange(filters);
   if (range) {
     conditions.push(sql`${sortDate} >= ${range.start}::date`);
@@ -497,11 +518,11 @@ function dateRange(filters: ExplorerFilters): { start: string; end: string } | u
   return { start: `${year}-01-01`, end: `${year + 1}-01-01` };
 }
 
-async function resolveDashboardItems(db: ReturnType<typeof createDbSession>["db"], rows: AggregateRow[], locale: string): Promise<DashboardItem[]> {
+async function resolveDashboardItems(db: DbClient, rows: AggregateRow[], locale: string): Promise<DashboardItem[]> {
   return Promise.all(rows.map((row) => resolveDashboardItem(db, row, locale)));
 }
 
-async function resolveDashboardItem(db: ReturnType<typeof createDbSession>["db"], row: AggregateRow, locale: string): Promise<DashboardItem> {
+async function resolveDashboardItem(db: DbClient, row: AggregateRow, locale: string): Promise<DashboardItem> {
   if (row.entity_type === "vote" && row.entity_id) {
     const records = await db.execute<{ id: string; title: string }>(sql`select id, title from votes where id = ${row.entity_id} limit 1`);
     return { entityType: "vote", entityId: row.entity_id, title: records[0]?.title ?? row.entity_id, href: `/${locale}/votes/${row.entity_id}`, count: row.count };

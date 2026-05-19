@@ -1399,3 +1399,37 @@ Verification:
   - `npm run typecheck` passed;
   - `npm run build` passed after rerunning outside the sandbox because
     Turbopack needs local IPC/port binding.
+
+## 2026-05-19 — Performance: Hybrid Cache + Postgres Search
+
+- Added a web-runtime DB helper that reuses a small pooled Postgres client per
+  server process while keeping importer/CLI sessions explicit and closable.
+- Added lightweight data-function timing logs for development and
+  `CUMSEVOTEAZA_PERF_LOG=1`.
+- Added Next cache wrappers and tags for public read paths:
+  - homepage dashboard, vote/project directories, vote/project/member/party
+    detail pages, and `Compoziții`;
+  - daily cron now revalidates `home`, `votes`, `bills`, `members`, `parties`,
+    `composition`, and `search` tags after a sync run.
+- Reworked hot DB reads:
+  - vote detail now fetches only the requested vote, linked bill/source,
+    group totals, nominal votes, and valid roster seats for that vote date;
+  - member directory now uses a bounded SQL slice with search/group/legislature
+    filters instead of loading the full member/mandate/membership set;
+  - bill directory now uses `bill_vote_summaries`;
+  - party pages now use scoped group/member/vote joins.
+- Added migration `0008_lush_captain_america.sql`:
+  - enables `pg_stat_statements`, `pg_trgm`, and `unaccent`;
+  - adds hot-path member/vote indexes;
+  - adds trigram search on `entity_search_index.search_text`;
+  - adds GIN on `bills.identifiers`.
+- Refreshed Neon read models after normalizing search text:
+  - 2,196 bill summaries;
+  - 553 vote coverage rows;
+  - 5,265 member legislature activity rows;
+  - 8,256 search-index rows.
+- Verified Neon query plans:
+  - vote-date roster lookup: about 4 ms;
+  - search-index last-name lookup: about 0.2 ms using the trigram index;
+  - bill directory by year: about 1.3 ms;
+  - party member join sample: about 13 ms.

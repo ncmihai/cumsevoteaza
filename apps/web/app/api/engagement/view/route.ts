@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import { analyticsEnabled, isEngagementEntityType, isLocaleValue, setVisitorCookie, visitorHashForRequest } from "@/lib/engagement";
+import { createWebDbSession } from "@/lib/server-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   const visitor = visitorHashForRequest(request);
   if (!visitor) return NextResponse.json({ ok: false, disabled: true }, { status: 202 });
 
-  const session = createDbSession();
+  const session = createWebDbSession();
   try {
     await session.db.insert(schema.engagementEvents).values({
       id: crypto.randomUUID(),

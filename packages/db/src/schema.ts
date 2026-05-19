@@ -224,7 +224,8 @@ export const memberMandates = pgTable("member_mandates", {
   sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
 }, (table) => ({
   memberLegislatureIdx: index("member_mandates_member_legislature_idx").on(table.memberId, table.legislatureId, table.chamber),
-  legislatureChamberIdx: index("member_mandates_legislature_chamber_idx").on(table.legislatureId, table.chamber)
+  legislatureChamberIdx: index("member_mandates_legislature_chamber_idx").on(table.legislatureId, table.chamber),
+  chamberPeriodIdx: index("member_mandates_chamber_period_idx").on(table.chamber, table.startsOn, table.endsOn)
 }));
 
 export const memberMandateRelations = pgTable("member_mandate_relations", {
@@ -250,7 +251,8 @@ export const memberGroupMemberships = pgTable("member_group_memberships", {
   sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
 }, (table) => ({
   memberPeriodIdx: index("member_group_memberships_member_period_idx").on(table.memberId, table.startsOn, table.endsOn),
-  groupPeriodIdx: index("member_group_memberships_group_period_idx").on(table.groupId, table.startsOn, table.endsOn)
+  groupPeriodIdx: index("member_group_memberships_group_period_idx").on(table.groupId, table.startsOn, table.endsOn),
+  groupMemberPeriodIdx: index("member_group_memberships_group_member_period_idx").on(table.groupId, table.memberId, table.startsOn, table.endsOn)
 }));
 
 export const memberPartyAffiliations = pgTable("member_party_affiliations", {
@@ -435,6 +437,7 @@ export const individualVotes = pgTable("individual_votes", {
 }, (table) => ({
   voteIdx: index("individual_votes_vote_idx").on(table.voteId),
   memberIdx: index("individual_votes_member_idx").on(table.memberId),
+  memberVoteIdx: index("individual_votes_member_vote_idx").on(table.memberId, table.voteId),
   groupIdx: index("individual_votes_group_idx").on(table.groupId)
 }));
 

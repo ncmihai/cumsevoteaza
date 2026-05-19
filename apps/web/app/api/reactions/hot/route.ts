@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
-import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import { analyticsEnabled, hashValue, isReactionEntityType, setVisitorCookie, visitorHashForRequest } from "@/lib/engagement";
+import { createWebDbSession } from "@/lib/server-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   if (!visitor) return NextResponse.json({ ok: false, disabled: true }, { status: 202 });
 
   const reactionId = `hot-${hashValue(`${body.entityType}:${body.entityId}:${visitor.visitorHash}`).slice(0, 40)}`;
-  const session = createDbSession();
+  const session = createWebDbSession();
   let count = 0;
   try {
     await session.db

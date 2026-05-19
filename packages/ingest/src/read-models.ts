@@ -217,7 +217,13 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
           m.id as entity_id,
           m.display_name as title,
           coalesce(pg.short_name, mm.chamber::text) as subtitle,
-          lower(m.display_name || ' ' || m.slug || ' ' || coalesce(pg.short_name, '') || ' ' || coalesce(p.short_name, '')) as search_text,
+          lower(translate(
+            m.display_name || ' ' || m.first_name || ' ' || m.last_name || ' ' || m.slug || ' ' ||
+            coalesce(m.source_ids::text, '') || ' ' || coalesce(pg.short_name, '') || ' ' ||
+            coalesce(pg.name, '') || ' ' || coalesce(p.short_name, '') || ' ' || coalesce(p.name, ''),
+            'ăâîșşțţĂÂÎȘŞȚŢ',
+            'aaissttAAISSTT'
+          )) as search_text,
           mm.chamber,
           mm.legislature_id,
           mm.starts_on as source_date,
@@ -246,7 +252,11 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
           b.id,
           b.title,
           coalesce(b.identifiers->>'deputies', b.identifiers->>'senate', b.status),
-          lower(b.title || ' ' || b.slug || ' ' || b.identifiers::text),
+          lower(translate(
+            b.title || ' ' || b.slug || ' ' || b.identifiers::text || ' ' || b.status,
+            'ăâîșşțţĂÂÎȘŞȚŢ',
+            'aaissttAAISSTT'
+          )),
           case when b.chamber_of_origin in ('senate', 'deputies') then b.chamber_of_origin::chamber else null end,
           l.id,
           bvs.submitted_on,
@@ -261,7 +271,11 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
           v.id,
           v.title,
           v.vote_type,
-          lower(v.title || ' ' || coalesce(b.title, '') || ' ' || coalesce(b.identifiers::text, '')),
+          lower(translate(
+            v.title || ' ' || v.id || ' ' || coalesce(b.title, '') || ' ' || coalesce(b.identifiers::text, ''),
+            'ăâîșşțţĂÂÎȘŞȚŢ',
+            'aaissttAAISSTT'
+          )),
           v.chamber,
           l.id,
           v.held_on,
@@ -276,7 +290,11 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
           p.id,
           p.short_name,
           p.name,
-          lower(p.short_name || ' ' || p.name || ' ' || p.slug),
+          lower(translate(
+            p.short_name || ' ' || p.name || ' ' || p.slug,
+            'ăâîșşțţĂÂÎȘŞȚŢ',
+            'aaissttAAISSTT'
+          )),
           null,
           null,
           null,

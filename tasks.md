@@ -291,6 +291,58 @@ implementation steps.
 - [ ] Set `ANALYTICS_SALT` in Vercel so production can record anonymous views, searches, and hot reactions.
 - [x] Apply migrations `0005` and `0006` to Neon, then run `npm run ingest:refresh-read-models`.
 
+## Active Milestone — Performance: Hybrid Cache + Postgres Search
+
+- [x] Add a reusable web-runtime DB session helper so public reads and lightweight write APIs do not open a fresh one-connection client for every helper call.
+- [x] Add development query timing logs with `CUMSEVOTEAZA_PERF_LOG=1` support.
+- [x] Add `unstable_cache` wrappers and cache tags for:
+  - homepage dashboard: 5 minutes
+  - vote/project directories: 10 minutes
+  - vote/project/member/party details: 15 minutes
+  - composition timeline/current composition: 15-60 minutes
+- [x] Revalidate public cache tags after the daily cron import:
+  - `home`
+  - `votes`
+  - `bills`
+  - `members`
+  - `parties`
+  - `composition`
+  - `search`
+- [x] Replace vote detail roster reads with scoped SQL for:
+  - selected vote
+  - linked bill/source
+  - group totals
+  - nominal votes
+  - chamber roster seats valid on that vote date
+- [x] Replace legacy vote/project directory reads with paginated explorer/read-model paths.
+- [x] Make project directory queries use `bill_vote_summaries` instead of recomputing bill event and vote counts per request.
+- [x] Make member directory DB-backed search/filter read a bounded SQL slice instead of loading all members, mandates, memberships, groups, and parties.
+- [x] Limit party pages to scoped group/member/vote joins instead of loading all memberships and all votes.
+- [x] Enable PostgreSQL performance/search support in Neon:
+  - `pg_stat_statements`
+  - `pg_trgm`
+  - `unaccent`
+- [x] Add performance indexes:
+  - `individual_votes(member_id, vote_id)`
+  - `member_group_memberships(group_id, member_id, starts_on, ends_on)`
+  - `member_mandates(chamber, starts_on, ends_on)`
+  - trigram GIN on `entity_search_index.search_text`
+  - GIN on `bills.identifiers`
+- [x] Normalize read-model search text for diacritics-insensitive member, bill, vote, and party search.
+- [x] Apply migration `0008_lush_captain_america.sql` to Neon.
+- [x] Refresh Neon read models after the search/read-model change:
+  - 2196 bill summaries
+  - 553 vote coverage rows
+  - 5265 member-legislature activity rows
+  - 8256 search-index rows
+- [x] Verify query plans on Neon:
+  - vote-date roster lookup: about 4 ms
+  - search-index last-name lookup: about 0.2 ms using trigram GIN
+  - bill directory by year: about 1.3 ms
+  - party member join sample: about 13 ms
+- [ ] Add automated regression tests for cached function keys and SQL-backed directory search.
+- [ ] Add production log sampling for slow server data functions after the next deploy.
+
 ## Active Milestone — Historical Members + Compoziții Foundation
 
 - [x] Pause broad `Voturi` / `Proiecte` expansion until the composition model is ready.
