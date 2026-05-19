@@ -293,6 +293,7 @@ Commands:
 - `npm run ingest:roster:crosscheck -- --legislature=2020 --no-files`
 - `npm run ingest:wikipedia:roster:all -- --no-files`
 - `npm run ingest:roster:crosscheck:all -- --no-files`
+- `npm run ingest:wikipedia:roster:import -- --all --chamber=senate --skip-existing --persist --no-files`
 
 Default roster URL policy:
 - `2016-2020`, `2020-2024`, and `2024-2028`: use the combined Wikipedia
@@ -317,6 +318,10 @@ All-legislature observations:
 - Use fixed legislature seat counts for seat maps and composition rendering;
   use the larger split-page member lists for Transfermarkt-style parliamentary
   career history.
+- The historical Senate fallback import currently uses Wikipedia rows only for
+  legislatures where official Senate rosters are still missing. It must be
+  treated as fallback/manual provenance until official source snapshots are
+  attached.
 - Several labels from Wikipedia are coalitions, electoral alliances, minority
   organizations, or non-affiliation states (`USL`, `ARD`, `PSD+PC`, `CDR`,
   `independent`, `neafiliat`) and should be modeled separately from political

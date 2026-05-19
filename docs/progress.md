@@ -1314,3 +1314,41 @@ Verification:
 - Verified locally that scrolling to 2020-2024, 2016-2020, 2012-2016, and
   2008-2012 updates the active stage text and chamber map counts for that
   legislature.
+
+## 2026-05-19 — Wikipedia Fallback Senate Rosters Imported
+
+- Added a provenance-aware Wikipedia roster import path for historical Senate
+  gaps:
+  - `npm run ingest:wikipedia:roster:import -- --all --chamber=senate --skip-existing --persist --no-files`.
+  - Existing official 2024 Senate mandates are detected and skipped.
+  - Imported fallback rows keep Wikipedia source URLs and snapshot IDs.
+- Imported historical Senate fallback mandates into Neon:
+  - 2020-2024: 136;
+  - 2016-2020: 136;
+  - 2012-2016: 179;
+  - 2008-2012: 137;
+  - 2004-2008: 166;
+  - 2000-2004: 162;
+  - 1996-2000: 154;
+  - 1992-1996: 158;
+  - 1990-1992: 128.
+- Rebuilt people links and read models after the import:
+  - people backfill: 5,467 members read, 3,614 people upserted, 5,466 members linked;
+  - read models: 2,196 bill/vote summaries, 553 vote coverage summaries,
+    5,258 member legislature activity rows, 8,249 search-index rows.
+- Verified `Compoziții` now renders capped Senate seat maps for every
+  legislature:
+  - 2024: 134 Senate / 330 Deputies;
+  - 2020: 136 Senate / 330 Deputies;
+  - 2016: 136 Senate / 329 Deputies;
+  - 2012: 176 Senate / 412 Deputies;
+  - 2008: 137 Senate / 334 Deputies;
+  - 2004: 137 Senate / 314 Deputies;
+  - 2000: 140 Senate / 345 Deputies;
+  - 1996: 143 Senate / 343 Deputies;
+  - 1992: 143 Senate / 341 Deputies;
+  - 1990: 119 Senate / 396 Deputies.
+- Caveat: older Wikipedia split legislature pages can list everyone who served
+  during a term, not only exact simultaneous seat holders. The UI therefore
+  uses fixed formal seat counts for chamber maps while preserving the larger
+  member lists for parliamentary history.

@@ -15,6 +15,8 @@ export interface WikipediaRosterRow {
   partyId?: string;
   observation?: string;
   wikiProfileUrl?: string;
+  sourceUrl?: string;
+  sourceSnapshotId?: string;
 }
 
 export interface WikipediaRosterPage {
@@ -46,6 +48,7 @@ export function parseWikipediaElectionRoster(
 ): WikipediaRosterPage {
   const legislature = options.legislature ?? legislatureFromUrlOrText(sourceUrl, html);
   const $ = cheerio.load(html);
+  const sourceSnapshot = snapshotFor("wikipedia-election-roster", sourceUrl, html, "partial");
   const rows: WikipediaRosterRow[] = [];
   const counts: Partial<Record<ChamberId, number>> = {};
 
@@ -93,13 +96,15 @@ export function parseWikipediaElectionRoster(
         partyLabel: partyLabel || undefined,
         partyId: party?.id,
         observation: observationIndex >= 0 ? cleanCellText(row[observationIndex]?.text) || undefined : undefined,
-        wikiProfileUrl: row[nameIndex]?.href ? absoluteWikipediaUrl(row[nameIndex]!.href!) : undefined
+        wikiProfileUrl: row[nameIndex]?.href ? absoluteWikipediaUrl(row[nameIndex]!.href!) : undefined,
+        sourceUrl,
+        sourceSnapshotId: sourceSnapshot.id
       });
     }
   });
 
   return {
-    sourceSnapshot: snapshotFor("wikipedia-election-roster", sourceUrl, html, rows.length > 0 ? "parsed" : "partial"),
+    sourceSnapshot: { ...sourceSnapshot, status: rows.length > 0 ? "parsed" : "partial" },
     sourceUrl,
     legislatureId: legislature.id,
     legislatureLabel: legislature.label,

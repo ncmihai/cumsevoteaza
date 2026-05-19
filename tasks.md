@@ -590,10 +590,16 @@ implementation steps.
 - [ ] Add mandate end-date parsing for CDEP profiles so current compositions can
   distinguish active members from people who served earlier in the same
   legislature but no longer hold the mandate.
+- [x] Add a provenance-aware Wikipedia fallback import/staging flow for
+  historical Senate and missing official rows; official 2024 Senate rows are
+  skipped and protected.
+- [x] Import Wikipedia fallback Senate rosters for 2020-2024 through
+  1990-1992 into Neon, then rerun people backfill and read-model refresh.
+- [x] Verify `Compoziții` Senate seat maps use fixed formal seat counts:
+  2024: 134, 2020: 136, 2016: 136, 2012: 176, 2008: 137,
+  2004: 137, 2000: 140, 1996: 143, 1992: 143, 1990: 119.
 - [ ] Find/import official historical Senate rosters before claiming complete
-  bicameral post-1989 roster coverage.
-- [ ] Add a provenance-aware Wikipedia fallback import/staging flow for
-  historical Senate and missing official rows; do not overwrite official
-  rows without a visible source status.
+  bicameral post-1989 roster coverage; current historical Senate rows are
+  marked as Wikipedia fallback/manual source data.
 - [ ] Model coalitions/electoral alliances such as `USL`, `ARD`, `PSD+PC`,
   `CDR`, and `DA PNL-PD` separately from parties.

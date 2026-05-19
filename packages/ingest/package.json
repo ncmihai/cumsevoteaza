@@ -18,6 +18,7 @@
     "roster:reset": "tsx src/cli.ts roster:reset",
     "wikipedia:roster": "tsx src/cli.ts wikipedia:roster",
     "wikipedia:roster:all": "tsx src/cli.ts wikipedia:roster:all",
+    "wikipedia:roster:import": "tsx src/cli.ts wikipedia:roster:import",
     "wikipedia:roster-index": "tsx src/cli.ts wikipedia:roster-index",
     "roster:crosscheck": "tsx src/cli.ts roster:crosscheck",
     "roster:crosscheck:all": "tsx src/cli.ts roster:crosscheck:all",

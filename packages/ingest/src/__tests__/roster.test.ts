@@ -5,6 +5,7 @@ import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRost
 import { legislature2020, legislature2024 } from "../parsers/roster";
 import { parseSenateMemberProfile, parseSenateRosterGroup, parseSenateRosterIndex } from "../parsers/senate-roster";
 import { defaultWikipediaRosterUrls, parseWikipediaElectionRoster, parseWikipediaRosterIndex } from "../parsers/wikipedia-roster";
+import { wikipediaRosterToParsedRoster } from "../wikipedia-roster-import";
 
 const fixtures = path.join(__dirname, "../fixtures");
 
@@ -150,6 +151,28 @@ describe("roster parsers", () => {
       "https://ro.wikipedia.org/wiki/Legislatura_1990-1992_(Camera_Deputa%C8%9Bilor)",
       "https://ro.wikipedia.org/wiki/Legislatura_1990-1992_(Senat)"
     ]);
+  });
+
+  it("converts Wikipedia Senate rows into provenance-marked fallback roster rows", () => {
+    const page = parseWikipediaElectionRoster(
+      read("wikipedia-election-roster.html"),
+      "https://ro.wikipedia.org/wiki/Lista_parlamentarilor_aleși_la_alegerile_din_România_din_2020",
+      { legislature: legislature2020 }
+    );
+    const roster = wikipediaRosterToParsedRoster(page, "senate");
+
+    expect(roster.chamber).toBe("senate");
+    expect(roster.members).toHaveLength(1);
+    expect(roster.members[0]?.id).toMatch(/^member-senate-wikipedia-2020-/);
+    expect(roster.members[0]?.sourceIds.wikipediaRoster).toContain("wikipedia.org");
+    expect(roster.mandates[0]).toEqual(
+      expect.objectContaining({
+        legislatureId: "leg-2020-2024",
+        chamber: "senate",
+        status: "ended"
+      })
+    );
+    expect(roster.groupMemberships[0]?.sourceSnapshotId).toBe(page.sourceSnapshot.id);
   });
 
   it("discovers Wikipedia legislature links from index pages", () => {

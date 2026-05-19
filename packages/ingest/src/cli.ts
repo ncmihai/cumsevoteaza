@@ -1,6 +1,9 @@
+import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { sql } from "drizzle-orm";
+import { createDbSession } from "@cumsevoteaza/db";
 import { parseChamberNominalVote } from "./parsers/chamber-vote";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "./parsers/deputies-roster";
 import { legislatureCatalog, legislatureFromFlag, partyCatalog, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
@@ -21,6 +24,7 @@ import { snapshotFor } from "./parsers/utils";
 import { refreshReadModels } from "./read-models";
 import { resetRosterData } from "./roster-reset";
 import { crosscheckWikipediaRoster } from "./roster-crosscheck";
+import { wikipediaRosterToParsedRoster } from "./wikipedia-roster-import";
 import {
   discoverDeputiesSources,
   discoverDeputiesVoteSources,
@@ -37,6 +41,8 @@ type RosterGroupRef = {
 };
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+
+loadLocalEnv();
 
 async function main() {
   const command = process.argv[2];
@@ -148,6 +154,32 @@ async function main() {
       summaries.push(wikipediaRosterSummary(parsed));
     }
     console.log(JSON.stringify(summaries, null, 2));
+    return;
+  }
+
+  if (command === "wikipedia:roster:import") {
+    const chamber = chamberFlag() ?? "senate";
+    const imports = [];
+    for (const legislature of hasFlag("all") ? allLegislaturesNewestFirst() : [rosterLegislature()]) {
+      const parsedPage = await importWikipediaRosterPage(legislature);
+      const parsedRoster = wikipediaRosterToParsedRoster(parsedPage, chamber);
+      const existingMandates = await existingMandateCount(parsedRoster.legislature.id, chamber);
+      const shouldSkip = hasFlag("skip-existing") && existingMandates > 0;
+      await writeImport(`wikipedia-roster-import-${chamber}-${parsedRoster.legislature.label}`, parsedRoster, JSON.stringify(parsedRoster, null, 2));
+      const persisted = hasFlag("persist") && !shouldSkip ? await persistRoster(parsedRoster) : undefined;
+      imports.push({
+        chamber,
+        legislature: parsedRoster.legislature.label,
+        existingMandates,
+        skipped: shouldSkip,
+        sources: parsedRoster.sourceSnapshots.length,
+        members: parsedRoster.members.length,
+        mandates: parsedRoster.mandates.length,
+        groups: parsedRoster.groups.length,
+        persisted
+      });
+    }
+    console.log(JSON.stringify(imports, null, 2));
     return;
   }
 
@@ -604,6 +636,22 @@ async function loadHtml(url: string): Promise<string> {
   return fetchOfficialSource(url);
 }
 
+async function existingMandateCount(legislatureId: string, chamber: "senate" | "deputies"): Promise<number> {
+  if (!process.env.DATABASE_URL) return 0;
+  const session = createDbSession();
+  try {
+    const rows = await session.db.execute<{ count: number }>(sql`
+      select count(*)::int as count
+      from member_mandates
+      where legislature_id = ${legislatureId}
+        and chamber = ${chamber}
+    `);
+    return Number(rows[0]?.count ?? 0);
+  } finally {
+    await session.close();
+  }
+}
+
 async function fetchWithFailureSnapshot(url: string, parser: string): Promise<string> {
   try {
     return await fetchOfficialSource(url, 3);
@@ -713,6 +761,19 @@ function senatePrefixesFlag(): Array<"B" | "BP" | "L" | "PLX"> | undefined {
 function chamberFlag(): "senate" | "deputies" | undefined {
   const value = flag("chamber");
   return value === "senate" || value === "deputies" ? value : undefined;
+}
+
+function loadLocalEnv() {
+  for (const file of [path.join(repoRoot, ".env"), path.join(repoRoot, "apps/web/.env.local")]) {
+    if (!existsSync(file)) continue;
+    for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
+      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (!match) continue;
+      const [, key, rawValue] = match;
+      if (!key || process.env[key] !== undefined) continue;
+      process.env[key] = rawValue?.replace(/^['"]|['"]$/g, "") ?? "";
+    }
+  }
 }
 
 function kindFlag(): "bill" | "vote" | undefined {

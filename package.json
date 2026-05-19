@@ -29,6 +29,7 @@
     "ingest:roster:reset": "npm --workspace @cumsevoteaza/ingest run roster:reset --",
     "ingest:wikipedia:roster": "npm --workspace @cumsevoteaza/ingest run wikipedia:roster --",
     "ingest:wikipedia:roster:all": "npm --workspace @cumsevoteaza/ingest run wikipedia:roster:all --",
+    "ingest:wikipedia:roster:import": "npm --workspace @cumsevoteaza/ingest run wikipedia:roster:import --",
     "ingest:wikipedia:roster-index": "npm --workspace @cumsevoteaza/ingest run wikipedia:roster-index --",
     "ingest:roster:crosscheck": "npm --workspace @cumsevoteaza/ingest run roster:crosscheck --",
     "ingest:roster:crosscheck:all": "npm --workspace @cumsevoteaza/ingest run roster:crosscheck:all --",
