@@ -7,6 +7,7 @@ import { createDbSession } from "@cumsevoteaza/db";
 import type { ChamberId } from "@cumsevoteaza/parliament-model";
 import { cleanupSupersededCdepHistoryRows } from "./cdep-history-cleanup";
 import { importCdepHistoryProfiles } from "./cdep-history-import";
+import { auditCurrentLegislature } from "./current-legislature-audit";
 import { parseChamberNominalVote } from "./parsers/chamber-vote";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "./parsers/deputies-roster";
 import { legislatureCatalog, legislatureFromFlag, partyCatalog, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
@@ -296,6 +297,17 @@ async function main() {
 
   if (command === "import:pending") {
     console.log(JSON.stringify(await importPendingDiscoveries(syncOptions()), null, 2));
+    return;
+  }
+
+  if (command === "audit:current-legislature") {
+    const result = await auditCurrentLegislature({
+      legislatureId: flag("legislature-id") ?? (flag("legislature") ? `leg-${flag("legislature")}` : undefined),
+      chamber: chamberFlag(),
+      sampleLimit: numberFlag("sample-limit")
+    });
+    await writeImport("audit-current-legislature", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
     return;
   }
 

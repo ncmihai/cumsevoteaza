@@ -1714,3 +1714,31 @@ Verification:
   - `npm run typecheck` passed;
   - `npm run test` passed;
   - `npm run build` passed after allowing Turbopack's local helper process.
+
+## 2026-05-20 — Current Legislature Bill/Vote Audit
+
+- Added `npm run ingest:audit:current-legislature` as a read-only
+  reconciliation command for the active legislature.
+- The audit compares official discoveries and persisted records using:
+  - official identifier;
+  - source URL;
+  - chamber;
+  - date;
+  - normalized title;
+  - vote totals and coverage level.
+- The first Neon-backed audit for `leg-2024-2028` reported:
+  - discoveries: 1,366 bills and 486 votes;
+  - DB rows: 1,121 bills and 420 votes;
+  - pending discoveries: 87 bills and 88 votes;
+  - 18 votes without linked bills;
+  - 3 weak/generic Senate vote titles;
+  - 203 imported/partial discoveries without a high-confidence DB match;
+  - several cross-chamber split bills sharing identifiers, which should become
+    the next lifecycle merge/reconciliation task instead of being auto-merged
+    by title alone.
+- Verification:
+  - `npm run typecheck` passed;
+  - `npm run test` passed;
+  - `npm run build` passed;
+  - `npm run ingest:audit:current-legislature -- --no-files --sample-limit=10`
+    passed after allowing `tsx` to create its local IPC pipe.

@@ -33,6 +33,7 @@
     "backfill:2024": "tsx src/cli.ts backfill:2024",
     "sync:daily": "tsx src/cli.ts sync:daily",
     "import:pending": "tsx src/cli.ts import:pending",
+    "audit:current-legislature": "tsx src/cli.ts audit:current-legislature",
     "refresh-read-models": "tsx src/cli.ts refresh-read-models"
   },
   "dependencies": {

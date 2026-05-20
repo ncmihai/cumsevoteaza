@@ -44,6 +44,7 @@
     "ingest:backfill:2024": "npm --workspace @cumsevoteaza/ingest run backfill:2024 --",
     "ingest:sync:daily": "npm --workspace @cumsevoteaza/ingest run sync:daily --",
     "ingest:import:pending": "npm --workspace @cumsevoteaza/ingest run import:pending --",
+    "ingest:audit:current-legislature": "npm --workspace @cumsevoteaza/ingest run audit:current-legislature --",
     "ingest:refresh-read-models": "npm --workspace @cumsevoteaza/ingest run refresh-read-models --",
     "probe:cdep-history": "python3 tools/cdep-history-probe/cdep_history_probe.py",
     "pipeline:parliament": "python3 tools/parliament-pipeline/parliament_pipeline.py",

@@ -812,3 +812,16 @@ implementation steps.
 - [x] Show the exact composition date in the pinned government stage.
 - [ ] Add visible data-quality badges when active mandate counts are below or
   above formal seat counts for that date.
+
+## Current Legislature Bill/Vote Reconciliation
+
+- [x] Add a read-only current-legislature audit command:
+  `npm run ingest:audit:current-legislature`.
+- [x] Audit bills and votes using official identifier/source URL plus
+  normalized title/date/chamber/totals fingerprints instead of ID-only checks.
+- [x] Report high-signal issues:
+  imported discoveries without DB matches, duplicate official bill
+  identifiers, duplicate title/date/chamber fingerprints, votes without linked
+  bills, generic vote subjects, and non-nominal coverage.
+- [ ] Use the audit output to design the next persistence fix:
+  cross-chamber bill lifecycle merging and vote-to-bill reconciliation.
