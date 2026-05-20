@@ -26,7 +26,7 @@ export default async function LocaleLayout({
       <div className="min-h-screen">
         <header className="border-b border-slate-300 bg-white">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-            <Link href={`/${locale}`} className="rounded-md outline-none ring-offset-2 ring-offset-white focus-visible:ring-2 focus-visible:ring-[#FF9F00]">
+            <Link href={`/${locale}`} aria-label="cumsevoteaza" className="rounded-md outline-none ring-offset-2 ring-offset-white focus-visible:ring-2 focus-visible:ring-[#FF9F00]">
               <BrandLogo />
             </Link>
             <nav className="flex items-center gap-1 text-sm text-slate-700">
