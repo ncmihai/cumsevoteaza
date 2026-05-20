@@ -9,6 +9,7 @@ implementation steps.
 - V2 persistence layer is locally verified: Docker Postgres, Drizzle migration, persistent Senate importers, DB-backed bill/vote pages with demo fallback.
 - Deployment layer in progress for Vercel repo `https://github.com/ncmihai/cumvoteaza`.
 - Scope is private-first, bilingual, data-first, and factual only.
+- Architecture decision: keep Next.js as the public web/API layer; use Python as a local-first, file-first data pipeline for crawling, parsing, auditing, and backfill preparation. TypeScript remains the canonical DB persistence layer.
 
 ## Active Milestone — Data Proof + First UI
 
@@ -102,6 +103,76 @@ implementation steps.
   - Ion Rotaru Senate 2004 profile with replacement relation
   - Constantin Tămagă Deputies 2004 profile
 - [x] Refresh people links and read models after official sample imports.
+- [x] Add separate CDEP history probe under `tools/cdep-history-probe`:
+  - file-first Python crawler, no DB writes
+  - generates all official roster URL patterns from 1990-present
+  - follows official `Activitate parlamentară` profile links as a deduped career graph
+  - saves raw snapshots and parsed JSONL under ignored `data/cdep-history`
+  - captures profile photos, period logos, career links, parties, groups, committees, constituency links, and activity links
+- [x] Run the clean 2004 base batch without career expansion:
+  - 541 official profiles
+  - 378 Deputies profiles
+  - 163 Senate profiles
+  - 71 replacement relations
+- [x] Add CDEP history audit command:
+  - reads parsed JSONL
+  - reports missing fields, duplicate names, replacement count, and profile distribution
+  - optionally compares counts with Postgres through `psql` when available
+- [x] Extend CDEP history audit to compare against Postgres through the repo's Node Postgres driver when local `psql` is unavailable.
+- [x] Generate the 2004 audit against Neon:
+  - Deputies matched exactly: probe 378, Postgres 378
+  - Senate differed: probe 163, Postgres 167
+  - Senate mismatch is mostly from Wikipedia-derived naming/dirty rows, including one `?` row; official CDEP import should replace this as canonical data.
+- [x] Add CDEP import preview command:
+  - `npm run probe:cdep-history -- preview-import`
+  - creates person candidates from official career-link graph edges
+  - separates imported profile keys from missing future career profile keys
+- [x] Audit CDEP history probe output on a full 2004 Deputies/Senate sample before importing into Postgres.
+- [x] Add dry-run CDEP history importer:
+  - `npm run ingest:cdep-history:import -- --legislature=2004`
+  - converts parsed official CDEP profile JSONL into the existing `ParsedRoster` shape
+  - reuses the existing `persistRoster` path only when `--persist` is explicitly passed
+  - keeps old Wikipedia-derived rows untouched until a deliberate cleanup/replacement pass
+- [x] Dry-run the 2004 official CDEP import:
+  - Deputies: 378 members, 378 mandates, 43 replacement relations
+  - Senate: 163 members, 163 mandates, 21 replacement relations
+  - warnings are explicit: 20 minority Deputy rows have no official constituency link; historical formations are stored separately from canonical parties.
+- [x] Save manual review files for the 20 missing-constituency warnings:
+  - `data/cdep-history/reports/manual-warning-review-2004-2008.json`
+  - `data/cdep-history/reports/manual-warning-review-2004-2008.csv`
+  - includes legislature, chamber, member name, official id, profile key, official profile URL, party labels, group labels, and validation date.
+- [x] Apply the 2004 official CDEP import to Docker/local Postgres once Docker is reachable:
+  - local migrations applied successfully
+  - official local mandate counts: 378 Deputies, 163 Senate
+  - official local replacement relations: 43 Deputies, 21 Senate
+  - local missing constituency count: 20 Deputies, matching the manual review file
+- [x] Refresh local people links and read models after the official 2004 import:
+  - people backfill: 1,005 members read, 998 people upserted, 1,005 members linked
+  - read models: 1,005 member legislature activity rows, 1,040 search-index rows
+- [x] Apply the verified 2004 official CDEP import to Neon:
+  - Deputies imported first: 378 official CDEP mandates
+  - combined import stalled after Deputies, so roster persistence was changed from broad `Promise.all` writes to controlled sequential writes for Neon reliability
+  - Senate imported after batching fix: 163 official CDEP mandates
+  - replacement relations in Neon: 43 Deputies, 21 Senate
+- [x] Clean superseded 2004 Senate Wikipedia-derived rows from Neon:
+  - removed 166 old non-CDEP Senate mandates
+  - final 2004 Neon counts: 378 Deputies, 163 Senate, 0 non-CDEP mandates
+- [x] Refresh Neon read models after 2004 official import:
+  - bill/vote summaries: 2,196
+  - vote coverage summaries: 553
+  - member legislature activity rows: 5,261
+  - search-index rows: 8,436
+  - linked members verified: 5,473
+- [x] Add broader Python parliament pipeline umbrella:
+  - `npm run pipeline:parliament -- domains`
+  - `npm run pipeline:parliament -- plan historical-members`
+  - `npm run pipeline:parliament -- cdep-members <command>`
+  - current implemented domain delegates to the proven CDEP member-history probe
+  - future `votes-projects` domain is documented as planned, file-first output under `data/parliament-pipeline/`
+- [x] Add Python pipeline tests and wire them into root `npm run test`:
+  - validates the file-first boundary
+  - validates the historical-member workflow plan
+  - validates the umbrella CLI delegates 2004 CDEP roster URL generation correctly
 
 ## Active Milestone — Chamber Vote Map
 
@@ -647,6 +718,44 @@ implementation steps.
     pages, with all advertised group counts matching parsed counts.
 - [x] Reimport official CDEP Deputies profile rosters for 2020, 2016, 2012,
   2008, 2004, 2000, 1996, 1992, and 1990 legislatures.
+- [x] Crawl official CDEP `structura.de` roster/profile pages locally for both
+  chambers across all post-1989 legislatures, 1990-2024.
+- [x] Import the official CDEP-history crawl into local Docker Postgres for both
+  chambers across 1990, 1992, 1996, 2000, 2004, 2008, 2012, 2016, 2020, and
+  2024 legislatures.
+- [x] Compare local mandate counts against the Python crawl counts:
+  all CDEP-history counts match; local 2024 Senate still has 134 legacy
+  `senate-member-profile` rows alongside 137 CDEP-history rows.
+- [x] Decide canonical handling for duplicated 2024 Senate data: CDEP-history
+  rows are canonical because they include cross-legislature and replacement
+  information.
+- [x] Add `ingest:cdep-history:cleanup` as a dry-run-first command that removes
+  superseded non-CDEP mandate/profile rows where CDEP-history rows exist for
+  the same legislature and chamber, while keeping member rows that still have
+  vote references.
+- [x] Run the cleanup locally for duplicated 2024 Senate rows:
+  removed 134 `senate-member-profile` mandates and related legacy
+  memberships/affiliations/committee/role rows; 2024 Senate now has 137
+  CDEP-history mandates and 0 other mandate rows locally.
+- [x] Make the public search read model ignore member rows that no longer have
+  any mandate, so retained vote-reference-only legacy members do not appear as
+  searchable parliamentarians.
+- [x] Show the current period CDEP party/group logo in the member profile
+  header, using the `logo_url` parsed from official CDEP profile pages.
+- [x] Upgrade the member profile history table into grouped legislature
+  sections with compact chamber/date summaries, internal scrolling, translated
+  history row types, and period logo cues.
+- [x] Promote the full official CDEP-history import to Neon for both chambers
+  across all post-1989 legislatures.
+- [x] Run `ingest:cdep-history:cleanup -- --confirm` against Neon after
+  promotion: removed superseded Senate fallback/profile mandate rows wherever
+  CDEP-history rows exist.
+- [x] Rerun people backfill and read-model refresh against Neon after CDEP
+  promotion and cleanup.
+- [x] Optimize production promotion writes:
+  - roster persistence now uses batched upserts instead of one DB round trip
+    per row;
+  - people backfill now updates member/person links in batches.
 - [x] Rebuild people links and read models after roster cleanup.
 - [x] Verify all imported mandate constituency fields are clean:
   `dirty_constituencies = 0` for every imported legislature/chamber.
@@ -682,8 +791,24 @@ implementation steps.
 - [x] Verify `Compoziții` Senate seat maps use fixed formal seat counts:
   2024: 134, 2020: 136, 2016: 136, 2012: 176, 2008: 137,
   2004: 137, 2000: 140, 1996: 143, 1992: 143, 1990: 119.
-- [ ] Find/import official historical Senate rosters before claiming complete
-  bicameral post-1989 roster coverage; current historical Senate rows are
-  marked as Wikipedia fallback/manual source data.
+- [x] Find/import official historical Senate rosters locally before claiming
+  complete bicameral post-1989 roster coverage in production; official CDEP
+  profile pages now cover Senate and Deputies in the local Docker database.
+- [x] Promote the verified local official Senate/Deputies history import to
+  Neon after the duplicated 2024 Senate source-priority decision is settled.
 - [ ] Model coalitions/electoral alliances such as `USL`, `ARD`, `PSD+PC`,
   `CDR`, and `DA PNL-PD` separately from parties.
+
+## Composition Active-Date Maps
+
+- [x] Change `Compoziții` maps to use a representative composition date per
+  legislature:
+  - current legislature uses today;
+  - historical legislatures use the earliest date where chamber roster data is
+    available, bounded by legislature start.
+- [x] Use strict date-active memberships for composition maps; do not fall back
+  to a later/future group label when a member has no active group on the
+  displayed date.
+- [x] Show the exact composition date in the pinned government stage.
+- [ ] Add visible data-quality badges when active mandate counts are below or
+  above formal seat counts for that date.

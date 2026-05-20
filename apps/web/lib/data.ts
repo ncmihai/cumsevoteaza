@@ -92,6 +92,7 @@ export interface MemberPageData {
   mandate?: MemberMandate;
   group?: ParliamentaryGroup;
   party?: Party;
+  currentLogoUrl?: string;
   source?: SourceSnapshot;
   legislatures: Legislature[];
   selectedLegislature?: Legislature;
@@ -330,6 +331,7 @@ async function getMemberPageDataUncached(slug: string, options: { legislature?: 
     mandate: selectedMandate,
     group,
     party,
+    currentLogoUrl: groupMembership?.logoUrl,
     source,
     legislatures,
     selectedLegislature,
@@ -722,6 +724,7 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
       mandate,
       group,
       party,
+      currentLogoUrl: currentMembership?.logoUrl,
       source: sourceRow ? mapSource(sourceRow) : undefined,
       legislatures,
       selectedLegislature,
@@ -1627,6 +1630,7 @@ function buildMemberHistory(input: {
       id: `history-${mandate.id}`,
       startsOn: mandate.startsOn,
       endsOn: mandate.endsOn,
+      legislatureId: mandate.legislatureId,
       chamber: mandate.chamber,
       type: "mandate" as const,
       label: "Mandat parlamentar",
@@ -1641,6 +1645,7 @@ function buildMemberHistory(input: {
           id: `history-${relation.id}`,
           startsOn: mandate.startsOn,
           endsOn: mandate.endsOn,
+          legislatureId: mandate.legislatureId,
           chamber: mandate.chamber,
           type: "relation" as const,
           label: "Înlocuire mandat",
@@ -1652,11 +1657,13 @@ function buildMemberHistory(input: {
     }),
     ...input.groupMemberships.map((membership) => {
       const group = input.groups.find((item) => item.id === membership.groupId);
+      const mandate = mandateForMemberPeriod(input.mandates, membership.memberId, membership.startsOn);
       return {
         id: `history-${membership.id}`,
         startsOn: membership.startsOn,
         endsOn: membership.endsOn,
-        chamber: group?.chamber ?? "senate",
+        legislatureId: mandate?.legislatureId,
+        chamber: mandate?.chamber ?? group?.chamber ?? "senate",
         type: "group" as const,
         label: group?.shortName ?? membership.groupId,
         details: group?.name ?? "Grup parlamentar",
@@ -1666,11 +1673,13 @@ function buildMemberHistory(input: {
     }),
     ...input.partyAffiliations.map((affiliation) => {
       const party = input.parties.find((item) => item.id === affiliation.partyId);
+      const mandate = mandateForMemberPeriod(input.mandates, affiliation.memberId, affiliation.startsOn);
       return {
         id: `history-${affiliation.id}`,
         startsOn: affiliation.startsOn,
         endsOn: affiliation.endsOn,
-        chamber: chamberForMemberPeriod(input.mandates, affiliation.memberId, affiliation.startsOn),
+        legislatureId: mandate?.legislatureId,
+        chamber: mandate?.chamber ?? chamberForMemberPeriod(input.mandates, affiliation.memberId, affiliation.startsOn),
         type: "party" as const,
         label: party?.shortName ?? affiliation.partyId,
         details: party?.name ?? "Formațiune politică",
@@ -1682,6 +1691,7 @@ function buildMemberHistory(input: {
       id: `history-${committee.id}`,
       startsOn: committee.startsOn,
       endsOn: committee.endsOn,
+      legislatureId: mandateForMemberPeriod(input.mandates, committee.memberId, committee.startsOn)?.legislatureId,
       chamber: committee.chamber,
       type: "committee" as const,
       label: committee.committeeName,
@@ -1692,6 +1702,7 @@ function buildMemberHistory(input: {
       id: `history-${role.id}`,
       startsOn: role.startsOn,
       endsOn: role.endsOn,
+      legislatureId: mandateForMemberPeriod(input.mandates, role.memberId, role.startsOn)?.legislatureId,
       chamber: role.chamber,
       type: "role" as const,
       label: role.title,
@@ -1731,14 +1742,18 @@ function cleanHistoryDetail(value?: string): string | undefined {
   return cleaned || undefined;
 }
 
-function chamberForMemberPeriod(mandates: MemberMandate[], memberId: string, date: string): MemberMandate["chamber"] {
+function mandateForMemberPeriod(mandates: MemberMandate[], memberId: string, date: string): MemberMandate | undefined {
+  const memberMandates = mandates.filter((mandate) => mandate.memberId === memberId);
   return (
-    mandates
-      .filter((mandate) => mandate.memberId === memberId && mandate.startsOn <= date && (!mandate.endsOn || mandate.endsOn >= date))
-      .sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0]?.chamber ??
-    mandates.filter((mandate) => mandate.memberId === memberId).sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0]?.chamber ??
-    "deputies"
+    memberMandates
+      .filter((mandate) => mandate.startsOn <= date && (!mandate.endsOn || mandate.endsOn >= date))
+      .sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0] ??
+    memberMandates.sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0]
   );
+}
+
+function chamberForMemberPeriod(mandates: MemberMandate[], memberId: string, date: string): MemberMandate["chamber"] {
+  return mandateForMemberPeriod(mandates, memberId, date)?.chamber ?? "deputies";
 }
 
 type DateValue = Date | string;

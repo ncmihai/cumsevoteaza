@@ -14,7 +14,7 @@
     "dev": "npm --workspace @cumsevoteaza/web run dev",
     "build": "npm --workspace @cumsevoteaza/web run build",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present && npm run test:python-pipeline",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:generate": "npm --workspace @cumsevoteaza/db run generate",
@@ -26,6 +26,8 @@
     "ingest:senate:roster": "npm --workspace @cumsevoteaza/ingest run senate:roster --",
     "ingest:deputies:roster": "npm --workspace @cumsevoteaza/ingest run deputies:roster --",
     "ingest:official-careers": "npm --workspace @cumsevoteaza/ingest run official-careers --",
+    "ingest:cdep-history:import": "npm --workspace @cumsevoteaza/ingest run cdep-history:import --",
+    "ingest:cdep-history:cleanup": "npm --workspace @cumsevoteaza/ingest run cdep-history:cleanup --",
     "ingest:roster:all": "npm --workspace @cumsevoteaza/ingest run roster:all --",
     "ingest:roster:reset": "npm --workspace @cumsevoteaza/ingest run roster:reset --",
     "ingest:wikipedia:roster": "npm --workspace @cumsevoteaza/ingest run wikipedia:roster --",
@@ -42,7 +44,10 @@
     "ingest:backfill:2024": "npm --workspace @cumsevoteaza/ingest run backfill:2024 --",
     "ingest:sync:daily": "npm --workspace @cumsevoteaza/ingest run sync:daily --",
     "ingest:import:pending": "npm --workspace @cumsevoteaza/ingest run import:pending --",
-    "ingest:refresh-read-models": "npm --workspace @cumsevoteaza/ingest run refresh-read-models --"
+    "ingest:refresh-read-models": "npm --workspace @cumsevoteaza/ingest run refresh-read-models --",
+    "probe:cdep-history": "python3 tools/cdep-history-probe/cdep_history_probe.py",
+    "pipeline:parliament": "python3 tools/parliament-pipeline/parliament_pipeline.py",
+    "test:python-pipeline": "python3 -m unittest discover -s tools/parliament-pipeline/tests"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

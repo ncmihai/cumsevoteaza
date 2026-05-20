@@ -15,6 +15,8 @@
     "senate:roster": "tsx src/cli.ts senate:roster",
     "deputies:roster": "tsx src/cli.ts deputies:roster",
     "official-careers": "tsx src/cli.ts official-careers",
+    "cdep-history:import": "tsx src/cli.ts cdep-history:import",
+    "cdep-history:cleanup": "tsx src/cli.ts cdep-history:cleanup",
     "roster:all": "tsx src/cli.ts roster:all",
     "roster:reset": "tsx src/cli.ts roster:reset",
     "wikipedia:roster": "tsx src/cli.ts wikipedia:roster",

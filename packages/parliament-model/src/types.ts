@@ -315,6 +315,7 @@ export interface MemberHistoryRow {
   id: string;
   startsOn: string;
   endsOn?: string;
+  legislatureId?: string;
   chamber: ChamberId;
   type: "mandate" | "group" | "party" | "committee" | "role" | "relation";
   label: string;

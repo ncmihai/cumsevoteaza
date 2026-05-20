@@ -148,25 +148,25 @@ export async function persistRoster(parsed: ParsedRoster) {
   const session = createDbSession();
   try {
     await upsertLegislature(session.db, parsed.legislature);
-    await Promise.all(parsed.sourceSnapshots.map((source) => upsertSourceSnapshot(session.db, source)));
-    await Promise.all(parsed.parties.map((party) => upsertParty(session.db, party)));
-    await Promise.all(parsed.groups.map((group) => upsertGroup(session.db, group)));
-    await Promise.all(parsed.members.map((member) => upsertMember(session.db, member)));
-    await Promise.all(parsed.mandates.map((mandate) => upsertMemberMandate(session.db, mandate)));
+    await upsertSourceSnapshots(session.db, parsed.sourceSnapshots);
+    await upsertParties(session.db, parsed.parties);
+    await upsertGroups(session.db, parsed.groups);
+    await upsertMembers(session.db, parsed.members);
+    await upsertMemberMandates(session.db, parsed.mandates);
     await deleteRosterMandateRelations(
       session.db,
       parsed.mandates.map((mandate) => mandate.id)
     );
-    await Promise.all((parsed.mandateRelations ?? []).map((relation) => upsertMemberMandateRelation(session.db, relation)));
+    await upsertMemberMandateRelations(session.db, parsed.mandateRelations ?? []);
     await applyReplacementEndDates(session.db, parsed);
     await deleteRosterMemberDetails(
       session.db,
       parsed.members.map((member) => member.id)
     );
-    await Promise.all(parsed.groupMemberships.map((membership) => upsertMemberGroupMembership(session.db, membership)));
-    await Promise.all(parsed.partyAffiliations.map((affiliation) => upsertMemberPartyAffiliation(session.db, affiliation)));
-    await Promise.all(parsed.committeeMemberships.map((membership) => upsertMemberCommitteeMembership(session.db, membership)));
-    await Promise.all(parsed.roles.map((role) => upsertMemberRole(session.db, role)));
+    await upsertMemberGroupMemberships(session.db, parsed.groupMemberships);
+    await upsertMemberPartyAffiliations(session.db, parsed.partyAffiliations);
+    await upsertMemberCommitteeMemberships(session.db, parsed.committeeMemberships);
+    await upsertMemberRoles(session.db, parsed.roles);
 
     return {
       chamber: parsed.chamber,
@@ -185,6 +185,20 @@ export async function persistRoster(parsed: ParsedRoster) {
   } finally {
     await session.close();
   }
+}
+
+async function persistEach<T>(items: T[], task: (item: T) => Promise<void>) {
+  for (const item of items) {
+    await task(item);
+  }
+}
+
+function chunks<T>(items: T[], size = 250): T[][] {
+  const result: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    result.push(items.slice(index, index + size));
+  }
+  return result;
 }
 
 async function deleteRosterMemberDetails(db: Db, memberIds: string[]) {
@@ -241,6 +255,38 @@ async function upsertSourceSnapshot(db: Db, source: SourceSnapshot) {
     });
 }
 
+async function upsertSourceSnapshots(db: Db, sources: SourceSnapshot[]) {
+  if (sources.length === 0) return;
+  for (const batch of chunks(sources)) {
+    await db
+      .insert(schema.sourceSnapshots)
+      .values(
+        batch.map((source) => ({
+          id: source.id,
+          sourceUrl: source.sourceUrl,
+          fetchedAt: new Date(source.fetchedAt),
+          contentHash: source.contentHash,
+          parser: source.parser,
+          parserVersion: source.parserVersion,
+          status: source.status,
+          notes: source.notes
+        }))
+      )
+      .onConflictDoUpdate({
+        target: schema.sourceSnapshots.id,
+        set: {
+          sourceUrl: sql`excluded.source_url`,
+          fetchedAt: sql`excluded.fetched_at`,
+          contentHash: sql`excluded.content_hash`,
+          parser: sql`excluded.parser`,
+          parserVersion: sql`excluded.parser_version`,
+          status: sql`excluded.status`,
+          notes: sql`excluded.notes`
+        }
+      });
+  }
+}
+
 async function upsertGroup(db: Db, group: ParliamentaryGroup) {
   await db
     .insert(schema.parliamentaryGroups)
@@ -257,6 +303,25 @@ async function upsertGroup(db: Db, group: ParliamentaryGroup) {
     });
 }
 
+async function upsertGroups(db: Db, groups: ParliamentaryGroup[]) {
+  if (groups.length === 0) return;
+  for (const batch of chunks(groups)) {
+    await db
+      .insert(schema.parliamentaryGroups)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: schema.parliamentaryGroups.id,
+        set: {
+          partyId: sql`excluded.party_id`,
+          chamber: sql`excluded.chamber`,
+          shortName: sql`excluded.short_name`,
+          name: sql`excluded.name`,
+          color: sql`excluded.color`
+        }
+      });
+  }
+}
+
 async function upsertParty(db: Db, party: Party) {
   await db
     .insert(schema.parties)
@@ -270,6 +335,24 @@ async function upsertParty(db: Db, party: Party) {
         color: party.color
       }
     });
+}
+
+async function upsertParties(db: Db, parties: Party[]) {
+  if (parties.length === 0) return;
+  for (const batch of chunks(parties)) {
+    await db
+      .insert(schema.parties)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: schema.parties.id,
+        set: {
+          slug: sql`excluded.slug`,
+          shortName: sql`excluded.short_name`,
+          name: sql`excluded.name`,
+          color: sql`excluded.color`
+        }
+      });
+  }
 }
 
 async function upsertMember(db: Db, member: Member) {
@@ -315,9 +398,42 @@ function isMemberSlugUniqueViolation(error: unknown): boolean {
 
 async function upsertMembers(db: Db, members: Member[]) {
   if (members.length === 0) return;
-  for (const member of members) {
-    await upsertMember(db, member);
+  const slugs = uniqueStrings(members.map((member) => member.slug));
+  const existingRows =
+    slugs.length > 0
+      ? await db.select({ id: schema.members.id, slug: schema.members.slug }).from(schema.members).where(inArray(schema.members.slug, slugs))
+      : [];
+  const slugOwner = new Map(existingRows.map((row) => [row.slug, row.id]));
+  const seenSlugs = new Set<string>();
+  const values = members.map((member) => {
+    let slug = member.slug;
+    if ((slugOwner.has(slug) && slugOwner.get(slug) !== member.id) || seenSlugs.has(slug)) {
+      slug = `${member.slug}-${member.id.replace(/^member-/, "")}`;
+    }
+    seenSlugs.add(slug);
+    return { ...member, slug };
+  });
+
+  for (const batch of chunks(values)) {
+    await db
+      .insert(schema.members)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: schema.members.id,
+        set: {
+          personId: sql`excluded.person_id`,
+          slug: sql`excluded.slug`,
+          firstName: sql`excluded.first_name`,
+          lastName: sql`excluded.last_name`,
+          displayName: sql`excluded.display_name`,
+          sourceIds: sql`excluded.source_ids`
+        }
+      });
   }
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values)];
 }
 
 async function insertMissingMembers(db: Db, members: Member[]) {
@@ -371,10 +487,10 @@ export async function backfillPeopleFromMembers() {
     }
 
     const people = [...peopleById.values()];
-    if (people.length > 0) {
+    for (const batch of chunks(people)) {
       await session.db
         .insert(schema.people)
-        .values(people)
+        .values(batch)
         .onConflictDoUpdate({
           target: schema.people.id,
           set: {
@@ -387,15 +503,19 @@ export async function backfillPeopleFromMembers() {
     }
 
     let linkedMembers = 0;
-    for (const member of memberRows) {
+    const memberLinks = memberRows.flatMap((member) => {
       const normalizedName = normalizePersonName(member.displayName);
-      if (!normalizedName) continue;
-      const personId = `person-${normalizedName}`;
-      await session.db
-        .update(schema.members)
-        .set({ personId })
-        .where(eq(schema.members.id, member.id));
-      linkedMembers += 1;
+      return normalizedName ? [{ id: member.id, personId: `person-${normalizedName}` }] : [];
+    });
+    for (const batch of chunks(memberLinks)) {
+      const values = sql.join(batch.map((member) => sql`(${member.id}, ${member.personId})`), sql`,`);
+      await session.db.execute(sql`
+        update ${schema.members} as m
+        set person_id = v.person_id
+        from (values ${values}) as v(id, person_id)
+        where m.id = v.id
+      `);
+      linkedMembers += batch.length;
     }
 
     return {
@@ -587,6 +707,28 @@ async function upsertMemberMandate(db: Db, mandate: MemberMandate) {
     });
 }
 
+async function upsertMemberMandates(db: Db, mandates: MemberMandate[]) {
+  if (mandates.length === 0) return;
+  for (const batch of chunks(mandates)) {
+    await db
+      .insert(schema.memberMandates)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: schema.memberMandates.id,
+        set: {
+          memberId: sql`excluded.member_id`,
+          legislatureId: sql`excluded.legislature_id`,
+          chamber: sql`excluded.chamber`,
+          startsOn: sql`excluded.starts_on`,
+          endsOn: sql`excluded.ends_on`,
+          constituency: sql`excluded.constituency`,
+          status: sql`excluded.status`,
+          sourceSnapshotId: sql`excluded.source_snapshot_id`
+        }
+      });
+  }
+}
+
 async function upsertMemberMandateRelation(db: Db, relation: MemberMandateRelation) {
   const relatedMemberId = relation.relatedMemberId && (await memberExists(db, relation.relatedMemberId)) ? relation.relatedMemberId : undefined;
   await db
@@ -603,6 +745,26 @@ async function upsertMemberMandateRelation(db: Db, relation: MemberMandateRelati
         sourceSnapshotId: relation.sourceSnapshotId
       }
     });
+}
+
+async function upsertMemberMandateRelations(db: Db, relations: MemberMandateRelation[]) {
+  if (relations.length === 0) return;
+  for (const batch of chunks(relations)) {
+    await db
+      .insert(schema.memberMandateRelations)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: schema.memberMandateRelations.id,
+        set: {
+          mandateId: sql`excluded.mandate_id`,
+          relation: sql`excluded.relation`,
+          relatedMemberId: sql`excluded.related_member_id`,
+          relatedName: sql`excluded.related_name`,
+          relatedOfficialUrl: sql`excluded.related_official_url`,
+          sourceSnapshotId: sql`excluded.source_snapshot_id`
+        }
+      });
+  }
 }
 
 async function memberExists(db: Db, memberId: string): Promise<boolean> {
@@ -653,6 +815,26 @@ async function upsertMemberGroupMembership(db: Db, membership: MemberGroupMember
     });
 }
 
+async function upsertMemberGroupMemberships(db: Db, memberships: MemberGroupMembership[]) {
+  if (memberships.length === 0) return;
+  for (const batch of chunks(memberships)) {
+    await db
+      .insert(schema.memberGroupMemberships)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: schema.memberGroupMemberships.id,
+        set: {
+          memberId: sql`excluded.member_id`,
+          groupId: sql`excluded.group_id`,
+          startsOn: sql`excluded.starts_on`,
+          endsOn: sql`excluded.ends_on`,
+          logoUrl: sql`excluded.logo_url`,
+          sourceSnapshotId: sql`excluded.source_snapshot_id`
+        }
+      });
+  }
+}
+
 async function upsertMemberPartyAffiliation(db: Db, affiliation: MemberPartyAffiliation) {
   await db
     .insert(schema.memberPartyAffiliations)
@@ -668,6 +850,26 @@ async function upsertMemberPartyAffiliation(db: Db, affiliation: MemberPartyAffi
         sourceSnapshotId: affiliation.sourceSnapshotId
       }
     });
+}
+
+async function upsertMemberPartyAffiliations(db: Db, affiliations: MemberPartyAffiliation[]) {
+  if (affiliations.length === 0) return;
+  for (const batch of chunks(affiliations)) {
+    await db
+      .insert(schema.memberPartyAffiliations)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: schema.memberPartyAffiliations.id,
+        set: {
+          memberId: sql`excluded.member_id`,
+          partyId: sql`excluded.party_id`,
+          startsOn: sql`excluded.starts_on`,
+          endsOn: sql`excluded.ends_on`,
+          logoUrl: sql`excluded.logo_url`,
+          sourceSnapshotId: sql`excluded.source_snapshot_id`
+        }
+      });
+  }
 }
 
 async function upsertMemberCommitteeMembership(db: Db, membership: MemberCommitteeMembership) {
@@ -688,6 +890,27 @@ async function upsertMemberCommitteeMembership(db: Db, membership: MemberCommitt
     });
 }
 
+async function upsertMemberCommitteeMemberships(db: Db, memberships: MemberCommitteeMembership[]) {
+  if (memberships.length === 0) return;
+  for (const batch of chunks(memberships)) {
+    await db
+      .insert(schema.memberCommitteeMemberships)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: schema.memberCommitteeMemberships.id,
+        set: {
+          memberId: sql`excluded.member_id`,
+          committeeName: sql`excluded.committee_name`,
+          chamber: sql`excluded.chamber`,
+          role: sql`excluded.role`,
+          startsOn: sql`excluded.starts_on`,
+          endsOn: sql`excluded.ends_on`,
+          sourceSnapshotId: sql`excluded.source_snapshot_id`
+        }
+      });
+  }
+}
+
 async function upsertMemberRole(db: Db, role: MemberRole) {
   await db
     .insert(schema.memberRoles)
@@ -703,6 +926,26 @@ async function upsertMemberRole(db: Db, role: MemberRole) {
         sourceSnapshotId: role.sourceSnapshotId
       }
     });
+}
+
+async function upsertMemberRoles(db: Db, roles: MemberRole[]) {
+  if (roles.length === 0) return;
+  for (const batch of chunks(roles)) {
+    await db
+      .insert(schema.memberRoles)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: schema.memberRoles.id,
+        set: {
+          memberId: sql`excluded.member_id`,
+          title: sql`excluded.title`,
+          chamber: sql`excluded.chamber`,
+          startsOn: sql`excluded.starts_on`,
+          endsOn: sql`excluded.ends_on`,
+          sourceSnapshotId: sql`excluded.source_snapshot_id`
+        }
+      });
+  }
 }
 
 async function upsertBill(db: Db, bill: Bill) {

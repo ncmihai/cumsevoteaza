@@ -25,6 +25,7 @@ export default async function MemberPage({
     history,
     group,
     party,
+    currentLogoUrl,
     mandate,
     source,
     legislatures,
@@ -42,14 +43,22 @@ export default async function MemberPage({
     <main className="mx-auto max-w-7xl px-4 py-8">
       <EngagementTracker entityType="member" entityId={member.id} locale={locale} />
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="text-sm font-semibold uppercase text-blue-800">
-            {group?.shortName ?? party?.shortName ?? "unknown"}
+        <div className="flex min-w-0 items-start gap-4">
+          {currentLogoUrl ? (
+            <div className="mt-1 flex h-16 w-16 shrink-0 items-center justify-center border border-slate-300 bg-white p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={currentLogoUrl} alt="" className="max-h-full max-w-full object-contain" />
+            </div>
+          ) : null}
+          <div className="min-w-0">
+            <div className="text-sm font-semibold uppercase text-blue-800">
+              {group?.shortName ?? party?.shortName ?? "unknown"}
+            </div>
+            <h1 className="mt-2 text-4xl font-semibold text-slate-950">{member.displayName}</h1>
+            <p className="mt-3 text-slate-600">
+              {mandate ? chamberLabels[locale][mandate.chamber] : "unknown"} · {mandate?.status ?? "unknown"}
+            </p>
           </div>
-          <h1 className="mt-2 text-4xl font-semibold text-slate-950">{member.displayName}</h1>
-          <p className="mt-3 text-slate-600">
-            {mandate ? chamberLabels[locale][mandate.chamber] : "unknown"} · {mandate?.status ?? "unknown"}
-          </p>
         </div>
         <div className="flex flex-col items-start gap-2">
           {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
@@ -83,6 +92,7 @@ export default async function MemberPage({
         <MemberHistoryTable
           rows={history}
           locale={locale}
+          legislatures={legislatures}
           labels={{
             period: messages.common.period,
             chamber: messages.common.chamber,

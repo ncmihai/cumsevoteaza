@@ -9,7 +9,11 @@ coverage
 !.env.example
 *.log
 *.tsbuildinfo
+__pycache__/
+*.pyc
 .DS_Store
 .playwright-cli/
 data/imports/*.json
 data/snapshots/*.html
+data/cdep-history/
+data/parliament-pipeline/

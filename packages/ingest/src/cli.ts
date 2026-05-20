@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import type { ChamberId } from "@cumsevoteaza/parliament-model";
+import { cleanupSupersededCdepHistoryRows } from "./cdep-history-cleanup";
+import { importCdepHistoryProfiles } from "./cdep-history-import";
 import { parseChamberNominalVote } from "./parsers/chamber-vote";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "./parsers/deputies-roster";
 import { legislatureCatalog, legislatureFromFlag, partyCatalog, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
@@ -116,6 +118,36 @@ async function main() {
     logRosterSummary(parsed);
     if (hasFlag("persist")) {
       console.log(JSON.stringify(await persistRoster(parsed), null, 2));
+    }
+    return;
+  }
+
+  if (command === "cdep-history:import") {
+    const result = await importCdepHistoryProfiles({
+      profilesPath: flag("profiles") ?? path.join(repoRoot, "data/cdep-history/parsed/profiles.jsonl"),
+      legislature: flag("legislature") ?? "2004",
+      chamber: chamberFlag() ?? "both",
+      persist: hasFlag("persist")
+    });
+    await writeCdepHistoryWarningFiles(result);
+    await writeImport("cdep-history-import", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(compactCdepHistoryImportResult(result), null, 2));
+    if (!hasFlag("persist")) {
+      console.log("Dry run only. Re-run with --persist to write these official CDEP roster rows.");
+    }
+    return;
+  }
+
+  if (command === "cdep-history:cleanup") {
+    const result = await cleanupSupersededCdepHistoryRows({
+      legislature: flag("legislature"),
+      chamber: chamberFlag(),
+      confirm: hasFlag("confirm")
+    });
+    await writeImport("cdep-history-cleanup", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    if (!hasFlag("confirm")) {
+      console.log("Dry run only. Re-run with --confirm to delete superseded non-CDEP mandate/profile rows.");
     }
     return;
   }
@@ -789,6 +821,83 @@ async function writeImport(name: string, payload: unknown, raw: string) {
   await writeFile(path.join(importDir, `${now}-${name}.json`), JSON.stringify(payload, null, 2));
   await writeFile(path.join(snapshotDir, `${now}-${name}.html`), raw);
   console.log(`Wrote ${name} import at ${now}`);
+}
+
+async function writeCdepHistoryWarningFiles(result: Awaited<ReturnType<typeof importCdepHistoryProfiles>>) {
+  if (hasFlag("no-files") || process.env.VERCEL === "1") return;
+  const warnings = result.chambers.flatMap((chamber) => chamber.warningItems);
+  if (warnings.length === 0) return;
+  const reportsDir = path.join(repoRoot, "data/cdep-history/reports");
+  const suffix = result.legislature.replace(/[^0-9A-Za-z-]+/g, "-");
+  const jsonPath = path.join(reportsDir, `manual-warning-review-${suffix}.json`);
+  const csvPath = path.join(reportsDir, `manual-warning-review-${suffix}.csv`);
+  await mkdir(reportsDir, { recursive: true });
+  await writeFile(
+    jsonPath,
+    JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        source: result.source,
+        legislature: result.legislature,
+        count: warnings.length,
+        warnings
+      },
+      null,
+      2
+    )
+  );
+  await writeFile(csvPath, warningCsv(warnings));
+  console.log(`Wrote CDEP manual warning review files: ${jsonPath} and ${csvPath}`);
+}
+
+function compactCdepHistoryImportResult(result: Awaited<ReturnType<typeof importCdepHistoryProfiles>>) {
+  return {
+    ...result,
+    chambers: result.chambers.map((chamber) => ({
+      ...chamber,
+      warningItems: chamber.warningItems.length
+    }))
+  };
+}
+
+function warningCsv(warnings: Awaited<ReturnType<typeof importCdepHistoryProfiles>>["chambers"][number]["warningItems"]): string {
+  const headers = [
+    "type",
+    "legislature",
+    "chamber",
+    "memberName",
+    "officialId",
+    "profileKey",
+    "profileUrl",
+    "validationDateRaw",
+    "partyLabels",
+    "groupLabels",
+    "note"
+  ];
+  return [
+    headers.join(","),
+    ...warnings.map((warning) =>
+      [
+        warning.type,
+        warning.legislature,
+        warning.chamber,
+        warning.memberName,
+        warning.officialId,
+        warning.profileKey,
+        warning.profileUrl,
+        warning.validationDateRaw ?? "",
+        warning.partyLabels.join(" | "),
+        warning.groupLabels.join(" | "),
+        warning.note
+      ]
+        .map(csvCell)
+        .join(",")
+    )
+  ].join("\n");
+}
+
+function csvCell(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
 }
 
 function syncOptions() {

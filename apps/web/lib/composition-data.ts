@@ -49,6 +49,7 @@ export interface CompositionPageData {
 export interface CompositionTimelineStop {
   id: string;
   legislature: Legislature;
+  compositionDate: string;
   activeGovernment?: Government;
   governments: Government[];
   primeMinister?: Person;
@@ -203,9 +204,7 @@ async function tryDatabaseCompositionTimeline(
         });
         if (legislatureGovernments.length === 0 && legislatureEvents.length === 0) return [];
 
-        const compositionDate = today >= legislature.startsOn && today < legislature.endsOn
-          ? today
-          : legislature.startsOn;
+        const compositionDate = compositionDateForLegislature(legislature, compositionRows.mandates, today);
         const activeGovernment =
           legislatureGovernments.find((government) => isActiveGovernment(government, compositionDate)) ?? legislatureGovernments[0];
         const primeMinister = activeGovernment?.primeMinisterPersonId ? peopleById.get(activeGovernment.primeMinisterPersonId) : undefined;
@@ -228,6 +227,7 @@ async function tryDatabaseCompositionTimeline(
           {
             id: legislature.id,
             legislature,
+            compositionDate,
             activeGovernment,
             governments: legislatureGovernments,
             primeMinister,
@@ -334,8 +334,10 @@ function buildComposition(input: {
       .flatMap((mandate) => {
         const member = memberById.get(mandate.memberId);
         if (!member) return [];
-        const membership = latestActiveMembership(
+        const membership = activeMembershipOn(
           input.memberships.filter((item) => item.memberId === member.id),
+          groupById,
+          chamber,
           input.asOf
         );
         const group = membership ? groupById.get(membership.groupId) : undefined;
@@ -425,6 +427,19 @@ function hasCompositionSeats(composition: CompositionPageData): boolean {
   return composition.chambers.some((chamber) => chamber.seats.length > 0);
 }
 
+function compositionDateForLegislature(legislature: Legislature, mandates: MemberMandate[], today: string): string {
+  if (today >= legislature.startsOn && today < legislature.endsOn) return today;
+  const chamberFirstDates = (["deputies", "senate"] as ChamberId[])
+    .map((chamber) =>
+      mandates
+        .filter((mandate) => mandate.legislatureId === legislature.id && mandate.chamber === chamber)
+        .map((mandate) => mandate.startsOn)
+        .sort()[0]
+    )
+    .filter((date): date is string => Boolean(date));
+  return latestDate(legislature.startsOn, ...chamberFirstDates);
+}
+
 function rankedPrimeMinistersForLegislature(input: {
   governments: Government[];
   roles: GovernmentRole[];
@@ -487,9 +502,16 @@ function latestAlignment(rows: AlignmentRow[], mode: CompositionMode, asOf: stri
     .sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0];
 }
 
-function latestActiveMembership(rows: MemberGroupMembership[], asOf: string): MemberGroupMembership | undefined {
-  const active = rows.filter((row) => activeOn(row.startsOn, row.endsOn, asOf));
-  return [...(active.length > 0 ? active : rows)].sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0];
+function activeMembershipOn(
+  rows: MemberGroupMembership[],
+  groupById: Map<string, ParliamentaryGroup>,
+  chamber: ChamberId,
+  asOf: string
+): MemberGroupMembership | undefined {
+  return rows
+    .filter((row) => activeOn(row.startsOn, row.endsOn, asOf))
+    .filter((row) => groupById.get(row.groupId)?.chamber === chamber)
+    .sort((a, b) => b.startsOn.localeCompare(a.startsOn))[0];
 }
 
 function activeOn(startsOn: string, endsOn: string | undefined | null, date: string): boolean {

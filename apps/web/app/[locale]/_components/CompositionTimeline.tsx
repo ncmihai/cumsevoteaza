@@ -109,6 +109,7 @@ function GovernmentStage({ locale, mode, stop }: { locale: Locale; mode: Composi
         </div>
         <div className="mt-4 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
           <Metric label={labels.period} value={periodLabel(stop.legislature.startsOn, stop.legislature.endsOn, labels.present)} />
+          <Metric label={labels.compositionDate} value={stop.compositionDate} />
           <Metric label={labels.pm} value={pmSummary || stop.primeMinister?.displayName || labels.unknown} />
           <Metric label={labels.mode} value={mode === "computed" ? labels.computedMode : labels.officialMode} />
           <Metric label={labels.role} value={stop.primeMinisterRole?.title ?? labels.unknown} />
@@ -256,6 +257,7 @@ type TimelineLabels = {
   legislature: string;
   pm: string;
   period: string;
+  compositionDate: string;
   event: string;
   mode: string;
   role: string;
@@ -284,6 +286,7 @@ const timelineLabels = {
     legislature: "Legislatură",
     pm: "Prim-ministru",
     period: "Perioadă",
+    compositionDate: "Compoziție la data",
     event: "Eveniment",
     mode: "Mod",
     role: "Rol",
@@ -328,6 +331,7 @@ const timelineLabels = {
     legislature: "Legislature",
     pm: "Prime minister",
     period: "Period",
+    compositionDate: "Composition date",
     event: "Event",
     mode: "Mode",
     role: "Role",

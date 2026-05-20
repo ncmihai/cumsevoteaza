@@ -229,7 +229,7 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
           mm.starts_on as source_date,
           now() as refreshed_at
         from members m
-        left join lateral (
+        join lateral (
           select *
           from member_mandates mm
           where mm.member_id = m.id

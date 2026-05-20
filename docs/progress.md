@@ -218,6 +218,43 @@ Append-only implementation history.
 - Verified `/ro/compozitii` and `/ro/compozitii?mode=computed` locally against
   Docker Postgres.
 
+## 2026-05-20 — CDEP History Probe
+
+- Added `tools/cdep-history-probe`, a file-first Python crawler for official
+  CDEP member history pages.
+- Added root script `npm run probe:cdep-history` with two commands:
+  - `roster-urls` to generate the post-1989 CDEP roster URL matrix.
+  - `crawl` to fetch roster/profile pages, save raw snapshots, parse profile
+    records, and follow official `Activitate parlamentară` career links.
+- Kept generated probe output ignored under `data/cdep-history/`.
+- Verified a known multi-legislature profile seed:
+  - fetched 4 unique profiles from one seed
+  - found 24 official career-link edges
+  - captured official profile photos and period-specific party logos
+- Verified a bounded 2004 Deputies roster probe:
+  - fetched active and `par=X` roster pages
+  - discovered official profile links
+  - fetched 3 profile pages as a small smoke test
+- Ran the clean 2004 base batch for both chambers without career expansion:
+  - 541 official profiles fetched
+  - 378 Deputies profiles
+  - 163 Senate profiles
+  - 71 replacement relations
+- Added `audit` command for parsed CDEP history output:
+  - summarizes parsed JSONL
+  - reports missing data and duplicate names
+  - optionally compares legislature/chamber counts against Postgres via `psql`
+- Extended audit comparison to fall back to the repo's Node Postgres driver when
+  local `psql` is unavailable.
+- Ran the 2004 audit against Neon:
+  - Deputies: probe 378, Postgres 378
+  - Senate: probe 163, Postgres 167
+  - The Senate difference is in existing Wikipedia-derived data; the CDEP probe
+    shows cleaner official names and exposes the dirty `?` row in Postgres.
+- Added `preview-import`, a file-only normalization step that creates person
+  candidates from CDEP career-link graph edges and lists missing career profile
+  keys for later expansion.
+
 ## 2026-05-16 — Compoziții Timeline Scroll Story
 
 - Added a curated post-1989 government skeleton seed command:
@@ -1433,3 +1470,247 @@ Verification:
   - search-index last-name lookup: about 0.2 ms using the trigram index;
   - bill directory by year: about 1.3 ms;
   - party member join sample: about 13 ms.
+
+## 2026-05-20 — CDEP 2004 Official History Dry-Run Importer
+
+- Added `npm run ingest:cdep-history:import` as the bridge between the
+  file-first CDEP history probe and the existing Postgres roster persistence
+  path.
+- The command is dry-run by default and only writes when `--persist` is passed.
+  It converts official `profiles.jsonl` rows into the app's `ParsedRoster`
+  shape, including:
+  - CDEP profile source snapshots;
+  - official member ids;
+  - mandates;
+  - party affiliations;
+  - parliamentary group memberships;
+  - committee memberships;
+  - replacement relations;
+  - official profile photos and period logo URLs.
+- Replacement relation handling is conservative:
+  - bad probe link matches such as numeric pagination labels are ignored;
+  - the importer recovers the replaced member name from raw
+    `inlocuieste pe:` profile text when available;
+  - related member ids are attached only when the related profile key is
+    genuinely different and available in the same batch.
+- Ran the 2004 dry run:
+  - Deputies: 378 sources, 378 members, 378 mandates, 43 replacement relations;
+  - Senate: 163 sources, 163 members, 163 mandates, 21 replacement relations.
+- Warnings from the dry run:
+  - 20 Deputy mandates have no official constituency link; these are national
+    minority-style rows from the official pages, not random parser misses;
+  - historical labels that are not canonical parties are stored as scoped
+    formations for now.
+- Saved the missing-constituency warnings for manual review:
+  - `data/cdep-history/reports/manual-warning-review-2004-2008.json`;
+  - `data/cdep-history/reports/manual-warning-review-2004-2008.csv`;
+  - each row includes legislature, chamber, member name, official id, profile
+    key, official profile URL, validation date, party labels, and group labels.
+- Local Docker/Postgres write is blocked because the Docker daemon is not
+  reachable and `127.0.0.1:5432` is closed. Next step is to start Docker, run
+  migrations locally if needed, then rerun the same importer with `--persist`
+  against local Postgres before touching Neon.
+- Docker was later started and the local Postgres container was healthy.
+- Applied local Drizzle migrations successfully.
+- Applied the 2004 official CDEP import to local Postgres:
+  - mandate counts: 378 Deputies, 163 Senate;
+  - replacement relation counts: 43 Deputies, 21 Senate;
+  - missing constituency count: 20 Deputies, matching the manual review file.
+- Verified known official profiles locally:
+  - `member-deputies-2004-64` -> Constantin Tămagă;
+  - `member-senate-2004-152` -> Ion Rotaru.
+- Refreshed local people links and read models:
+  - people backfill: 1,005 members read, 998 people upserted, 1,005 members linked;
+  - read models: 1,005 member legislature activity rows and 1,040 search-index rows.
+- Applied the verified 2004 official CDEP import to Neon:
+  - Deputies imported first with 378 official CDEP mandates;
+  - the combined production import stalled after Deputies, so roster persistence
+    was changed from broad `Promise.all` writes to controlled sequential writes
+    for Neon reliability;
+  - Senate then imported successfully with 163 official CDEP mandates.
+- Cleaned superseded 2004 Senate Wikipedia-derived rows from Neon:
+  - removed 166 old non-CDEP Senate mandates plus their old membership and
+    affiliation rows;
+  - final 2004 Neon counts are 378 Deputies mandates and 163 Senate mandates,
+    with 0 non-CDEP mandates for that legislature.
+- Verified known official profiles in Neon:
+  - `member-deputies-2004-64` -> Constantin Tămagă;
+  - `member-senate-2004-152` -> Ion Rotaru.
+- Refreshed Neon read models after the cleanup:
+  - 2,196 bill/vote summaries;
+  - 553 vote coverage summaries;
+  - 5,261 member legislature activity rows;
+  - 8,436 search-index rows.
+- People links were verified at 5,473 linked members. The long-running
+  `people:backfill` process was stopped after it became idle and the linked
+  count had reached the existing verified level.
+
+## 2026-05-20 — Python Data Pipeline Umbrella
+
+- Locked the architecture direction:
+  - Next.js remains the public web/API backend;
+  - Neon remains source of truth;
+  - Python is for local-first data engineering work;
+  - TypeScript remains the only canonical DB persistence layer.
+- Added `tools/parliament-pipeline`, a broader Python pipeline entrypoint.
+- Added root command:
+  - `npm run pipeline:parliament -- domains`;
+  - `npm run pipeline:parliament -- plan historical-members`;
+  - `npm run pipeline:parliament -- cdep-members <command>`.
+- Kept the existing CDEP command stable:
+  - `npm run probe:cdep-history -- ...`.
+- The umbrella pipeline currently delegates the implemented `cdep-members`
+  domain to the proven CDEP history probe, so the 2004 workflow remains intact.
+- Documented the future `votes-projects` pipeline domain as planned with
+  file-first output under `data/parliament-pipeline/`.
+- Added Python stdlib tests for the pipeline CLI:
+  - domain metadata preserves the file-first DB boundary;
+  - historical member plan keeps TypeScript as the DB writer;
+  - CDEP roster URL generation delegates correctly.
+- Wired Python pipeline tests into root `npm run test`.
+- Verification:
+  - `npm run pipeline:parliament -- domains` passed;
+  - `npm run pipeline:parliament -- plan historical-members` passed;
+  - `npm run pipeline:parliament -- cdep-members roster-urls --legislature 2004 --chamber both` passed;
+  - `npm run typecheck` passed;
+  - `npm run test` passed, including 30 Vitest tests and 3 Python unittest tests.
+
+## 2026-05-20 — Local Official CDEP History Backfill
+
+- Extended the CDEP history probe for full local crawling:
+  - added bounded profile concurrency with `--concurrency`;
+  - kept profile failures non-fatal;
+  - added `data/cdep-history/parsed/profile-failures.jsonl` for failed profile
+    fetches;
+  - documented the failure file in the probe README.
+- Ran the official CDEP crawl for all post-1989 legislatures and both chambers:
+  - command:
+    `npm run pipeline:parliament -- cdep-members crawl --legislature all --chamber both --no-follow-careers --delay 0.05 --concurrency 4 --insecure`;
+  - first concurrent pass had 2 transient DNS/profile failures;
+  - rerun reused cached raw snapshots and completed with `profilesFailed = 0`.
+- Final parsed official profile counts:
+  - 1990: 448 Deputies, 128 Senate;
+  - 1992: 381 Deputies, 162 Senate;
+  - 1996: 367 Deputies, 154 Senate;
+  - 2000: 393 Deputies, 163 Senate;
+  - 2004: 378 Deputies, 163 Senate;
+  - 2008: 339 Deputies, 137 Senate;
+  - 2012: 417 Deputies, 179 Senate;
+  - 2016: 361 Deputies, 142 Senate;
+  - 2020: 354 Deputies, 151 Senate;
+  - 2024: 335 Deputies, 137 Senate.
+- Imported the parsed profiles into local Docker Postgres, one legislature at a
+  time, using the TypeScript persistence path and local `DATABASE_URL`.
+- Local DB comparison:
+  - CDEP-history mandate counts match the Python crawl for every
+    legislature/chamber;
+  - all 1990-2024 rows except 2024 Senate have `other_rows = 0`;
+  - 2024 Senate has 137 CDEP-history mandates and 134 legacy
+    `senate-member-profile` mandates, so source priority or cleanup must be
+    decided before production import.
+- Checked 2008 Deputies group labels locally after the scoped group-id fix:
+  PDL, PSD, PNL, UDMR, Minorități, Neafiliați, and scoped historical labels are
+  present; FSN no longer bleeds into the 2008 composition data.
+- Verification:
+  - `npm run typecheck` passed;
+  - `npm run test` passed, including 30 Vitest tests and 3 Python unittest tests.
+
+## 2026-05-20 — CDEP Canonical Cleanup + Profile Logos
+
+- Chose CDEP-history rows as canonical for overlapping mandate/profile data
+  because the official CDEP profile pages include cross-legislature links,
+  replacement information, profile photos, and period logo URLs.
+- Added `ingest:cdep-history:cleanup`, a dry-run-first cleanup command:
+  - finds non-CDEP mandate/profile rows only where CDEP-history rows already
+    exist for the same legislature and chamber;
+  - removes superseded mandates and related legacy membership, affiliation,
+    committee, role, governance, and composition-event rows;
+  - intentionally keeps old `members` rows because some still have
+    `individual_votes` references.
+- Ran the cleanup locally for the duplicated 2024 Senate data:
+  - dry-run found 134 superseded `senate-member-profile` mandates;
+  - confirmed cleanup removed 134 mandates, 134 group memberships, 135 party
+    affiliations, 403 committee memberships, and 36 role rows;
+  - local 2024 Senate verification now shows 137 CDEP-history mandates and
+    0 other mandate rows.
+- Refreshed local read models after cleanup:
+  - `memberLegislatureActivity = 5289`;
+  - `entitySearchIndex = 5512`.
+- Updated search indexing so member rows without any mandate are not indexed as
+  public parliamentarians. This prevents retained vote-reference-only legacy
+  members from showing in search after cleanup.
+- Updated member profile pages to show the current period CDEP logo in the
+  profile header, sourced from membership `logo_url`.
+- Sample local data check:
+  - Anamaria Gavrilă resolves to POT/UPR period rows with
+    `https://cdep.ro/aleg/pot2024.jpg`;
+  - Diana-Anda Buzoianu has USR period logo rows from CDEP profiles.
+- Verification:
+  - `npm run typecheck` passed;
+  - `npm run test` passed;
+  - `npm run build` passed;
+  - local browser smoke-check for
+    `/ro/members/anamaria-gavrila-deputies-113` found the member heading and
+    CDEP logo images rendered from `cdep.ro/aleg`.
+
+## 2026-05-20 — Neon CDEP-History Promotion + Active Composition Maps
+
+- Optimized DB promotion writes before moving the full CDEP-history dataset to
+  Neon:
+  - `persistRoster` now uses batched upserts for source snapshots, parties,
+    groups, members, mandates, relations, memberships, affiliations,
+    committees, and roles;
+  - `people:backfill` now upserts people and updates member/person links in
+    batches instead of one row at a time.
+- Promoted official CDEP-history rows to Neon for all post-1989 legislatures:
+  1990, 1992, 1996, 2000, 2004, 2008, 2012, 2016, 2020, and 2024.
+- Ran `ingest:cdep-history:cleanup -- --confirm --no-files` against Neon after
+  promotion:
+  - removed 1,324 superseded fallback/profile Senate mandates;
+  - removed related legacy group memberships, party affiliations, committee
+    memberships, and role rows;
+  - kept legacy member identity rows where votes still reference them.
+- Refreshed Neon people links and read models:
+  - people backfill: 6,983 members read, 3,526 people upserted,
+    6,982 members linked;
+  - read models: 2,196 bill/vote summaries, 553 vote coverage summaries,
+    5,289 member legislature activity rows, 8,259 search-index rows.
+- Verified Neon mandate provenance after cleanup:
+  - every post-1989 legislature/chamber in `member_mandates` has matching
+    CDEP-history counts;
+  - `other_rows = 0` for each of those legislature/chamber pairs.
+- Updated `Compoziții` map selection:
+  - current legislature uses today;
+  - historical legislatures use a representative composition date based on
+    available roster starts for both chambers;
+  - memberships are now strict date-active matches for the same chamber, so
+    later/future group labels are not reused on old compositions.
+- Added the composition date to the pinned government stage.
+- Smoke-check:
+  - local `/ro/compozitii` returned `Compoziție la data`, `2024-2028`,
+    `2020-2024`, and the formal current chamber counts `331` / `134`.
+- Verification:
+  - `npm run typecheck` passed;
+  - `npm run test` passed;
+  - `npm run build` passed.
+
+## 2026-05-20 — Member History Track 2
+
+- Upgraded the member profile history surface toward the Transfermarkt-style
+  career view:
+  - history rows now carry `legislatureId` so mandates, group rows, party rows,
+    committees, roles, and replacement relations can be grouped by legislature;
+  - member pages pass the available legislature list into the history table;
+  - the table now renders separate legislature sections with date range,
+    chamber chips, row counts, period logo cues, internal scrolling, sticky
+    headers, and translated row-type labels.
+- Local browser smoke-check on
+  `/ro/members/anamaria-gavrila-deputies-113` verified:
+  - the member profile renders;
+  - POT is shown as the current period formation;
+  - `Istoric parlamentar` includes a `2024-2028` legislature section;
+  - party/formation rows and logo cues are visible.
+- Verification:
+  - `npm run typecheck` passed;
+  - `npm run test` passed;
+  - `npm run build` passed after allowing Turbopack's local helper process.
