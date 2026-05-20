@@ -1,12 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
+  --background: #f6f8f7;
   --foreground: #0f172a;
   --muted: #64748b;
   --line: #cbd5e1;
   --surface: #ffffff;
-  --accent: #204a87;
+  --accent: #309898;
+  --accent-warm: #ff9f00;
+  --accent-orange: #f4631e;
+  --accent-red: #cb0404;
 }
 
 * {
@@ -15,7 +18,9 @@
 
 body {
   margin: 0;
-  background: var(--background);
+  background:
+    linear-gradient(180deg, rgba(48, 152, 152, 0.07), rgba(255, 159, 0, 0.04) 240px, transparent 520px),
+    var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;

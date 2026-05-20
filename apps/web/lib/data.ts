@@ -119,6 +119,13 @@ export interface MemberLegislatureActivityData {
   lastActivityOn?: string;
 }
 
+type MemberDirectoryFilters = {
+  chamber?: string;
+  group?: string;
+  q?: string;
+  legislature?: string;
+};
+
 export interface VoteCoverageData {
   coverageLevel: "nominal" | "group_totals" | "result_only" | "source_only";
   nominalVotes: number;
@@ -160,7 +167,7 @@ const getCachedBillPageData = unstable_cache(
 );
 
 const getCachedMemberDirectoryData = unstable_cache(
-  async (filters?: { chamber?: string; group?: string; q?: string; legislature?: string }) =>
+  async (filters?: MemberDirectoryFilters) =>
     timed("data.member-directory", () => getMemberDirectoryDataUncached(filters)),
   ["member-directory-data"],
   { revalidate: 600, tags: [CACHE_TAGS.members, CACHE_TAGS.search] }
@@ -267,11 +274,11 @@ async function getBillPageDataUncached(id: string): Promise<BillPageData | undef
   };
 }
 
-export async function getMemberDirectoryData(filters?: { chamber?: string; group?: string; q?: string; legislature?: string }): Promise<MemberDirectoryData> {
+export async function getMemberDirectoryData(filters?: MemberDirectoryFilters): Promise<MemberDirectoryData> {
   return getCachedMemberDirectoryData(filters);
 }
 
-async function getMemberDirectoryDataUncached(filters?: { chamber?: string; group?: string; q?: string; legislature?: string }): Promise<MemberDirectoryData> {
+async function getMemberDirectoryDataUncached(filters?: MemberDirectoryFilters): Promise<MemberDirectoryData> {
   const dbData = await tryDatabaseMemberDirectory(filters);
   if (dbData) return dbData;
 
@@ -545,7 +552,7 @@ async function tryDatabaseBill(id: string): Promise<BillPageData | undefined> {
   }
 }
 
-async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: string; q?: string; legislature?: string }): Promise<MemberDirectoryData | undefined> {
+async function tryDatabaseMemberDirectory(filters?: MemberDirectoryFilters): Promise<MemberDirectoryData | undefined> {
   if (!process.env.DATABASE_URL) return undefined;
 
   const session = createWebDbSession();
@@ -583,7 +590,7 @@ async function tryDatabaseMemberDirectory(filters?: { chamber?: string; group?: 
             p.short_name as party_short_name,
             p.name as party_name,
             p.color as party_color,
-            row_number() over (partition by m.id order by mm.starts_on desc, mm.id desc) as rn
+            row_number() over (partition by coalesce(m.person_id, m.id) order by mm.starts_on desc, mm.id desc) as rn
           from member_mandates mm
           join members m on m.id = mm.member_id
           left join lateral (
@@ -1470,13 +1477,14 @@ function latestMandate(mandates: MemberMandate[]): MemberMandate | undefined {
 
 function filterDirectoryItems(
   items: MemberDirectoryItem[],
-  filters?: { chamber?: string; group?: string; q?: string; legislature?: string }
+  filters?: MemberDirectoryFilters
 ): MemberDirectoryItem[] {
   const query = normalizeSearch(filters?.q);
+  const groupFilters = parseGroupFilters(filters?.group);
   return items
     .filter((item) => !filters?.chamber || item.mandate?.chamber === filters.chamber)
     .filter((item) => !filters?.legislature || item.mandate?.legislatureId === filters.legislature)
-    .filter((item) => !filters?.group || matchesMemberGroupFilter(item, filters.group))
+    .filter((item) => groupFilters.length === 0 || groupFilters.some((groupFilter) => matchesMemberGroupFilter(item, groupFilter)))
     .filter((item) => {
       if (!query) return true;
       return [item.member.displayName, item.member.firstName, item.member.lastName, item.group?.shortName, item.party?.shortName]
@@ -1486,7 +1494,7 @@ function filterDirectoryItems(
     .sort((a, b) => a.member.displayName.localeCompare(b.member.displayName, "ro"));
 }
 
-function memberDirectoryConditions(filters?: { chamber?: string; group?: string; q?: string; legislature?: string }) {
+function memberDirectoryConditions(filters?: MemberDirectoryFilters) {
   const conditions = [];
   if (filters?.chamber === "senate" || filters?.chamber === "deputies") {
     conditions.push(sql`mm.chamber = ${filters.chamber}`);
@@ -1507,8 +1515,9 @@ function memberDirectoryConditions(filters?: { chamber?: string; group?: string;
       )
     )`);
   }
-  if (filters?.group) {
-    conditions.push(memberGroupCondition(filters.group));
+  const groupFilters = parseGroupFilters(filters?.group);
+  if (groupFilters.length > 0) {
+    conditions.push(sql`(${sql.join(groupFilters.map(memberGroupCondition), sql` or `)})`);
   }
   return conditions;
 }
@@ -1550,6 +1559,13 @@ function memberGroupCondition(groupFilter: string) {
     return sql`${normalizedGroupSql(sql`coalesce(p.short_name, pg.short_name)`)} = ${key}`;
   }
   return sql`(pg.id = ${groupFilter} or p.id = ${groupFilter})`;
+}
+
+function parseGroupFilters(value?: string): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function normalizedSql(value: ReturnType<typeof sql>) {

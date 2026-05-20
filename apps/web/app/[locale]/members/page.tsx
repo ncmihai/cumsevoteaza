@@ -9,15 +9,23 @@ export default async function MembersPage({
   searchParams
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ chamber?: string; group?: string; q?: string; legislature?: string }>;
+  searchParams: Promise<{ chamber?: string; group?: string | string[]; q?: string; legislature?: string }>;
 }) {
   const { locale: rawLocale } = await params;
-  const filters = await searchParams;
+  const rawFilters = await searchParams;
   const locale: AppLocale = isLocale(rawLocale) ? rawLocale : "ro";
   const messages = messagesFor(locale);
+  const currentLegislatureId = "leg-2024-2028";
+  const filters = {
+    chamber: rawFilters.chamber,
+    group: normalizeGroupParam(rawFilters.group),
+    q: rawFilters.q,
+    legislature: rawFilters.legislature === undefined ? (rawFilters.group ? "" : currentLegislatureId) : rawFilters.legislature
+  };
   const data = await getMemberDirectoryData(filters);
   const groupChips = memberGroupChips(data.groups, data.parties, locale, filters.chamber);
-  const activeGroupFilter = filters.group && groupChips.some((group) => group.value === filters.group) ? filters.group : undefined;
+  const validGroupValues = new Set(groupChips.map((group) => group.value));
+  const activeGroupFilters = parseGroupParam(filters.group).filter((group) => validGroupValues.has(group));
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -30,9 +38,10 @@ export default async function MembersPage({
         <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{data.sourceKind}</span>
       </div>
 
-      <form action={`/${locale}/members`} className="mt-6 grid gap-3 border border-slate-300 bg-white p-4 md:grid-cols-[minmax(220px,1fr)_220px_auto]">
+      <form action={`/${locale}/members`} className="mt-6 grid gap-3 border border-slate-300 bg-white p-4 shadow-sm md:grid-cols-[minmax(220px,1fr)_auto]">
         {filters.chamber ? <input type="hidden" name="chamber" value={filters.chamber} /> : null}
-        {activeGroupFilter ? <input type="hidden" name="group" value={activeGroupFilter} /> : null}
+        {activeGroupFilters.length > 0 ? <input type="hidden" name="group" value={activeGroupFilters.join(",")} /> : null}
+        {filters.legislature ? <input type="hidden" name="legislature" value={filters.legislature} /> : null}
         <label className="flex items-center gap-2 border border-slate-300 px-3 py-2">
           <input
             className="min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 outline-none"
@@ -43,37 +52,56 @@ export default async function MembersPage({
             aria-label={messages.home.searchPlaceholder}
           />
         </label>
-        <label className="grid gap-1 text-xs uppercase text-slate-500">
-          {locale === "ro" ? "Legislatură" : "Legislature"}
-          <select name="legislature" defaultValue={filters.legislature ?? ""} className="min-w-0 border border-slate-300 bg-white px-2 py-2 text-sm normal-case text-slate-900">
-            <option value="">-</option>
-            {data.legislatures.map((legislature) => (
-              <option key={legislature.id} value={legislature.id}>
-                {legislature.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button className="rounded-md bg-slate-950 px-3 py-2 text-sm text-white" type="submit">
+        <button className="rounded-md bg-slate-950 px-4 py-2 text-sm text-white hover:bg-[#309898]" type="submit">
           {locale === "ro" ? "Caută" : "Search"}
         </button>
       </form>
 
       <section className="mt-6 flex flex-wrap gap-2">
-        <FilterLink href={memberDirectoryHref(locale, { q: filters.q, legislature: filters.legislature })} active={!filters.chamber && !activeGroupFilter}>
-          Toți
+        <span className="w-full text-xs font-semibold uppercase text-slate-500">{locale === "ro" ? "Legislatură" : "Legislature"}</span>
+        {data.legislatures.map((legislature) => (
+          <FilterLink
+            key={legislature.id}
+            href={memberDirectoryHref(locale, { chamber: filters.chamber, group: activeGroupFilters, q: filters.q, legislature: legislature.id })}
+            active={filters.legislature === legislature.id}
+          >
+            {legislature.label}
+          </FilterLink>
+        ))}
+        <FilterLink href={memberDirectoryHref(locale, { chamber: filters.chamber, group: activeGroupFilters, q: filters.q, legislature: "" })} active={!filters.legislature}>
+          {locale === "ro" ? "Toate legislaturile" : "All legislatures"}
         </FilterLink>
-        <FilterLink href={memberDirectoryHref(locale, { chamber: "senate", group: activeGroupFilter, q: filters.q, legislature: filters.legislature })} active={filters.chamber === "senate"}>
+      </section>
+
+      <section className="mt-4 flex flex-wrap gap-2">
+        <FilterLink href={memberDirectoryHref(locale, { group: activeGroupFilters, q: filters.q, legislature: filters.legislature })} active={!filters.chamber}>
+          {locale === "ro" ? "Toți" : "All"}
+        </FilterLink>
+        <FilterLink href={memberDirectoryHref(locale, { chamber: "senate", group: activeGroupFilters, q: filters.q, legislature: filters.legislature })} active={filters.chamber === "senate"}>
           {chamberLabels[locale].senate}
         </FilterLink>
-        <FilterLink href={memberDirectoryHref(locale, { chamber: "deputies", group: activeGroupFilter, q: filters.q, legislature: filters.legislature })} active={filters.chamber === "deputies"}>
+        <FilterLink href={memberDirectoryHref(locale, { chamber: "deputies", group: activeGroupFilters, q: filters.q, legislature: filters.legislature })} active={filters.chamber === "deputies"}>
           {chamberLabels[locale].deputies}
         </FilterLink>
       </section>
 
       <section className="mt-3 flex flex-wrap gap-2">
+        {activeGroupFilters.length > 0 ? (
+          <FilterLink href={memberDirectoryHref(locale, { chamber: filters.chamber, q: filters.q, legislature: filters.legislature })} active={false}>
+            {locale === "ro" ? "Curăță grupuri" : "Clear groups"}
+          </FilterLink>
+        ) : null}
         {groupChips.map((group) => (
-          <FilterLink key={group.value} href={memberDirectoryHref(locale, { chamber: filters.chamber, group: group.value, q: filters.q, legislature: filters.legislature })} active={activeGroupFilter === group.value}>
+          <FilterLink
+            key={group.value}
+            href={memberDirectoryHref(locale, {
+              chamber: filters.chamber,
+              group: toggleGroupFilter(activeGroupFilters, group.value),
+              q: filters.q,
+              legislature: filters.legislature
+            })}
+            active={activeGroupFilters.includes(group.value)}
+          >
             {group.label}
           </FilterLink>
         ))}
@@ -163,12 +191,28 @@ function normalizeGroupKey(value: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
-function memberDirectoryHref(locale: AppLocale, filters: { chamber?: string; group?: string; q?: string; legislature?: string }): string {
+function normalizeGroupParam(value?: string | string[]): string | undefined {
+  return Array.isArray(value) ? value.join(",") : value;
+}
+
+function parseGroupParam(value?: string): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function toggleGroupFilter(current: string[], value: string): string[] {
+  return current.includes(value) ? current.filter((item) => item !== value) : [...current, value];
+}
+
+function memberDirectoryHref(locale: AppLocale, filters: { chamber?: string; group?: string | string[]; q?: string; legislature?: string }): string {
   const params = new URLSearchParams();
   if (filters.chamber) params.set("chamber", filters.chamber);
-  if (filters.group) params.set("group", filters.group);
+  const groups = Array.isArray(filters.group) ? filters.group : parseGroupParam(filters.group);
+  if (groups.length > 0) params.set("group", groups.join(","));
   if (filters.q) params.set("q", filters.q);
-  if (filters.legislature) params.set("legislature", filters.legislature);
+  if (filters.legislature !== undefined) params.set("legislature", filters.legislature);
   const query = params.toString();
   return `/${locale}/members${query ? `?${query}` : ""}`;
 }
@@ -178,7 +222,7 @@ function FilterLink({ href, active, children }: { href: string; active: boolean;
     <Link
       href={href}
       className={`rounded-md border px-3 py-2 text-sm ${
-        active ? "border-blue-700 bg-blue-700 text-white" : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
+        active ? "border-[#309898] bg-[#309898] text-white shadow-sm" : "border-slate-300 bg-white text-slate-800 hover:border-[#FF9F00] hover:bg-[#FF9F00]/10"
       }`}
     >
       {children}

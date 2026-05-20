@@ -84,7 +84,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <MetricList items={dashboard.mostSearchedMembers} empty={labels.noActivity} />
         </Panel>
         <Explainer title={labels.committees} body={labels.committeeCopy} />
-        <Explainer title={labels.groups} body={labels.groupCopy} />
+        <Explainer title={labels.groups} body={labels.groupCopy} href={`/${locale}/members`} cta={labels.groupCta} />
       </section>
     </main>
   );
@@ -92,9 +92,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
 function Panel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="border border-slate-300 bg-white">
+    <section className="border border-slate-300 bg-white shadow-sm">
       <div className="flex items-center gap-2 border-b border-slate-300 px-4 py-3 font-semibold text-slate-950">
-        <span className="text-blue-800">{icon}</span>
+        <span className="text-[#309898]">{icon}</span>
         {title}
       </div>
       {children}
@@ -128,11 +128,16 @@ function MetricList({ items, empty }: { items: DashboardItem[]; empty: string })
   );
 }
 
-function Explainer({ title, body }: { title: string; body: string }) {
+function Explainer({ title, body, href, cta }: { title: string; body: string; href?: string; cta?: string }) {
   return (
-    <section className="border border-slate-300 bg-white p-4">
-      <div className="text-sm font-semibold uppercase text-blue-800">{title}</div>
+    <section className="border border-slate-300 bg-white p-4 shadow-sm">
+      <div className="text-sm font-semibold uppercase text-[#0c6464]">{title}</div>
       <p className="mt-2 text-sm leading-6 text-slate-600">{body}</p>
+      {href && cta ? (
+        <Link className="mt-4 inline-flex rounded-md border border-[#309898] px-3 py-2 text-sm font-medium text-[#0c6464] hover:bg-[#309898]/10" href={href}>
+          {cta}
+        </Link>
+      ) : null}
     </section>
   );
 }
@@ -150,7 +155,8 @@ const pageLabels = {
     committees: "Comisii",
     committeeCopy: "Comisiile analizează proiectele înainte de plen, pregătesc rapoarte și pot influența forma finală a textului.",
     groups: "Grupuri parlamentare",
-    groupCopy: "Grupurile organizează activitatea politică din fiecare cameră și agregă voturile membrilor afiliați."
+    groupCopy: "Grupurile organizează activitatea politică din fiecare cameră și agregă voturile membrilor afiliați.",
+    groupCta: "Vezi grupurile pe legislaturi"
   },
   en: {
     thisMonth: "Most viewed this month",
@@ -164,6 +170,7 @@ const pageLabels = {
     committees: "Committees",
     committeeCopy: "Committees analyze bills before plenary debate, prepare reports, and can influence the final text.",
     groups: "Parliamentary groups",
-    groupCopy: "Groups organize political activity in each chamber and aggregate voting behavior for affiliated members."
+    groupCopy: "Groups organize political activity in each chamber and aggregate voting behavior for affiliated members.",
+    groupCta: "View groups by legislature"
   }
 } satisfies Record<AppLocale, Record<string, string>>;

@@ -825,3 +825,25 @@ implementation steps.
   bills, generic vote subjects, and non-nominal coverage.
 - [ ] Use the audit output to design the next persistence fix:
   cross-chamber bill lifecycle merging and vote-to-bill reconciliation.
+
+## UI Polish + Member Directory Filters
+
+- [x] Add a compact illustrated brand mark: newspaper-style ballot with a hand
+  choosing between `DA` and `NU`.
+- [x] Update homepage introductory Romanian/English copy.
+- [x] Apply the first warm civic palette pass using `#309898`, `#FF9F00`,
+  `#F4631E`, and `#CB0404`.
+- [x] Replace the member legislature dropdown with period filter buttons under
+  the search bar.
+- [x] Default `/members` to the current legislature while preserving all-history
+  URLs such as old group filters.
+- [x] Allow multiple group/party chips to be selected at once in the member
+  directory.
+- [x] Deduplicate member directory rows by linked person identity where possible
+  so multi-legislature politicians do not appear repeatedly in the same result
+  list.
+- [x] Add a homepage CTA from the parliamentary-groups explainer to the member
+  directory filters.
+- [ ] Add a proper parties/groups directory or popover with legislature filters.
+- [ ] Add member ranking panels once absence, party-movement, and activity data
+  are complete enough to avoid misleading users.

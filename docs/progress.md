@@ -1742,3 +1742,21 @@ Verification:
   - `npm run build` passed;
   - `npm run ingest:audit:current-legislature -- --no-files --sample-limit=10`
     passed after allowing `tsx` to create its local IPC pipe.
+
+## 2026-05-20 — Homepage and Member Directory UI Polish
+
+- Added a compact brand mark to the header: a newspaper-style ballot with a
+  hand choosing between `DA` and `NU`.
+- Replaced the homepage subtitle with the requested Romanian copy and matching
+  English copy.
+- Started applying the warm civic palette:
+  `#309898`, `#FF9F00`, `#F4631E`, and `#CB0404`.
+- Added a CTA from the parliamentary-groups explainer to the member directory.
+- Reworked member-directory filtering:
+  - `/members` now defaults to the current legislature;
+  - legislature selection is shown as period buttons under the search bar;
+  - legacy/all-history group-filter URLs still work;
+  - group/party chips can be multi-selected and toggled off;
+  - directory SQL deduplicates rows by linked person identity where available.
+- Added follow-up tasks for a real parties/groups directory and future member
+  ranking panels once absence and party-movement data quality is high enough.
