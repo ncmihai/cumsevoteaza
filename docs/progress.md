@@ -1887,3 +1887,10 @@ Verification:
 - Kept weak/partial items out of the seed: UNPR founding day, PSD+PC exact
   signing date, SOS România exact founding date, ApR exact dates, and the
   minority-organization model.
+
+## 2026-05-21 — UNPR Romanian-Source Refinement
+
+- Added UNPR's 1 May 2010 first-congress/leadership milestone from Romanian
+  Wikipedia as the first exact public date for the party.
+- Documented Tribunalul București as the future higher-confidence source for
+  exact legal party registration dates.

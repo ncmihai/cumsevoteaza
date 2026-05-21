@@ -895,9 +895,11 @@ implementation steps.
 - [x] Continue source review and seed exact-date events for FSN, UDMR, PRM,
   PC/PUR, PUNR absorption, ARD, PMP, PSD-UNPR-PC/ALDE, PRO România, AUR, and
   POT.
-- [ ] Continue source review for UNPR founding day, PSD+PC exact signed date,
-  SOS România exact founding date, ApR exact dates, and minority-organization
-  modeling.
+- [x] Add UNPR's 1 May 2010 congress/leadership milestone from Romanian
+  Wikipedia as the first exact public party date.
+- [ ] Continue source review for UNPR legal registration date at Tribunalul
+  București, PSD+PC exact signed date, SOS România exact founding date, ApR
+  exact dates, and minority-organization modeling.
 - [ ] Add an audit page or report that lists member rows affected by curated
   formation-event normalization.
 - [ ] Design party profile pages for legal parties, not alliances:

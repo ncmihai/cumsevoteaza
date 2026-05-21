@@ -434,6 +434,11 @@ Initial source set:
 - `https://en.wikipedia.org/wiki/National_Union_for_the_Progress_of_Romania`
   - UNPR was formed in March 2010.
   - A UNPR-PMP merger was announced in July 2016, but later failed.
+- `https://ro.wikipedia.org/wiki/Uniunea_Na%C8%9Bional%C4%83_pentru_Progresul_Rom%C3%A2niei`
+  - UNPR came from the independent parliamentary group in 2010.
+  - On 1 May 2010, the new party elected its leaders at congress.
+  - Use 1 May 2010 as the first exact public party milestone until the
+    Tribunalul București legal registration file is verified.
 - `https://en.wikipedia.org/wiki/PRO_Romania`
   - PRO România founded 29 May 2017.
   - PRO România registered 20 February 2018.
@@ -448,8 +453,9 @@ Initial source set:
 Deferred source-review items:
 - Alliance for Romania / ApR: source currently confirms 1997 founding and
   later absorption by PNL, but not exact day.
-- UNPR: source confirms March 2010 formation, but not exact day in the first
-  reviewed source.
+- UNPR legal registration date: public sources give March 2010 and the exact
+  1 May 2010 congress date; the formal legal file should be checked later via
+  Tribunalul București records.
 - PSD+PC: source currently says founded in 2008 and dissolved in 2010, but the
   exact signed date still needs confirmation before seeding.
 - SOS România: reviewed sources confirm 2021 and some secondary sources point
@@ -463,6 +469,11 @@ Modeling notes:
 - Long historical parties can have both a `party_founded` event for their
   original identity and a `party_reestablished` event for post-1989 activity.
   For public timelines, the re-establishment should be the first modern bullet.
+- For Romanian legal parties, exact legal existence is tied to court records
+  filed at Tribunalul București. When available, tribunal records should
+  supersede Wikipedia for the precise legal-registration date while Wikipedia
+  can remain useful for public political milestones such as congresses,
+  alliances, and mergers.
 - `political_formation_event_entities` links events to parties or formations
   with roles such as `absorbed`, `absorber`, `alliance_member`, `split_from`,
   and `split_to`.

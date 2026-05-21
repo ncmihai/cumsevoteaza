@@ -262,6 +262,21 @@
     ]
   },
   {
+    "id": "formation-event-unpr-first-congress-2010-05-01",
+    "date": "2010-05-01",
+    "eventType": "party_founded",
+    "titleRo": "UNPR își alege conducerea la primul congres",
+    "titleEn": "UNPR elects its leadership at first congress",
+    "descriptionRo": "UNPR a fost format în 2010 din grupul parlamentar al independenților; pe 1 mai 2010 noul partid și-a ales liderii prin congres. Data este folosită ca prim reper public exact, până la verificarea juridică la Tribunalul București.",
+    "descriptionEn": "UNPR was formed in 2010 from the independent parliamentary group; on 1 May 2010 the new party elected its leaders at congress. This date is used as the first exact public milestone until legal registration is checked at the Bucharest Tribunal.",
+    "sourceUrl": "https://ro.wikipedia.org/wiki/Uniunea_Na%C8%9Bional%C4%83_pentru_Progresul_Rom%C3%A2niei",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-unpr", "role": "subject" },
+      { "entityType": "formation", "entityId": "formation-independent-parliamentary-group-2009", "role": "split_from" }
+    ]
+  },
+  {
     "id": "formation-event-usl-formed-2011-02-05",
     "date": "2011-02-05",
     "eventType": "alliance_formed",
