@@ -510,5 +510,198 @@
       ]
     },
     "note": "Exact short name PACE."
+  },
+  {
+    "id": "tribunal-source-formation-formation-da-pnl-pd-alliance-1",
+    "entityType": "formation",
+    "entityId": "formation-da-pnl-pd",
+    "approvalStatus": "manual_verified",
+    "registryKind": "alliance",
+    "tribunalEntityId": "tribunal-alliance-1",
+    "position": 1,
+    "legalName": "ALIANŢA „DREPTATE ŞI ADEVĂR – PARTIDUL NAŢIONAL LIBERAL – PARTIDUL DEMOCRAT”",
+    "shortName": "D.A.PNL – PD",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-aliante/poz-1-a.pdf",
+    "sourceKind": "official",
+    "caseNumber": null,
+    "decisionNumber": "3 din 14.01.2004",
+    "hearingDate": null,
+    "definitiveDate": null,
+    "matcher": {
+      "status": "manual_match",
+      "score": 40,
+      "reason": "manual_exact_alliance_name",
+      "matchedLabel": "Dreptate şi Adevăr PNL-PD",
+      "matchedIds": [
+        "group-senate-2004-2008-1"
+      ]
+    },
+    "note": "Manual match: Tribunal legal name explicitly names the D.A. PNL-PD alliance; automatic token matching also saw PDL because the alliance contains PD/PNL terms."
+  },
+  {
+    "id": "tribunal-source-formation-formation-acd-alliance-5",
+    "entityType": "formation",
+    "entityId": "formation-acd",
+    "approvalStatus": "manual_verified",
+    "registryKind": "alliance",
+    "tribunalEntityId": "tribunal-alliance-5",
+    "position": 5,
+    "legalName": "Alianţa de Centru Dreapta Partidul Naţional Liberal – Partidul Conservator",
+    "shortName": "ACD",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-aliante/poz-5-a.pdf",
+    "sourceKind": "official",
+    "caseNumber": "2173/3/2011",
+    "decisionNumber": "2 din 04.02.2011",
+    "hearingDate": "2011-02-04",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "manual_match",
+      "score": 40,
+      "reason": "manual_alliance_label",
+      "matchedLabel": "Liberal Conservator",
+      "matchedIds": [
+        "group-deputies-2012-2016-7",
+        "group-senate-2012-2016-7"
+      ]
+    },
+    "note": "Manual match: ACD is the PNL-PC alliance later visible in parliamentary labels as Liberal Conservator."
+  },
+  {
+    "id": "tribunal-source-formation-formation-usl-alliance-6",
+    "entityType": "formation",
+    "entityId": "formation-usl",
+    "approvalStatus": "manual_verified",
+    "registryKind": "alliance",
+    "tribunalEntityId": "tribunal-alliance-6",
+    "position": 6,
+    "legalName": "UNIUNEA SOCIAL LIBERALĂ",
+    "shortName": "USL",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-aliante/poz-6-a.pdf",
+    "sourceKind": "official",
+    "caseNumber": "17216/3/2011",
+    "decisionNumber": null,
+    "hearingDate": "2011-09-01",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "manual_match",
+      "score": 88,
+      "reason": "exact_short_name_reviewed",
+      "matchedLabel": "USL",
+      "matchedIds": [
+        "group-senate-usl"
+      ]
+    },
+    "note": "Manual match after exact short-name review."
+  },
+  {
+    "id": "tribunal-source-formation-formation-usr-plus-alliance-9",
+    "entityType": "formation",
+    "entityId": "formation-usr-plus",
+    "approvalStatus": "manual_verified",
+    "registryKind": "alliance",
+    "tribunalEntityId": "tribunal-alliance-9",
+    "position": 9,
+    "legalName": "Alianţa USR PLUS",
+    "shortName": "USR PLUS",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-aliante/poz-9-Alianta_USR_PLUS.pdf",
+    "sourceKind": "official",
+    "caseNumber": "36165/3/2019",
+    "decisionNumber": "22 DEC/P",
+    "hearingDate": "2020-06-24",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "manual_match",
+      "score": 100,
+      "reason": "manual_exact_alliance_name",
+      "matchedLabel": "USR PLUS",
+      "matchedIds": [
+        "formation-usr-plus"
+      ]
+    },
+    "note": "Manual match: exact Tribunal alliance name for USR PLUS."
+  },
+  {
+    "id": "tribunal-source-formation-formation-pld-party-44",
+    "entityType": "formation",
+    "entityId": "formation-pld",
+    "approvalStatus": "manual_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-44",
+    "position": 44,
+    "legalName": "PARTIDUL LIBERAL DEMOCRAT",
+    "shortName": "P.L.D. Radiat 26.03.2008",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-44.pdf",
+    "sourceKind": "official",
+    "caseNumber": "43976/3/2006",
+    "decisionNumber": "4/29.01.2007",
+    "hearingDate": "2007-12-21",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "manual_match",
+      "score": 80,
+      "reason": "manual_pld_predecessor",
+      "matchedLabel": "PLD",
+      "matchedIds": [
+        "formation-pld"
+      ]
+    },
+    "note": "Manual match: PLD is stored as a historical formation/predecessor in the app because it is mainly used in the PD+PLD to PDL timeline."
+  },
+  {
+    "id": "tribunal-source-party-party-pp-dd-party-51",
+    "entityType": "party",
+    "entityId": "party-pp-dd",
+    "approvalStatus": "manual_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-51",
+    "position": 51,
+    "legalName": "PARTIDUL POPORULUI – DAN DIACONESCU (denumire prescurtată P.P.-D.D.)",
+    "shortName": null,
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-51-apr-2016_1.pdf",
+    "sourceKind": "official",
+    "caseNumber": "24336/3/2015",
+    "decisionNumber": "16P/06.06.2011",
+    "hearingDate": "2015-07-15",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "manual_match",
+      "score": 34,
+      "reason": "manual_exact_legal_name",
+      "matchedLabel": "PP-DD",
+      "matchedIds": [
+        "group-senate-pp-dd",
+        "party-pp-dd"
+      ]
+    },
+    "note": "Manual match: this is the Dan Diaconescu PP-DD entity used in the 2012-2016 data. The separate Tribunal entry at position 375 is a different newer party and is intentionally not promoted here."
+  },
+  {
+    "id": "tribunal-source-party-party-usr-party-125",
+    "entityType": "party",
+    "entityId": "party-usr",
+    "approvalStatus": "manual_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-125",
+    "position": 125,
+    "legalName": "PARTIDUL UNIUNEA SALVAŢI ROMÂNIA - USR",
+    "shortName": "USR",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-125-mai-2026.pdf",
+    "sourceKind": "official",
+    "caseNumber": "9609/3/2016",
+    "decisionNumber": "54/DEC/P",
+    "hearingDate": "2016-04-04",
+    "definitiveDate": "2024-09-04",
+    "matcher": {
+      "status": "manual_match",
+      "score": 88,
+      "reason": "exact_short_name_reviewed",
+      "matchedLabel": "USR",
+      "matchedIds": [
+        "group-deputies-usr",
+        "group-senate-usr",
+        "party-usr"
+      ]
+    },
+    "note": "Manual match after exact short-name review."
   }
 ]

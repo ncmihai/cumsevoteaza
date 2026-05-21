@@ -912,6 +912,10 @@ implementation steps.
   manual-review files.
 - [x] Review safe Tribunal matches and promote `18` canonical party/formation
   source links into curated source files.
+- [x] Promote a second manually reviewed Tribunal source batch for DA PNL-PD,
+  ACD, USL, USR PLUS, PLD, PP-DD, and USR.
+- [x] Add ACD as an official Tribunal-backed formation event for PNL/PC member
+  timelines.
 - [x] Document fragile CDEP access method and hotspot-safe crawl commands in
   `docs/cdep-access.md`.
 - [x] Show approved Tribunal source links on party pages.

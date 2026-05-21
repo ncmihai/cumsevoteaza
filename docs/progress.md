@@ -1981,3 +1981,16 @@ Verification:
   political founding dates.
 - Deduplicated identical member career timeline segments so repeated imported
   rows do not create duplicate Transfermarkt-style blocks.
+
+## 2026-05-22 — Second Tribunal Source Batch
+
+- Promoted a second manually reviewed Tribunal source batch into
+  `data/curated/tribunal-political-entity-sources.json` and the matching
+  markdown review table.
+- Added official registry source links for DA PNL-PD, ACD, USL, USR PLUS, PLD,
+  PP-DD, and USR.
+- Kept the PP-DD mapping pinned to the Dan Diaconescu party at Tribunal party
+  position `51`; the newer `Partidul Poporului Demn şi Drept` row remains
+  intentionally unpromoted despite abbreviation similarity.
+- Added an ACD Tribunal-backed formation event so PNL/PC member timelines can
+  show the legal-registry milestone around the 2011-2014 alliance context.

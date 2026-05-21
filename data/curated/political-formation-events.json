@@ -337,6 +337,22 @@
     ]
   },
   {
+    "id": "formation-event-acd-registered-2011-02-04",
+    "date": "2011-02-04",
+    "eventType": "alliance_formed",
+    "titleRo": "ACD apare în registrul Tribunalului București",
+    "titleEn": "ACD appears in the Bucharest Tribunal registry",
+    "descriptionRo": "Alianța de Centru Dreapta dintre PNL și PC este consemnată în registrul Tribunalului București. Data este tratată ca reper juridic, nu ca singura dată politică posibilă a colaborării.",
+    "descriptionEn": "The Centre Right Alliance between PNL and PC is recorded in the Bucharest Tribunal registry. The date is treated as a legal registry milestone, not necessarily the only political start date of the cooperation.",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-aliante/poz-5-a.pdf",
+    "sourceKind": "official",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-acd", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pc", "role": "alliance_member" }
+    ]
+  },
+  {
     "id": "formation-event-usl-formed-2011-02-05",
     "date": "2011-02-05",
     "eventType": "alliance_formed",
