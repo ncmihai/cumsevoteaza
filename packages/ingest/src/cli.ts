@@ -29,6 +29,7 @@ import { snapshotFor } from "./parsers/utils";
 import { refreshReadModels } from "./read-models";
 import { resetRosterData } from "./roster-reset";
 import { crosscheckWikipediaRoster } from "./roster-crosscheck";
+import { seedPoliticalFormationEvents } from "./political-formation-events";
 import { wikipediaRosterToParsedRoster } from "./wikipedia-roster-import";
 import {
   discoverDeputiesSources,
@@ -284,6 +285,11 @@ async function main() {
 
   if (command === "governments:skeleton") {
     console.log(JSON.stringify(await persistGovernmentSkeleton(governmentSkeletonData()), null, 2));
+    return;
+  }
+
+  if (command === "political-formations:seed") {
+    console.log(JSON.stringify(await seedPoliticalFormationEvents({ eventsPath: flag("events") }), null, 2));
     return;
   }
 

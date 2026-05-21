@@ -71,6 +71,13 @@
       "when": 1779376872716,
       "tag": "0009_rainy_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1779383447740,
+      "tag": "0010_glamorous_human_torch",
+      "breakpoints": true
     }
   ]
 }

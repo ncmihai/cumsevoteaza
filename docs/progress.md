@@ -1821,3 +1821,31 @@ Verification:
   - `npm run typecheck` passed;
   - `npm run test` passed;
   - `npm run build` passed.
+
+## 2026-05-21 — Political Formation Events For Member Timelines
+
+- Added a separate political-formation event model so party/alliance changes
+  can affect member timelines without overwriting imported official mandate
+  rows.
+- Added curated seed data for initial high-impact transitions:
+  - USL formation and dissolution;
+  - PLR split from PNL;
+  - ACL formation;
+  - PDL merger into PNL;
+  - PLR/PC merger into ALDE.
+- Added `npm run ingest:political-formations:seed` to upsert those events and
+  their affected parties/formations.
+- Updated member profile career timelines to:
+  - split overlapping PDL/PNL rows around the 2014 merger where applicable;
+  - show formation events as dated sourced markers;
+  - remove the previous black rail and dotted background.
+- Verification:
+  - `npm run typecheck` passed.
+  - `npm run test` passed.
+  - `npm run build` passed after running outside the sandbox because
+    Turbopack needs a local helper process during CSS processing.
+  - Applied the migration to Neon and seeded 6 formation events / 20 entity
+    links.
+  - Local browser smoke-check for
+    `/ro/members/lucian-nicolae-bode-deputies-30` showed the ACL and
+    PDL-to-PNL event markers and corrected PDL/PNL dates.

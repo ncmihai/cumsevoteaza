@@ -367,3 +367,36 @@ Historical group identity notes:
   clearly maps to a real party.
 - `Partidul Democrat-Liberal` appears with a hyphen in official 2008 CDEP
   labels and should map to PDL.
+
+## Curated Political Formation Events
+
+Purpose:
+- These rows explain party/alliance changes that affect how a parliamentary
+  career should be read across time.
+- They are a curated layer over official mandate/group rows. They must not
+  replace official source history.
+- They can split or annotate display timelines, for example PDL ending as a
+  separate party in 2014 and the member continuing under PNL.
+
+Initial source set:
+- `https://en.wikipedia.org/wiki/Social_Liberal_Union`
+  - USL founded 5 February 2011.
+  - USL dissolved / PNL left the coalition on 25 February 2014.
+- `https://en.wikipedia.org/wiki/Christian_Liberal_Alliance`
+  - ACL was formed by PNL and PDL in July 2014.
+  - It was disbanded when PDL merged into PNL in November 2014.
+- `https://en.wikipedia.org/wiki/Democratic_Liberal_Party_(Romania)`
+  - PDL dissolved / merged into PNL on 17 November 2014.
+- `https://en.wikipedia.org/wiki/Liberal_Reformist_Party_(Romania)`
+  - PLR founded 3 July 2014 after splitting from PNL.
+  - PLR merged with PC to form ALDE on 19 June 2015.
+- `https://en.wikipedia.org/wiki/Alliance_of_Liberals_and_Democrats_(Romania)`
+  - ALDE founded 19 June 2015 through PLR and PC.
+
+Modeling notes:
+- `USL`, `ACL`, `ARD`, `CDR`, and similar entities are formations/alliances,
+  not legal-party rows.
+- `political_formation_event_entities` links events to parties or formations
+  with roles such as `absorbed`, `absorber`, `alliance_member`, `split_from`,
+  and `split_to`.
+- The first UI consumer is the Transfermarkt-style member career timeline.

@@ -14,6 +14,8 @@ export function MemberCareerTimeline({
   const start = dateMs(sorted[0]?.startsOn);
   const end = Math.max(...sorted.map((segment) => dateMs(segment.endsOn) || Date.now()), Date.now());
   const span = Math.max(1, end - start);
+  const events = uniqueEvents(sorted);
+  const legislatureBreaks = uniqueLegislatureBreaks(sorted);
 
   return (
     <section className="mt-6 border border-slate-300 bg-white p-4">
@@ -33,14 +35,30 @@ export function MemberCareerTimeline({
 
       <div className="mt-5 overflow-x-auto pb-2">
         <div className="min-w-[680px]">
-          <div className="relative h-20 border-y-4 border-slate-950 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:28px_28px]">
+          <div className="relative h-28 border border-slate-200 bg-slate-50">
+            <div className="absolute left-0 right-0 top-[62px] h-px bg-slate-300" />
+            {legislatureBreaks.map((breakpoint) => {
+              const left = ((dateMs(breakpoint.date) - start) / span) * 100;
+              return (
+                <div
+                  key={breakpoint.id}
+                  className="absolute bottom-4 top-4 w-px bg-slate-300"
+                  style={{ left: `${left}%` }}
+                  title={breakpoint.label}
+                >
+                  <span className="absolute -left-4 top-full mt-1 text-[10px] font-semibold text-slate-500">
+                    {breakpoint.label}
+                  </span>
+                </div>
+              );
+            })}
             {sorted.map((segment) => {
               const left = ((dateMs(segment.startsOn) - start) / span) * 100;
               const width = Math.max(3, (((dateMs(segment.endsOn) || end) - dateMs(segment.startsOn)) / span) * 100);
               return (
                 <div
                   key={segment.id}
-                  className="absolute top-5 h-8 border-x border-white"
+                  className="absolute top-12 h-9 border-x border-white shadow-sm"
                   style={{
                     left: `${left}%`,
                     width: `${Math.min(width, 100 - left)}%`,
@@ -60,6 +78,27 @@ export function MemberCareerTimeline({
                 </div>
               );
             })}
+            {events.map((event) => {
+              const left = ((dateMs(event.date) - start) / span) * 100;
+              const label = locale === "ro" ? event.labelRo : event.labelEn;
+              const description = locale === "ro" ? event.descriptionRo : event.descriptionEn;
+              return (
+                <a
+                  key={event.id}
+                  href={event.sourceUrl}
+                  target={event.sourceUrl ? "_blank" : undefined}
+                  rel={event.sourceUrl ? "noreferrer" : undefined}
+                  className="absolute top-2 z-10 -translate-x-1/2 text-center"
+                  style={{ left: `${left}%` }}
+                  title={`${formatDate(event.date, locale)} · ${description}`}
+                >
+                  <span className="mx-auto block h-4 w-4 border-2 border-white bg-[#309898] shadow-sm" />
+                  <span className="mt-1 block max-w-28 truncate bg-white px-1 text-[10px] font-semibold text-slate-700 shadow-sm">
+                    {label}
+                  </span>
+                </a>
+              );
+            })}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {sorted.map((segment) => (
@@ -73,6 +112,24 @@ export function MemberCareerTimeline({
               </div>
             ))}
           </div>
+          {events.length > 0 ? (
+            <div className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+              {events.map((event) => (
+                <a
+                  key={`${event.id}-note`}
+                  href={event.sourceUrl}
+                  target={event.sourceUrl ? "_blank" : undefined}
+                  rel={event.sourceUrl ? "noreferrer" : undefined}
+                  className="border border-slate-200 bg-white px-2 py-1 hover:border-[#309898]"
+                >
+                  <span className="font-semibold text-slate-950">
+                    {formatDate(event.date, locale)} · {locale === "ro" ? event.labelRo : event.labelEn}
+                  </span>
+                  <span className="mt-0.5 block">{locale === "ro" ? event.descriptionRo : event.descriptionEn}</span>
+                </a>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
     </section>
@@ -85,4 +142,28 @@ function dateMs(value?: string): number {
 
 function yearLabel(value?: string): string | undefined {
   return value?.slice(0, 4);
+}
+
+function uniqueEvents(segments: MemberCareerSegment[]): NonNullable<MemberCareerSegment["events"]> {
+  const events = new Map<string, NonNullable<MemberCareerSegment["events"]>[number]>();
+  for (const segment of segments) {
+    for (const event of segment.events ?? []) {
+      events.set(event.id, event);
+    }
+  }
+  return [...events.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function uniqueLegislatureBreaks(segments: MemberCareerSegment[]): Array<{ id: string; date: string; label: string }> {
+  const breaks = new Map<string, { id: string; date: string; label: string }>();
+  for (const segment of segments) {
+    if (!segment.legislatureId) continue;
+    const label = segment.legislatureId.replace(/^leg-/, "");
+    breaks.set(segment.legislatureId, {
+      id: segment.legislatureId,
+      date: segment.startsOn,
+      label
+    });
+  }
+  return [...breaks.values()].sort((a, b) => a.date.localeCompare(b.date));
 }

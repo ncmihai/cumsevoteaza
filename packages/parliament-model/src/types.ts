@@ -47,6 +47,29 @@ export type CompositionEventType =
   | "role_change"
   | "other";
 
+export type PoliticalFormationEventType =
+  | "alliance_formed"
+  | "alliance_dissolved"
+  | "party_merged"
+  | "party_split"
+  | "party_renamed"
+  | "party_absorbed"
+  | "other";
+
+export type PoliticalFormationEventSourceKind = "official" | "wikipedia" | "curated";
+
+export type PoliticalFormationEventEntityType = "party" | "formation";
+
+export type PoliticalFormationEventEntityRole =
+  | "absorbed"
+  | "absorber"
+  | "alliance_member"
+  | "renamed_from"
+  | "renamed_to"
+  | "split_from"
+  | "split_to"
+  | "subject";
+
 export interface SourceSnapshot {
   id: string;
   sourceUrl: string;
@@ -173,6 +196,26 @@ export interface CompositionEvent {
   partyId?: string;
   groupId?: string;
   sourceSnapshotId?: string;
+}
+
+export interface PoliticalFormationEventEntity {
+  eventId: string;
+  entityType: PoliticalFormationEventEntityType;
+  entityId: string;
+  role: PoliticalFormationEventEntityRole;
+}
+
+export interface PoliticalFormationEvent {
+  id: string;
+  date: string;
+  eventType: PoliticalFormationEventType;
+  titleRo: string;
+  titleEn: string;
+  descriptionRo: string;
+  descriptionEn: string;
+  sourceUrl?: string;
+  sourceKind: PoliticalFormationEventSourceKind;
+  entities: PoliticalFormationEventEntity[];
 }
 
 export interface MemberMandate {
@@ -338,6 +381,17 @@ export interface MemberCareerSegment {
   details?: string;
   logoUrl?: string;
   color?: string;
+  events?: MemberCareerEvent[];
+}
+
+export interface MemberCareerEvent {
+  id: string;
+  date: string;
+  labelRo: string;
+  labelEn: string;
+  descriptionRo: string;
+  descriptionEn: string;
+  sourceUrl?: string;
 }
 
 export interface NormalizedDataset {

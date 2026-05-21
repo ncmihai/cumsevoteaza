@@ -1,0 +1,100 @@
+[
+  {
+    "id": "formation-event-usl-formed-2011-02-05",
+    "date": "2011-02-05",
+    "eventType": "alliance_formed",
+    "titleRo": "Formarea Uniunii Social Liberale",
+    "titleEn": "Social Liberal Union formed",
+    "descriptionRo": "USL a fost formată inițial de PSD și ACD, alianța PNL-PC. Ulterior, UNPR a intrat în USL prin ACS.",
+    "descriptionEn": "USL was initially formed by PSD and ACD, the PNL-PC alliance. UNPR later entered USL through ACS.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Social_Liberal_Union",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-usl", "role": "subject" },
+      { "entityType": "party", "entityId": "party-psd", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pc", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-usl-dissolved-2014-02-25",
+    "date": "2014-02-25",
+    "eventType": "alliance_dissolved",
+    "titleRo": "PNL iese din USL",
+    "titleEn": "PNL exits USL",
+    "descriptionRo": "PNL a părăsit USL pe 25 februarie 2014; alianța s-a destrămat, iar PNL a intrat în opoziție.",
+    "descriptionEn": "PNL left USL on 25 February 2014; the alliance dissolved and PNL moved into opposition.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Social_Liberal_Union",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-usl", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-psd", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pc", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-unpr", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-plr-founded-2014-07-03",
+    "date": "2014-07-03",
+    "eventType": "party_split",
+    "titleRo": "PLR se desprinde din PNL",
+    "titleEn": "PLR splits from PNL",
+    "descriptionRo": "Partidul Liberal Reformator a fost fondat de Călin Popescu-Tăriceanu după ruptura de PNL.",
+    "descriptionEn": "The Liberal Reformist Party was founded by Călin Popescu-Tăriceanu after splitting from PNL.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Liberal_Reformist_Party_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-plr", "role": "split_to" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "split_from" }
+    ]
+  },
+  {
+    "id": "formation-event-acl-formed-2014-07-28",
+    "date": "2014-07-28",
+    "eventType": "alliance_formed",
+    "titleRo": "PNL și PDL formează ACL",
+    "titleEn": "PNL and PDL form ACL",
+    "descriptionRo": "Alianța Creștin-Liberală a fost formată de PNL și PDL înaintea fuziunii planificate și a alegerilor prezidențiale din 2014.",
+    "descriptionEn": "The Christian Liberal Alliance was formed by PNL and PDL ahead of their planned merger and the 2014 presidential election.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Christian_Liberal_Alliance",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-acl", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pdl", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-pdl-merged-into-pnl-2014-11-17",
+    "date": "2014-11-17",
+    "eventType": "party_merged",
+    "titleRo": "PDL fuzionează în PNL",
+    "titleEn": "PDL merges into PNL",
+    "descriptionRo": "PDL a fuzionat oficial în PNL, încetând să existe ca partid separat.",
+    "descriptionEn": "PDL officially merged into PNL, ceasing to exist as a separate party.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Democratic_Liberal_Party_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pdl", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "absorber" },
+      { "entityType": "formation", "entityId": "formation-acl", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-alde-formed-2015-06-19",
+    "date": "2015-06-19",
+    "eventType": "party_merged",
+    "titleRo": "PLR și PC formează ALDE",
+    "titleEn": "PLR and PC form ALDE",
+    "descriptionRo": "PLR a fuzionat cu Partidul Conservator pentru a forma ALDE.",
+    "descriptionEn": "PLR merged with the Conservative Party to form ALDE.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Liberal_Reformist_Party_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-plr", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-pc", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-alde", "role": "absorber" }
+    ]
+  }
+]

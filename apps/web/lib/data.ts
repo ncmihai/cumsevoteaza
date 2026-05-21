@@ -21,6 +21,7 @@ import {
   type MemberRole,
   type ParliamentaryGroup,
   type Party,
+  type PoliticalFormationEvent,
   type SourceSnapshot,
   type Vote
 } from "@cumsevoteaza/parliament-model";
@@ -343,7 +344,7 @@ async function getMemberPageDataUncached(slug: string, options: { legislature?: 
     party,
     profilePhotoUrl: member.sourceIds.profilePhoto,
     currentLogoUrl: groupMembership?.logoUrl,
-    careerSegments: buildMemberCareerSegments(history, demoDataset.groups, demoDataset.parties),
+    careerSegments: buildMemberCareerSegments(history, demoDataset.groups, demoDataset.parties, []),
     source,
     legislatures,
     selectedLegislature,
@@ -689,6 +690,9 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
           .from(schema.storedAssets)
           .where(and(inArray(schema.storedAssets.entityId, memberIds), eq(schema.storedAssets.fetchStatus, "stored")))
       : [];
+    const formationEventRows = await session.db.select().from(schema.politicalFormationEvents);
+    const formationEventEntityRows = await session.db.select().from(schema.politicalFormationEventEntities);
+    const formationEvents = mapPoliticalFormationEvents(formationEventRows, formationEventEntityRows);
     const legislatureRows = await session.db.select().from(schema.legislatures);
     const legislatures = legislatureRows
       .map(mapLegislature)
@@ -734,6 +738,8 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
       roles: roleRows.map(mapMemberRole),
       groups,
       parties,
+      legislatures,
+      formationEvents,
       votes: selectedVotes.individualVotes
     });
     const profilePhotoUrl =
@@ -750,7 +756,7 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
       party,
       profilePhotoUrl,
       currentLogoUrl: logoUrl,
-      careerSegments: buildMemberCareerSegments(history, groups, parties),
+      careerSegments: buildMemberCareerSegments(history, groups, parties, formationEvents),
       source: sourceRow ? mapSource(sourceRow) : undefined,
       legislatures,
       selectedLegislature,
@@ -1036,6 +1042,31 @@ function mapLegislature(row: typeof schema.legislatures.$inferSelect): Legislatu
     startsOn: row.startsOn,
     endsOn: row.endsOn
   };
+}
+
+function mapPoliticalFormationEvents(
+  rows: Array<typeof schema.politicalFormationEvents.$inferSelect>,
+  entityRows: Array<typeof schema.politicalFormationEventEntities.$inferSelect>
+): PoliticalFormationEvent[] {
+  return rows.map((row) => ({
+    id: row.id,
+    date: row.date,
+    eventType: row.eventType,
+    titleRo: row.titleRo,
+    titleEn: row.titleEn,
+    descriptionRo: row.descriptionRo,
+    descriptionEn: row.descriptionEn,
+    sourceUrl: row.sourceUrl ?? undefined,
+    sourceKind: row.sourceKind,
+    entities: entityRows
+      .filter((entity) => entity.eventId === row.id)
+      .map((entity) => ({
+        eventId: entity.eventId,
+        entityType: entity.entityType,
+        entityId: entity.entityId,
+        role: entity.role
+      }))
+  }));
 }
 
 function mapMemberGroupMembership(row: typeof schema.memberGroupMemberships.$inferSelect): MemberGroupMembership {
@@ -1667,24 +1698,27 @@ function firstSourceId(members: Member[], key: string): string | undefined {
 function buildMemberCareerSegments(
   history: MemberHistoryRow[],
   groups: ParliamentaryGroup[],
-  parties: Party[]
+  parties: Party[],
+  formationEvents: PoliticalFormationEvent[]
 ): MemberCareerSegment[] {
   const groupByLabel = new Map(groups.map((group) => [group.shortName, group]));
   const partyByLabel = new Map(parties.map((party) => [party.shortName, party]));
+  const partyIdByLabel = new Map(parties.map((party) => [party.shortName, party.id]));
   const rows = history
-    .filter((row) => row.type === "party" || row.type === "group")
+    .filter((row) => row.type === "party")
     .sort((a, b) => a.startsOn.localeCompare(b.startsOn) || a.label.localeCompare(b.label));
   const segments: MemberCareerSegment[] = [];
-  for (const row of rows) {
+  for (const row of normalizeCareerRows(rows, partyIdByLabel, formationEvents)) {
     const previous = segments.at(-1);
     if (
       previous &&
       previous.label === row.label &&
       previous.chamber === row.chamber &&
       previous.legislatureId === row.legislatureId &&
-      previous.endsOn === row.startsOn
+      datesTouch(previous.endsOn, row.startsOn)
     ) {
       previous.endsOn = row.endsOn;
+      previous.events = [...(previous.events ?? []), ...careerEventsForRow(row, partyIdByLabel, formationEvents)];
       continue;
     }
     const group = groupByLabel.get(row.label);
@@ -1698,10 +1732,11 @@ function buildMemberCareerSegments(
       label: row.label,
       details: row.details,
       logoUrl: row.logoUrl,
-      color: group?.color ?? party?.color
+      color: group?.color ?? party?.color,
+      events: careerEventsForRow(row, partyIdByLabel, formationEvents)
     });
   }
-  return segments;
+  return dedupeCareerSegments(segments);
 }
 
 function buildMemberHistory(input: {
@@ -1713,6 +1748,8 @@ function buildMemberHistory(input: {
   roles: MemberRole[];
   groups: ParliamentaryGroup[];
   parties: Party[];
+  legislatures: Legislature[];
+  formationEvents?: PoliticalFormationEvent[];
   votes: IndividualVote[];
 }): MemberHistoryRow[] {
   const votesFor = input.votes.filter((vote) => vote.choice === "for").length;
@@ -1720,18 +1757,21 @@ function buildMemberHistory(input: {
   const abstentions = input.votes.filter((vote) => vote.choice === "abstention").length;
   const counts = { votesFor, votesAgainst, abstentions, proposals: 0 };
 
-  return [
-    ...input.mandates.map((mandate) => ({
-      id: `history-${mandate.id}`,
-      startsOn: mandate.startsOn,
-      endsOn: mandate.endsOn,
-      legislatureId: mandate.legislatureId,
-      chamber: mandate.chamber,
-      type: "mandate" as const,
-      label: "Mandat parlamentar",
-      details: cleanHistoryDetail(mandate.constituency) ?? mandate.status,
-      ...counts
-    })),
+  const rows: MemberHistoryRow[] = [
+    ...input.mandates.map((mandate) => {
+      const legislature = input.legislatures.find((item) => item.id === mandate.legislatureId);
+      return {
+        id: `history-${mandate.id}`,
+        startsOn: mandate.startsOn,
+        endsOn: displayEndsOn(mandate.endsOn, mandate, legislature),
+        legislatureId: mandate.legislatureId,
+        chamber: mandate.chamber,
+        type: "mandate" as const,
+        label: "Mandat parlamentar",
+        details: cleanHistoryDetail(mandate.constituency) ?? mandate.status,
+        ...counts
+      };
+    }),
     ...input.mandateRelations.flatMap((relation) => {
       const mandate = input.mandates.find((item) => item.id === relation.mandateId);
       if (!mandate) return [];
@@ -1753,10 +1793,11 @@ function buildMemberHistory(input: {
     ...input.groupMemberships.map((membership) => {
       const group = input.groups.find((item) => item.id === membership.groupId);
       const mandate = mandateForMemberPeriod(input.mandates, membership.memberId, membership.startsOn);
+      const legislature = input.legislatures.find((item) => item.id === mandate?.legislatureId);
       return {
         id: `history-${membership.id}`,
         startsOn: membership.startsOn,
-        endsOn: membership.endsOn,
+        endsOn: displayEndsOn(membership.endsOn, mandate, legislature),
         legislatureId: mandate?.legislatureId,
         chamber: mandate?.chamber ?? group?.chamber ?? "senate",
         type: "group" as const,
@@ -1769,10 +1810,11 @@ function buildMemberHistory(input: {
     ...input.partyAffiliations.map((affiliation) => {
       const party = input.parties.find((item) => item.id === affiliation.partyId);
       const mandate = mandateForMemberPeriod(input.mandates, affiliation.memberId, affiliation.startsOn);
+      const legislature = input.legislatures.find((item) => item.id === mandate?.legislatureId);
       return {
         id: `history-${affiliation.id}`,
         startsOn: affiliation.startsOn,
-        endsOn: affiliation.endsOn,
+        endsOn: displayEndsOn(affiliation.endsOn, mandate, legislature),
         legislatureId: mandate?.legislatureId,
         chamber: mandate?.chamber ?? chamberForMemberPeriod(input.mandates, affiliation.memberId, affiliation.startsOn),
         type: "party" as const,
@@ -1782,29 +1824,167 @@ function buildMemberHistory(input: {
         ...counts
       };
     }),
-    ...input.committees.map((committee) => ({
-      id: `history-${committee.id}`,
-      startsOn: committee.startsOn,
-      endsOn: committee.endsOn,
-      legislatureId: mandateForMemberPeriod(input.mandates, committee.memberId, committee.startsOn)?.legislatureId,
-      chamber: committee.chamber,
-      type: "committee" as const,
-      label: committee.committeeName,
-      details: committee.role ?? "Membru",
-      ...counts
-    })),
-    ...input.roles.map((role) => ({
-      id: `history-${role.id}`,
-      startsOn: role.startsOn,
-      endsOn: role.endsOn,
-      legislatureId: mandateForMemberPeriod(input.mandates, role.memberId, role.startsOn)?.legislatureId,
-      chamber: role.chamber,
-      type: "role" as const,
-      label: role.title,
-      details: "Rol parlamentar",
-      ...counts
+    ...input.committees.map((committee) => {
+      const mandate = mandateForMemberPeriod(input.mandates, committee.memberId, committee.startsOn);
+      const legislature = input.legislatures.find((item) => item.id === mandate?.legislatureId);
+      return {
+        id: `history-${committee.id}`,
+        startsOn: committee.startsOn,
+        endsOn: displayEndsOn(committee.endsOn, mandate, legislature),
+        legislatureId: mandate?.legislatureId,
+        chamber: committee.chamber,
+        type: "committee" as const,
+        label: committee.committeeName,
+        details: committee.role ?? "Membru",
+        ...counts
+      };
+    }),
+    ...input.roles.map((role) => {
+      const mandate = mandateForMemberPeriod(input.mandates, role.memberId, role.startsOn);
+      const legislature = input.legislatures.find((item) => item.id === mandate?.legislatureId);
+      return {
+        id: `history-${role.id}`,
+        startsOn: role.startsOn,
+        endsOn: displayEndsOn(role.endsOn, mandate, legislature),
+        legislatureId: mandate?.legislatureId,
+        chamber: role.chamber,
+        type: "role" as const,
+        label: role.title,
+        details: "Rol parlamentar",
+        ...counts
+      };
+    })
+  ];
+
+  return normalizeHistoryDisplayRows(rows, input.parties, input.formationEvents ?? [])
+    .sort((a, b) => b.startsOn.localeCompare(a.startsOn));
+}
+
+function normalizeCareerRows(
+  rows: MemberHistoryRow[],
+  partyIdByLabel: Map<string, string>,
+  formationEvents: PoliticalFormationEvent[]
+): MemberHistoryRow[] {
+  const mergerEvents = formationEvents.filter((event) =>
+    event.eventType === "party_merged" || event.eventType === "party_absorbed"
+  );
+  const normalized = rows.map((row) => ({ ...row }));
+
+  for (const event of mergerEvents) {
+    const absorbed = event.entities.find((entity) => entity.role === "absorbed" && entity.entityType === "party")?.entityId;
+    const absorber = event.entities.find((entity) => entity.role === "absorber" && entity.entityType === "party")?.entityId;
+    if (!absorbed || !absorber) continue;
+
+    const absorbedLabels = labelsForPartyId(partyIdByLabel, absorbed);
+    const absorberLabels = labelsForPartyId(partyIdByLabel, absorber);
+    for (const row of normalized) {
+      if (!absorbedLabels.includes(row.label) && !absorberLabels.includes(row.label)) continue;
+      const hasOverlappingAbsorbedRow = normalized.some(
+        (candidate) =>
+          candidate !== row &&
+          absorbedLabels.includes(candidate.label) &&
+          candidate.legislatureId === row.legislatureId &&
+          rangesOverlap(candidate.startsOn, candidate.endsOn, row.startsOn, row.endsOn)
+      );
+      if (absorbedLabels.includes(row.label) && row.startsOn < event.date && (!row.endsOn || row.endsOn >= event.date)) {
+        row.endsOn = previousDay(event.date);
+      }
+      if (absorberLabels.includes(row.label) && hasOverlappingAbsorbedRow && row.startsOn < event.date && (!row.endsOn || row.endsOn >= event.date)) {
+        row.startsOn = event.date;
+      }
+    }
+  }
+
+  const unique = new Map<string, MemberHistoryRow>();
+  for (const row of normalized) {
+    if (row.endsOn && row.startsOn > row.endsOn) continue;
+    const key = [row.type, row.label, row.startsOn, row.endsOn ?? "", row.legislatureId ?? "", row.chamber].join("|");
+    if (!unique.has(key)) unique.set(key, row);
+  }
+  return [...unique.values()].sort((a, b) => a.startsOn.localeCompare(b.startsOn) || a.label.localeCompare(b.label));
+}
+
+function normalizeHistoryDisplayRows(
+  rows: MemberHistoryRow[],
+  parties: Party[],
+  formationEvents: PoliticalFormationEvent[]
+): MemberHistoryRow[] {
+  if (formationEvents.length === 0) return rows;
+  const partyIdByLabel = new Map(parties.map((party) => [party.shortName, party.id]));
+  const temporalRows = rows.filter((row) => row.type === "party" || row.type === "group");
+  const stableRows = rows.filter((row) => row.type !== "party" && row.type !== "group");
+  return [
+    ...stableRows,
+    ...normalizeCareerRows(temporalRows, partyIdByLabel, formationEvents)
+  ];
+}
+
+function careerEventsForRow(
+  row: MemberHistoryRow,
+  partyIdByLabel: Map<string, string>,
+  formationEvents: PoliticalFormationEvent[]
+): NonNullable<MemberCareerSegment["events"]> {
+  const partyId = partyIdByLabel.get(row.label);
+  if (!partyId) return [];
+  return formationEvents
+    .filter((event) => event.entities.some((entity) => entity.entityType === "party" && entity.entityId === partyId))
+    .filter((event) => dateTouchesRange(event.date, row.startsOn, row.endsOn))
+    .map((event) => ({
+      id: event.id,
+      date: event.date,
+      labelRo: event.titleRo,
+      labelEn: event.titleEn,
+      descriptionRo: event.descriptionRo,
+      descriptionEn: event.descriptionEn,
+      sourceUrl: event.sourceUrl
     }))
-  ].sort((a, b) => b.startsOn.localeCompare(a.startsOn));
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function dedupeCareerSegments(segments: MemberCareerSegment[]): MemberCareerSegment[] {
+  return segments.map((segment) => {
+    const events = new Map((segment.events ?? []).map((event) => [event.id, event]));
+    return { ...segment, events: [...events.values()].sort((a, b) => a.date.localeCompare(b.date)) };
+  });
+}
+
+function labelsForPartyId(partyIdByLabel: Map<string, string>, partyId: string): string[] {
+  return [...partyIdByLabel.entries()].filter(([, id]) => id === partyId).map(([label]) => label);
+}
+
+function rangesOverlap(aStart: string, aEnd: string | undefined, bStart: string, bEnd: string | undefined): boolean {
+  return aStart <= (bEnd ?? "9999-12-31") && bStart <= (aEnd ?? "9999-12-31");
+}
+
+function dateTouchesRange(date: string, startsOn: string, endsOn?: string): boolean {
+  return date >= startsOn && (!endsOn || date <= nextDay(endsOn));
+}
+
+function datesTouch(leftEnd: string | undefined, rightStart: string): boolean {
+  return Boolean(leftEnd && (leftEnd === rightStart || nextDay(leftEnd) === rightStart));
+}
+
+function displayEndsOn(endsOn: string | undefined, mandate?: MemberMandate, legislature?: Legislature): string | undefined {
+  if (endsOn) return endsOn;
+  if (mandate?.endsOn) return mandate.endsOn;
+  if (legislature && legislature.endsOn < todayIso()) return legislature.endsOn;
+  return undefined;
+}
+
+function previousDay(value: string): string {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function nextDay(value: string): string {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 async function findMemberByLegacySlug(

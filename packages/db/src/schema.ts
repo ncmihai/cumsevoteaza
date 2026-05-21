@@ -81,6 +81,34 @@ export const storedAssetStatusEnum = pgEnum("stored_asset_status", [
   "missing",
   "official_timeout"
 ]);
+export const politicalFormationEventTypeEnum = pgEnum("political_formation_event_type", [
+  "alliance_formed",
+  "alliance_dissolved",
+  "party_merged",
+  "party_split",
+  "party_renamed",
+  "party_absorbed",
+  "other"
+]);
+export const politicalFormationEventSourceKindEnum = pgEnum("political_formation_event_source_kind", [
+  "official",
+  "wikipedia",
+  "curated"
+]);
+export const politicalFormationEventEntityTypeEnum = pgEnum("political_formation_event_entity_type", [
+  "party",
+  "formation"
+]);
+export const politicalFormationEventEntityRoleEnum = pgEnum("political_formation_event_entity_role", [
+  "absorbed",
+  "absorber",
+  "alliance_member",
+  "renamed_from",
+  "renamed_to",
+  "split_from",
+  "split_to",
+  "subject"
+]);
 
 export const legislatures = pgTable("legislatures", {
   id: text("id").primaryKey(),
@@ -197,6 +225,33 @@ export const storedAssets = pgTable("stored_assets", {
   officialUrlIdx: index("stored_assets_official_url_idx").on(table.officialUrl),
   contentHashIdx: index("stored_assets_content_hash_idx").on(table.contentHash),
   statusIdx: index("stored_assets_status_idx").on(table.fetchStatus, table.lastAttemptAt)
+}));
+
+export const politicalFormationEvents = pgTable("political_formation_events", {
+  id: text("id").primaryKey(),
+  date: date("date").notNull(),
+  eventType: politicalFormationEventTypeEnum("event_type").notNull(),
+  titleRo: text("title_ro").notNull(),
+  titleEn: text("title_en").notNull(),
+  descriptionRo: text("description_ro").notNull(),
+  descriptionEn: text("description_en").notNull(),
+  sourceUrl: text("source_url"),
+  sourceKind: politicalFormationEventSourceKindEnum("source_kind").notNull().default("curated")
+}, (table) => ({
+  dateIdx: index("political_formation_events_date_idx").on(table.date, table.eventType),
+  sourceKindIdx: index("political_formation_events_source_kind_idx").on(table.sourceKind)
+}));
+
+export const politicalFormationEventEntities = pgTable("political_formation_event_entities", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => politicalFormationEvents.id),
+  entityType: politicalFormationEventEntityTypeEnum("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  role: politicalFormationEventEntityRoleEnum("role").notNull()
+}, (table) => ({
+  eventIdx: index("political_formation_event_entities_event_idx").on(table.eventId),
+  entityIdx: index("political_formation_event_entities_entity_idx").on(table.entityType, table.entityId, table.role),
+  uniqueEntityRoleIdx: uniqueIndex("political_formation_event_entities_unique_idx").on(table.eventId, table.entityType, table.entityId, table.role)
 }));
 
 export const governments = pgTable("governments", {

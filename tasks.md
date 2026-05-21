@@ -873,5 +873,21 @@ implementation steps.
   official CDEP profile photo and period logo URLs.
 - [x] Add a Transfermarkt-style member career strip showing party/group periods
   under the profile header.
+- [x] Add political formation events as a separate curated layer for member
+  timelines, starting with USL, ACL, PLR, ALDE, and the PDL-to-PNL merger.
+- [x] Use formation events to split/annotate overlapping imported party rows
+  without deleting the underlying official mandate history.
 - [ ] Wire CV assets into the profile once fresh CDEP crawls expose CV links and
   the Blob importer stores at least one successful CV row.
+
+## Political Formation Events
+
+- [x] Add `political_formation_events` and
+  `political_formation_event_entities` tables.
+- [x] Add `npm run ingest:political-formations:seed` to upsert curated
+  formation events.
+- [x] Render formation events as dated markers on member career timelines.
+- [ ] Expand the curated event file with DA PNL-PD, CDR, ARD, PMP, UNPR, PC,
+  PUR, and later party/formation changes after source review.
+- [ ] Add an audit page or report that lists member rows affected by curated
+  formation-event normalization.
