@@ -82,6 +82,8 @@ export const storedAssetStatusEnum = pgEnum("stored_asset_status", [
   "official_timeout"
 ]);
 export const politicalFormationEventTypeEnum = pgEnum("political_formation_event_type", [
+  "party_founded",
+  "party_reestablished",
   "alliance_formed",
   "alliance_dissolved",
   "party_merged",

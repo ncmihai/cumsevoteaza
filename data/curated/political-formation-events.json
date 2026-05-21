@@ -1,5 +1,147 @@
 [
   {
+    "id": "formation-event-pnl-founded-1875-05-24",
+    "date": "1875-05-24",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea Partidului Național Liberal istoric",
+    "titleEn": "Historical National Liberal Party founded",
+    "descriptionRo": "Partidul Național Liberal istoric a fost fondat la 24 mai 1875. Pentru traseele parlamentare moderne, acest eveniment este păstrat ca reper istoric separat de reînființarea post-1989.",
+    "descriptionEn": "The historical National Liberal Party was founded on 24 May 1875. For modern parliamentary timelines, this event is kept as historical context separate from the post-1989 re-establishment.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/National_Liberal_Party_(Romania,_1875)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pnl", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-pnl-reestablished-1990-01-15",
+    "date": "1990-01-15",
+    "eventType": "party_reestablished",
+    "titleRo": "PNL este reînființat după 1989",
+    "titleEn": "PNL re-established after 1989",
+    "descriptionRo": "PNL a fost reînființat în ianuarie 1990, revendicând continuitatea partidului istoric interzis în perioada comunistă. Acesta este primul reper modern pentru timeline-ul post-1989.",
+    "descriptionEn": "PNL was re-established in January 1990, claiming continuity from the historical party banned during the communist period. This is the first modern milestone for the post-1989 timeline.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/National_Liberal_Party_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pnl", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-cdr-formed-1991-11-26",
+    "date": "1991-11-26",
+    "eventType": "alliance_formed",
+    "titleRo": "Formarea Convenției Democrate Române",
+    "titleEn": "Romanian Democratic Convention formed",
+    "descriptionRo": "CDR a fost o alianță electorală și parlamentară de centru-dreapta, fondată în jurul PNȚCD și PNL, cu mai multe formațiuni și organizații civice membre.",
+    "descriptionEn": "CDR was a centre-right electoral and parliamentary alliance founded around PNȚCD and PNL, with several political formations and civic organisations as members.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Romanian_Democratic_Convention",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-cdr", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pntcd", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-per", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-psdr", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-udmr", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-pdsr-formed-1993-07-10",
+    "date": "1993-07-10",
+    "eventType": "party_renamed",
+    "titleRo": "FDSN devine PDSR",
+    "titleEn": "FDSN becomes PDSR",
+    "descriptionRo": "FDSN a adoptat numele Partidul Democrației Sociale din România după fuziunea cu alte formațiuni mai mici.",
+    "descriptionEn": "FDSN adopted the Party of Social Democracy in Romania name after merging with smaller formations.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Social_Democratic_Party_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-fdsn", "role": "renamed_from" },
+      { "entityType": "party", "entityId": "party-pdsr", "role": "renamed_to" }
+    ]
+  },
+  {
+    "id": "formation-event-usd-formed-1995-09-27",
+    "date": "1995-09-27",
+    "eventType": "alliance_formed",
+    "titleRo": "PD și PSDR formează USD",
+    "titleEn": "PD and PSDR form USD",
+    "descriptionRo": "Uniunea Social-Democrată a fost alianța electorală formată de PD și PSDR pentru alegerile generale din 1996.",
+    "descriptionEn": "The Social Democratic Union was the electoral alliance formed by PD and PSDR for the 1996 general election.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Social_Democratic_Union_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-usd", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pd", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-psdr", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-psd-formed-2001-06-16",
+    "date": "2001-06-16",
+    "eventType": "party_merged",
+    "titleRo": "PDSR și PSDR formează PSD",
+    "titleEn": "PDSR and PSDR form PSD",
+    "descriptionRo": "PSDR a fuzionat cu PDSR, iar partidul rezultat a adoptat numele Partidul Social Democrat.",
+    "descriptionEn": "PSDR merged with PDSR, and the resulting party adopted the Social Democratic Party name.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Social_Democratic_Party_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pdsr", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-psdr", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-psd", "role": "absorber" }
+    ]
+  },
+  {
+    "id": "formation-event-da-formed-2003-09-29",
+    "date": "2003-09-29",
+    "eventType": "alliance_formed",
+    "titleRo": "PNL și PD formează Alianța Dreptate și Adevăr",
+    "titleEn": "PNL and PD form the Justice and Truth Alliance",
+    "descriptionRo": "Alianța Dreptate și Adevăr a fost formată de PNL și PD înaintea alegerilor din 2004.",
+    "descriptionEn": "The Justice and Truth Alliance was formed by PNL and PD before the 2004 elections.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Justice_and_Truth_Alliance",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-da-pnl-pd", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pd", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-da-dissolved-2007-04-05",
+    "date": "2007-04-05",
+    "eventType": "alliance_dissolved",
+    "titleRo": "Se destramă Alianța Dreptate și Adevăr",
+    "titleEn": "Justice and Truth Alliance dissolves",
+    "descriptionRo": "Alianța Dreptate și Adevăr s-a încheiat de facto și de jure pe 5 aprilie 2007.",
+    "descriptionEn": "The Justice and Truth Alliance ended de facto and de jure on 5 April 2007.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Justice_and_Truth_Alliance",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-da-pnl-pd", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pd", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-pdl-formed-2007-12-15",
+    "date": "2007-12-15",
+    "eventType": "party_merged",
+    "titleRo": "PD și PLD formează PDL",
+    "titleEn": "PD and PLD form PDL",
+    "descriptionRo": "Partidul Democrat s-a unit cu Partidul Liberal Democrat pentru a forma Partidul Democrat-Liberal.",
+    "descriptionEn": "The Democratic Party merged with the Liberal Democratic Party to form the Democratic Liberal Party.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Democratic_Liberal_Party_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pd", "role": "absorbed" },
+      { "entityType": "formation", "entityId": "formation-pld", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-pdl", "role": "absorber" }
+    ]
+  },
+  {
     "id": "formation-event-usl-formed-2011-02-05",
     "date": "2011-02-05",
     "eventType": "alliance_formed",
@@ -95,6 +237,53 @@
       { "entityType": "formation", "entityId": "formation-plr", "role": "absorbed" },
       { "entityType": "party", "entityId": "party-pc", "role": "absorbed" },
       { "entityType": "party", "entityId": "party-alde", "role": "absorber" }
+    ]
+  },
+  {
+    "id": "formation-event-ppdd-merged-into-unpr-2015-06-29",
+    "date": "2015-06-29",
+    "eventType": "party_absorbed",
+    "titleRo": "PP-DD fuzionează în UNPR",
+    "titleEn": "PP-DD merges into UNPR",
+    "descriptionRo": "Partidul Poporului - Dan Diaconescu a fuzionat în UNPR la 29 iunie 2015.",
+    "descriptionEn": "The People's Party - Dan Diaconescu merged into UNPR on 29 June 2015.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/People%27s_Party_%E2%80%93_Dan_Diaconescu",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pp-dd", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-unpr", "role": "absorber" }
+    ]
+  },
+  {
+    "id": "formation-event-usr-plus-formed-2019-02-02",
+    "date": "2019-02-02",
+    "eventType": "alliance_formed",
+    "titleRo": "USR și PLUS formează alianța USR PLUS",
+    "titleEn": "USR and PLUS form USR PLUS alliance",
+    "descriptionRo": "USR PLUS a fost formată ca alianță electorală între USR și PLUS.",
+    "descriptionEn": "USR PLUS was formed as an electoral alliance between USR and PLUS.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/USR_PLUS",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-usr-plus", "role": "subject" },
+      { "entityType": "party", "entityId": "party-usr", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-plus", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-plus-merged-into-usr-2021-04-16",
+    "date": "2021-04-16",
+    "eventType": "party_merged",
+    "titleRo": "PLUS fuzionează în USR",
+    "titleEn": "PLUS merges into USR",
+    "descriptionRo": "Alianța USR PLUS s-a încheiat prin fuziunea PLUS în USR.",
+    "descriptionEn": "The USR PLUS alliance ended through PLUS merging into USR.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/USR_PLUS",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-plus", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-usr", "role": "absorber" },
+      { "entityType": "formation", "entityId": "formation-usr-plus", "role": "subject" }
     ]
   }
 ]

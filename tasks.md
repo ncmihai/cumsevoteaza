@@ -889,7 +889,15 @@ implementation steps.
 - [x] Render formation events as dated markers on member career timelines.
 - [x] Add `npm run ingest:political-entities:candidates` to generate the full
   party/group/formation review backlog from imported DB labels.
-- [ ] Expand the curated event file with DA PNL-PD, CDR, ARD, PMP, UNPR, PC,
-  PUR, and later party/formation changes after source review.
+- [x] Expand the curated event file with first source-reviewed historical
+  events: PNL founding/re-establishment, CDR, PDSR/PSD, USD, DA PNL-PD,
+  PD/PLD to PDL, PP-DD to UNPR, and USR PLUS.
+- [ ] Continue source review for ARD, PMP, UNPR founding, PC/PUR, PRM, PUNR,
+  PRO România, AUR, POT, PSD+PC, and minority organizations before seeding
+  those events.
 - [ ] Add an audit page or report that lists member rows affected by curated
   formation-event normalization.
+- [ ] Design party profile pages for legal parties, not alliances:
+  post-1989 timeline first, original founding/re-establishment context,
+  legislature vote/activity summaries, alliance/merger events, and dissolved
+  state where applicable.

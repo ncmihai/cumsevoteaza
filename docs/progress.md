@@ -1863,3 +1863,18 @@ Verification:
 - The report is intentionally marked `needs_source_review` so each entity can
   be checked against Wikipedia/Google/official sources before becoming a
   curated formation event.
+
+## 2026-05-21 — Expanded Source-Reviewed Formation Events
+
+- Added `party_founded` and `party_reestablished` event types so long-running
+  parties can keep original historical founding dates while the public
+  post-1989 timeline starts from the modern reactivation.
+- Expanded `data/curated/political-formation-events.json` with a first
+  source-reviewed batch:
+  - PNL founded in 1875 and re-established in 1990;
+  - CDR, USD, DA PNL-PD, USR PLUS alliance events;
+  - FDSN/PDSR/PSD, PD/PLD/PDL, PP-DD/UNPR, and PLUS/USR transitions.
+- Kept uncertain year-only items out of the seed file and documented them in
+  `docs/sources.md` for manual review.
+- Added party-profile timeline work to `tasks.md` as a follow-up surface built
+  on the same curated event table.

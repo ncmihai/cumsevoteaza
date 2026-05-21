@@ -1,0 +1,2 @@
+ALTER TYPE "public"."political_formation_event_type" ADD VALUE 'party_founded' BEFORE 'alliance_formed';--> statement-breakpoint
+ALTER TYPE "public"."political_formation_event_type" ADD VALUE 'party_reestablished' BEFORE 'alliance_formed';

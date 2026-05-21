@@ -48,6 +48,8 @@ export type CompositionEventType =
   | "other";
 
 export type PoliticalFormationEventType =
+  | "party_founded"
+  | "party_reestablished"
   | "alliance_formed"
   | "alliance_dissolved"
   | "party_merged"
