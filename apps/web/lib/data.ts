@@ -2,6 +2,7 @@ import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import type { DbClient } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
+import tribunalEntitySources from "../../../data/curated/tribunal-political-entity-sources.json";
 import {
   demoDataset,
   type Bill,
@@ -143,8 +144,30 @@ export interface PartyPageData {
   members: Member[];
   groupTotals: GroupVoteTotal[];
   votes: Vote[];
+  tribunalSources: TribunalPoliticalEntitySource[];
   sourceKind: "database" | "demo";
 }
+
+export interface TribunalPoliticalEntitySource {
+  id: string;
+  entityType: "party" | "formation";
+  entityId: string;
+  approvalStatus: "auto_verified" | "manual_verified";
+  registryKind: "party" | "alliance" | "other_association";
+  tribunalEntityId: string;
+  position: number;
+  legalName: string;
+  shortName?: string;
+  sourceUrl: string;
+  sourceKind: "official";
+  caseNumber?: string;
+  decisionNumber?: string;
+  hearingDate?: string;
+  definitiveDate?: string;
+  note: string;
+}
+
+const approvedTribunalEntitySources = tribunalEntitySources as TribunalPoliticalEntitySource[];
 
 const getCachedVoteDirectoryData = unstable_cache(
   async (limit: number) => timed("data.vote-directory", () => getVoteDirectoryDataUncached(limit)),
@@ -375,7 +398,7 @@ async function getPartyPageDataUncached(slug: string): Promise<PartyPageData | u
   );
   const groupTotals = demoDataset.groupVoteTotals.filter((total) => groupIds.has(total.groupId));
   const votes = demoDataset.votes.filter((vote) => groupTotals.some((total) => total.voteId === vote.id));
-  return { party, groups, members, groupTotals, votes, sourceKind: "demo" };
+  return { party, groups, members, groupTotals, votes, tribunalSources: tribunalSourcesForEntity("party", party.id), sourceKind: "demo" };
 }
 
 async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
@@ -833,7 +856,7 @@ async function tryDatabaseParty(slug: string): Promise<PartyPageData | undefined
     const members = memberRows.map(mapMember);
     const groupTotals = totalRows.map(mapGroupVoteTotal);
     const votes = voteRows.map(mapVote);
-    return { party, groups, members, groupTotals, votes, sourceKind: "database" };
+    return { party, groups, members, groupTotals, votes, tribunalSources: tribunalSourcesForEntity("party", party.id), sourceKind: "database" };
   } catch {
     return undefined;
   } finally {
@@ -1942,10 +1965,36 @@ function careerEventsForRow(
 }
 
 function dedupeCareerSegments(segments: MemberCareerSegment[]): MemberCareerSegment[] {
-  return segments.map((segment) => {
-    const events = new Map((segment.events ?? []).map((event) => [event.id, event]));
-    return { ...segment, events: [...events.values()].sort((a, b) => a.date.localeCompare(b.date)) };
-  });
+  const byKey = new Map<string, MemberCareerSegment>();
+  for (const segment of segments) {
+    const key = [
+      segment.label,
+      segment.startsOn,
+      segment.endsOn ?? "",
+      segment.legislatureId ?? "",
+      segment.chamber
+    ].join("|");
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, segment);
+      continue;
+    }
+    existing.events = [...(existing.events ?? []), ...(segment.events ?? [])];
+    existing.logoUrl ??= segment.logoUrl;
+    existing.color ??= segment.color;
+  }
+  return [...byKey.values()]
+    .map((segment) => {
+      const events = new Map((segment.events ?? []).map((event) => [event.id, event]));
+      return { ...segment, events: [...events.values()].sort((a, b) => a.date.localeCompare(b.date)) };
+    })
+    .sort((a, b) => a.startsOn.localeCompare(b.startsOn) || a.label.localeCompare(b.label));
+}
+
+function tribunalSourcesForEntity(entityType: TribunalPoliticalEntitySource["entityType"], entityId: string): TribunalPoliticalEntitySource[] {
+  return approvedTribunalEntitySources
+    .filter((source) => source.entityType === entityType && source.entityId === entityId)
+    .sort((a, b) => a.registryKind.localeCompare(b.registryKind) || a.position - b.position);
 }
 
 function labelsForPartyId(partyIdByLabel: Map<string, string>, partyId: string): string[] {

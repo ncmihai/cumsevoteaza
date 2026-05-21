@@ -10,7 +10,8 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
   const messages = messagesFor(locale);
   const data = await getPartyPageData(slug);
   if (!data) notFound();
-  const { party, members, groupTotals, votes, sourceKind } = data;
+  const { party, members, groupTotals, votes, tribunalSources, sourceKind } = data;
+  const labels = partyPageLabels[locale];
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -21,6 +22,39 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
       </div>
       <h1 className="mt-2 text-4xl font-semibold text-slate-950">{party.name}</h1>
       <span className="mt-3 inline-block rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
+
+      {tribunalSources.length > 0 ? (
+        <section className="mt-6 border border-slate-300 bg-white">
+          <div className="border-b border-slate-300 px-4 py-3">
+            <div className="text-xs font-semibold uppercase text-[#309898]">{labels.registryEyebrow}</div>
+            <h2 className="mt-1 text-xl font-semibold text-slate-950">{labels.registryTitle}</h2>
+            <p className="mt-1 text-sm text-slate-600">{labels.registryDescription}</p>
+          </div>
+          <div className="divide-y divide-slate-200">
+            {tribunalSources.map((source) => (
+              <a
+                key={source.id}
+                href={source.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="grid gap-2 px-4 py-3 hover:bg-slate-50 md:grid-cols-[1fr_auto]"
+              >
+                <div>
+                  <div className="font-medium text-slate-950">{source.legalName}</div>
+                  <div className="mt-1 text-sm text-slate-600">
+                    {source.shortName ? `${source.shortName} · ` : ""}
+                    {labels.registryPosition} {source.position} · {source.registryKind}
+                  </div>
+                </div>
+                <div className="text-sm text-slate-600 md:text-right">
+                  <div>{source.hearingDate ? `${labels.hearingDate}: ${source.hearingDate}` : labels.noDate}</div>
+                  <div>{source.caseNumber ? `${labels.caseNumber}: ${source.caseNumber}` : source.decisionNumber ?? ""}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-6 grid gap-5 md:grid-cols-2">
         <div className="border border-slate-300 bg-white">
@@ -54,3 +88,26 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
     </main>
   );
 }
+
+const partyPageLabels = {
+  ro: {
+    registryEyebrow: "Registru oficial",
+    registryTitle: "Surse Tribunalul București",
+    registryDescription:
+      "Legături oficiale către registrul juridic al partidelor. Datele de ședință sunt metadate juridice, nu automat date politice de fondare.",
+    registryPosition: "poziția",
+    hearingDate: "ședință",
+    caseNumber: "dosar",
+    noDate: "dată neextrasă"
+  },
+  en: {
+    registryEyebrow: "Official registry",
+    registryTitle: "Bucharest Tribunal Sources",
+    registryDescription:
+      "Official links to the legal party registry. Hearing dates are legal metadata, not automatically political founding dates.",
+    registryPosition: "position",
+    hearingDate: "hearing",
+    caseNumber: "case",
+    noDate: "date not extracted"
+  }
+};

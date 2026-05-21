@@ -912,10 +912,14 @@ implementation steps.
   manual-review files.
 - [x] Review safe Tribunal matches and promote `18` canonical party/formation
   source links into curated source files.
+- [x] Document fragile CDEP access method and hotspot-safe crawl commands in
+  `docs/cdep-access.md`.
+- [x] Show approved Tribunal source links on party pages.
+- [x] Deduplicate identical member career timeline segments.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
-- [ ] Add importer/UI usage for curated Tribunal source links on party profile
-  pages.
+- [ ] Add importer persistence for curated Tribunal source links if/when we want
+  them queryable from Postgres instead of file-backed UI data.
 - [ ] Continue source review for UNPR legal registration date at Tribunalul
   București, PSD+PC dissolution date, ApR founding date, and
   minority-organization modeling.

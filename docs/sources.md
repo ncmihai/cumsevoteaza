@@ -414,6 +414,8 @@ CDEP availability note:
   site was reported to work from the user's phone. This suggests a local
   network/IP route block or drop is plausible. Keep future CDEP crawls slow,
   resumable, and easy to pause.
+- Current operating method:
+  - `docs/cdep-access.md`
 
 Initial source set:
 - `https://en.wikipedia.org/wiki/National_Salvation_Front_(Romania)`

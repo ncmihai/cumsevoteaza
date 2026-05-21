@@ -1969,3 +1969,15 @@ Verification:
   `www.cdep.ro`, `http`, and `https`, while the user reported successful
   phone access. Treat this as possible local IP/network blocking and avoid
   aggressive CDEP crawling from this connection.
+
+## 2026-05-22 — Non-CDEP Source/UI Follow-Up
+
+- Added `docs/cdep-access.md` with the fragile-CDEP operating method for dorm
+  Wi-Fi, hotspot smoke checks, low-concurrency crawl commands, and local-only
+  audit/parse follow-up.
+- Added approved Tribunal source links to party pages from
+  `data/curated/tribunal-political-entity-sources.json`.
+- Kept Tribunal dates framed as legal registry metadata, not automatic
+  political founding dates.
+- Deduplicated identical member career timeline segments so repeated imported
+  rows do not create duplicate Transfermarkt-style blocks.
