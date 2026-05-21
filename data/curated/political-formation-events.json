@@ -42,6 +42,20 @@
     ]
   },
   {
+    "id": "formation-event-fsn-became-party-1990-02-06",
+    "date": "1990-02-06",
+    "eventType": "other",
+    "titleRo": "FSN se transformă în partid politic",
+    "titleEn": "FSN becomes a political party",
+    "descriptionRo": "FSN, apărut inițial ca organism provizoriu de putere după 22 decembrie 1989, a devenit partid politic pe 6 februarie 1990.",
+    "descriptionEn": "FSN, initially formed as a provisional governing body after 22 December 1989, became a political party on 6 February 1990.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/National_Salvation_Front_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-fsn", "role": "subject" }
+    ]
+  },
+  {
     "id": "formation-event-udmr-founded-1989-12-25",
     "date": "1989-12-25",
     "eventType": "party_founded",
@@ -166,6 +180,21 @@
     ]
   },
   {
+    "id": "formation-event-apr-absorbed-into-pnl-2002-01-19",
+    "date": "2002-01-19",
+    "eventType": "party_absorbed",
+    "titleRo": "ApR fuzionează prin absorbție cu PNL",
+    "titleEn": "ApR absorbed into PNL",
+    "descriptionRo": "Fuziunea prin absorbție dintre PNL și Alianța pentru România a fost discutată la congresul extraordinar PNL din 19 ianuarie 2002.",
+    "descriptionEn": "The absorption merger between PNL and the Alliance for Romania was addressed at the PNL extraordinary congress on 19 January 2002.",
+    "sourceUrl": "https://agerpres.ro/documentare/2021/09/24/documentar-congresele-pnl-1990-2017--785192",
+    "sourceKind": "curated",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-apr", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "absorber" }
+    ]
+  },
+  {
     "id": "formation-event-pur-renamed-pc-2005-05-07",
     "date": "2005-05-07",
     "eventType": "party_renamed",
@@ -228,6 +257,22 @@
     ]
   },
   {
+    "id": "formation-event-psd-pc-formed-2008-04-17",
+    "date": "2008-04-17",
+    "eventType": "alliance_formed",
+    "titleRo": "PSD și PC semnează protocolul Alianței PSD+PC",
+    "titleEn": "PSD and PC sign the PSD+PC alliance protocol",
+    "descriptionRo": "Liderii PSD și PC au semnat protocolul politic pentru formarea Alianței PSD+PC, cu obiectiv electoral pentru 2008 și 2009.",
+    "descriptionEn": "PSD and PC leaders signed the political protocol forming the PSD+PC alliance, with electoral objectives for 2008 and 2009.",
+    "sourceUrl": "https://jurnalul.ro/stiri/politica/protocolul-psd-pc-semnat-122757.html",
+    "sourceKind": "curated",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-psd-pc", "role": "subject" },
+      { "entityType": "party", "entityId": "party-psd", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pc", "role": "alliance_member" }
+    ]
+  },
+  {
     "id": "formation-event-ard-formed-2012-09-16",
     "date": "2012-09-16",
     "eventType": "alliance_formed",
@@ -274,6 +319,21 @@
     "entities": [
       { "entityType": "party", "entityId": "party-unpr", "role": "subject" },
       { "entityType": "formation", "entityId": "formation-independent-parliamentary-group-2009", "role": "split_from" }
+    ]
+  },
+  {
+    "id": "formation-event-pin-absorbed-into-unpr-2011-12-15",
+    "date": "2011-12-15",
+    "eventType": "party_absorbed",
+    "titleRo": "PIN fuzionează prin absorbție cu UNPR",
+    "titleEn": "PIN absorbed into UNPR",
+    "descriptionRo": "Partidul Inițiativa Națională a semnat protocolul de fuziune prin absorbție cu UNPR pe 15 decembrie 2011.",
+    "descriptionEn": "The National Initiative Party signed its absorption merger protocol with UNPR on 15 December 2011.",
+    "sourceUrl": "https://www.economica.net/vulturul-a-inghitit-ursul-partidul-infiintat-de-gusa-intra-in-unpr_7183.html",
+    "sourceKind": "curated",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-pin", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-unpr", "role": "absorber" }
     ]
   },
   {
@@ -513,6 +573,36 @@
       { "entityType": "party", "entityId": "party-plus", "role": "absorbed" },
       { "entityType": "party", "entityId": "party-usr", "role": "absorber" },
       { "entityType": "formation", "entityId": "formation-usr-plus", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-alde-absorbed-into-pnl-2022-03-22",
+    "date": "2022-03-22",
+    "eventType": "party_absorbed",
+    "titleRo": "ALDE este absorbit de PNL",
+    "titleEn": "ALDE absorbed into PNL",
+    "descriptionRo": "ALDE a fost absorbit oficial de PNL în martie 2022.",
+    "descriptionEn": "ALDE was officially absorbed into PNL in March 2022.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Alliance_of_Liberals_and_Democrats_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-alde", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "absorber" }
+    ]
+  },
+  {
+    "id": "formation-event-sos-ro-founded-2021-11-23",
+    "date": "2021-11-23",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea S.O.S. România",
+    "titleEn": "S.O.S. Romania founded",
+    "descriptionRo": "S.O.S. România a fost înființat la 23 noiembrie 2021 de Gabriel Gib, Adeluța Gib și Maricel Viziteu; Diana Șoșoacă s-a alăturat partidului în mai 2022.",
+    "descriptionEn": "S.O.S. Romania was founded on 23 November 2021 by Gabriel Gib, Adeluța Gib and Maricel Viziteu; Diana Șoșoacă joined the party in May 2022.",
+    "sourceUrl": "https://ro.wikipedia.org/wiki/S.O.S._Rom%C3%A2nia",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-sos-ro", "role": "subject" },
+      { "entityType": "party", "entityId": "party-aur", "role": "split_from" }
     ]
   },
   {

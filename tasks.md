@@ -897,9 +897,12 @@ implementation steps.
   POT.
 - [x] Add UNPR's 1 May 2010 congress/leadership milestone from Romanian
   Wikipedia as the first exact public party date.
+- [x] Add Romanian-source refinement events for FSN becoming a party,
+  PSD+PC protocol signing, ApR absorption into PNL, PIN absorption into UNPR,
+  ALDE absorption into PNL, and S.O.S. România founding.
 - [ ] Continue source review for UNPR legal registration date at Tribunalul
-  București, PSD+PC exact signed date, SOS România exact founding date, ApR
-  exact dates, and minority-organization modeling.
+  București, PSD+PC dissolution date, ApR founding date, and
+  minority-organization modeling.
 - [ ] Add an audit page or report that lists member rows affected by curated
   formation-event normalization.
 - [ ] Design party profile pages for legal parties, not alliances:

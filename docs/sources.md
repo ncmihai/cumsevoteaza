@@ -407,9 +407,14 @@ Initial source set:
 - `https://en.wikipedia.org/wiki/Justice_and_Truth_Alliance`
   - DA PNL-PD was founded on 29 September 2003.
   - DA PNL-PD dissolved on 5 April 2007.
+- `https://agerpres.ro/documentare/2021/09/24/documentar-congresele-pnl-1990-2017--785192`
+  - PNL's 19 January 2002 extraordinary congress addressed the absorption
+    merger with ApR.
 - `https://en.wikipedia.org/wiki/Democratic_Liberal_Party_(Romania)`
   - PDL formed on 15 December 2007 through PD and PLD.
   - PDL dissolved / merged into PNL on 17 November 2014.
+- `https://jurnalul.ro/stiri/politica/protocolul-psd-pc-semnat-122757.html`
+  - PSD and PC signed the PSD+PC political alliance protocol in April 2008.
 - `https://en.wikipedia.org/wiki/Romanian_National_Unity_Party`
   - PUNR existed from 1990 to 2006.
   - PUNR was absorbed into PC on 12 February 2006.
@@ -439,6 +444,9 @@ Initial source set:
   - On 1 May 2010, the new party elected its leaders at congress.
   - Use 1 May 2010 as the first exact public party milestone until the
     Tribunalul București legal registration file is verified.
+- `https://www.economica.net/vulturul-a-inghitit-ursul-partidul-infiintat-de-gusa-intra-in-unpr_7183.html`
+  - PIN and UNPR scheduled the signing of the absorption-merger protocol for
+    15 December 2011.
 - `https://en.wikipedia.org/wiki/PRO_Romania`
   - PRO România founded 29 May 2017.
   - PRO România registered 20 February 2018.
@@ -447,19 +455,21 @@ Initial source set:
 - `https://en.wikipedia.org/wiki/USR_PLUS`
   - USR PLUS electoral alliance founded 2 February 2019.
   - USR PLUS dissolved / PLUS merged into USR on 16 April 2021.
+- `https://en.wikipedia.org/wiki/Alliance_of_Liberals_and_Democrats_(Romania)`
+  - ALDE dissolved / merged into PNL on 22 March 2022.
+- `https://ro.wikipedia.org/wiki/S.O.S._Rom%C3%A2nia`
+  - S.O.S. România founded 23 November 2021.
 - `https://en.wikipedia.org/wiki/Party_of_Young_People`
   - POT founded 31 July 2023.
 
 Deferred source-review items:
 - Alliance for Romania / ApR: source currently confirms 1997 founding and
-  later absorption by PNL, but not exact day.
+  later absorption by PNL; the absorption has an exact public milestone, but
+  the founding day still needs source review.
 - UNPR legal registration date: public sources give March 2010 and the exact
   1 May 2010 congress date; the formal legal file should be checked later via
   Tribunalul București records.
-- PSD+PC: source currently says founded in 2008 and dissolved in 2010, but the
-  exact signed date still needs confirmation before seeding.
-- SOS România: reviewed sources confirm 2021 and some secondary sources point
-  to November 2021, but exact-date confidence is not yet high enough for seed.
+- PSD+PC dissolution date still needs confirmation.
 - Minority organizations should be modeled as repeated legislature-scoped
   formations/representative organizations rather than one party history.
 

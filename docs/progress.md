@@ -1894,3 +1894,16 @@ Verification:
   Wikipedia as the first exact public date for the party.
 - Documented Tribunalul București as the future higher-confidence source for
   exact legal party registration dates.
+
+## 2026-05-21 — Romanian-Source Cleanup For Remaining Gaps
+
+- Added more exact public milestones from Romanian Wikipedia and Romanian
+  press/AGERPRES sources:
+  - FSN becomes a party;
+  - ApR absorbed into PNL;
+  - PSD+PC protocol signed;
+  - PIN absorbed into UNPR;
+  - ALDE absorbed into PNL;
+  - S.O.S. România founded.
+- Reduced the deferred list to legal-registration dates, PSD+PC dissolution,
+  ApR founding day, and minority-organization modeling.
