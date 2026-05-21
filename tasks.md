@@ -892,9 +892,12 @@ implementation steps.
 - [x] Expand the curated event file with first source-reviewed historical
   events: PNL founding/re-establishment, CDR, PDSR/PSD, USD, DA PNL-PD,
   PD/PLD to PDL, PP-DD to UNPR, and USR PLUS.
-- [ ] Continue source review for ARD, PMP, UNPR founding, PC/PUR, PRM, PUNR,
-  PRO România, AUR, POT, PSD+PC, and minority organizations before seeding
-  those events.
+- [x] Continue source review and seed exact-date events for FSN, UDMR, PRM,
+  PC/PUR, PUNR absorption, ARD, PMP, PSD-UNPR-PC/ALDE, PRO România, AUR, and
+  POT.
+- [ ] Continue source review for UNPR founding day, PSD+PC exact signed date,
+  SOS România exact founding date, ApR exact dates, and minority-organization
+  modeling.
 - [ ] Add an audit page or report that lists member rows affected by curated
   formation-event normalization.
 - [ ] Design party profile pages for legal parties, not alliances:

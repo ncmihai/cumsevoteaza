@@ -379,10 +379,21 @@ Purpose:
   separate party in 2014 and the member continuing under PNL.
 
 Initial source set:
+- `https://en.wikipedia.org/wiki/National_Salvation_Front_(Romania)`
+  - FSN appeared on 22 December 1989 as a governing body.
+  - FSN became a political party on 6 February 1990.
 - `https://en.wikipedia.org/wiki/National_Liberal_Party_(Romania,_1875)`
   - Historical PNL founded 24 May 1875.
 - `https://en.wikipedia.org/wiki/National_Liberal_Party_(Romania)`
   - Modern PNL re-established 15 January 1990.
+- `https://en.wikipedia.org/wiki/Democratic_Alliance_of_Hungarians_in_Romania`
+  - UDMR founded 25 December 1989.
+- `https://en.wikipedia.org/wiki/Greater_Romania_Party`
+  - PRM founded 20 June 1991.
+- `https://en.wikipedia.org/wiki/Conservative_Party_(Romania)`
+  - PUR founded 18 December 1991.
+  - PUR adopted the PC name on 7 May 2005.
+  - PC merged with PLR into ALDE on 19 June 2015.
 - `https://en.wikipedia.org/wiki/Social_Liberal_Union`
   - USL founded 5 February 2011.
   - USL dissolved / PNL left the coalition on 25 February 2014.
@@ -399,6 +410,17 @@ Initial source set:
 - `https://en.wikipedia.org/wiki/Democratic_Liberal_Party_(Romania)`
   - PDL formed on 15 December 2007 through PD and PLD.
   - PDL dissolved / merged into PNL on 17 November 2014.
+- `https://en.wikipedia.org/wiki/Romanian_National_Unity_Party`
+  - PUNR existed from 1990 to 2006.
+  - PUNR was absorbed into PC on 12 February 2006.
+- `https://en.wikipedia.org/wiki/Right_Romania_Alliance`
+  - ARD founded 16 September 2012.
+  - ARD dissolved 10 December 2012.
+- `https://en.wikipedia.org/wiki/PSD%E2%80%93UNPR%E2%80%93ALDE_Alliance`
+  - PSD-UNPR-PC was initially established on 10 February 2014.
+  - The alliance became PSD-UNPR-ALDE after PC/PLR formed ALDE.
+- `https://en.wikipedia.org/wiki/People%27s_Movement_Party`
+  - PMP was relaunched as a party on 29 January 2014.
 - `https://en.wikipedia.org/wiki/Christian_Liberal_Alliance`
   - ACL was formed by PNL and PDL in July 2014.
   - It was disbanded when PDL merged into PNL in November 2014.
@@ -409,17 +431,31 @@ Initial source set:
   - ALDE founded 19 June 2015 through PLR and PC.
 - `https://en.wikipedia.org/wiki/People%27s_Party_%E2%80%93_Dan_Diaconescu`
   - PP-DD merged into UNPR on 29 June 2015.
+- `https://en.wikipedia.org/wiki/National_Union_for_the_Progress_of_Romania`
+  - UNPR was formed in March 2010.
+  - A UNPR-PMP merger was announced in July 2016, but later failed.
+- `https://en.wikipedia.org/wiki/PRO_Romania`
+  - PRO România founded 29 May 2017.
+  - PRO România registered 20 February 2018.
+- `https://en.wikipedia.org/wiki/Alliance_for_the_Union_of_Romanians`
+  - AUR founded in Romania on 19 September 2019.
 - `https://en.wikipedia.org/wiki/USR_PLUS`
   - USR PLUS electoral alliance founded 2 February 2019.
   - USR PLUS dissolved / PLUS merged into USR on 16 April 2021.
+- `https://en.wikipedia.org/wiki/Party_of_Young_People`
+  - POT founded 31 July 2023.
 
 Deferred source-review items:
 - Alliance for Romania / ApR: source currently confirms 1997 founding and
   later absorption by PNL, but not exact day.
 - UNPR: source confirms March 2010 formation, but not exact day in the first
   reviewed source.
-- PRM, PUNR, PC/PUR, PMP, PRO România, AUR, POT, ARD, PSD+PC, and minority
-  organizations need exact-date review before they are added to the seed file.
+- PSD+PC: source currently says founded in 2008 and dissolved in 2010, but the
+  exact signed date still needs confirmation before seeding.
+- SOS România: reviewed sources confirm 2021 and some secondary sources point
+  to November 2021, but exact-date confidence is not yet high enough for seed.
+- Minority organizations should be modeled as repeated legislature-scoped
+  formations/representative organizations rather than one party history.
 
 Modeling notes:
 - `USL`, `ACL`, `ARD`, `CDR`, and similar entities are formations/alliances,

@@ -1878,3 +1878,12 @@ Verification:
   `docs/sources.md` for manual review.
 - Added party-profile timeline work to `tasks.md` as a follow-up surface built
   on the same curated event table.
+
+## 2026-05-21 — Second Formation Event Source Pass
+
+- Expanded the curated formation event file from 18 to 33 events.
+- Added exact-date events for FSN, UDMR, PRM, PUR/PC, PUNR absorption, ARD,
+  PMP, PSD-UNPR-PC/ALDE, UNPR/PMP attempted merger, PRO România, AUR, and POT.
+- Kept weak/partial items out of the seed: UNPR founding day, PSD+PC exact
+  signing date, SOS România exact founding date, ApR exact dates, and the
+  minority-organization model.

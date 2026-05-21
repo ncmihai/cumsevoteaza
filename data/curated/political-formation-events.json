@@ -28,6 +28,62 @@
     ]
   },
   {
+    "id": "formation-event-fsn-founded-1989-12-22",
+    "date": "1989-12-22",
+    "eventType": "party_founded",
+    "titleRo": "Apare Frontul Salvării Naționale",
+    "titleEn": "National Salvation Front appears",
+    "descriptionRo": "FSN a fost format pe 22 decembrie 1989 ca organism de putere provizorie și s-a transformat ulterior în partid politic.",
+    "descriptionEn": "FSN was formed on 22 December 1989 as a provisional governing body and later became a political party.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/National_Salvation_Front_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-fsn", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-udmr-founded-1989-12-25",
+    "date": "1989-12-25",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea UDMR",
+    "titleEn": "UDMR founded",
+    "descriptionRo": "UDMR a fost fondată la 25 decembrie 1989 pentru reprezentarea comunității maghiare din România.",
+    "descriptionEn": "UDMR was founded on 25 December 1989 to represent Romania's Hungarian community.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Democratic_Alliance_of_Hungarians_in_Romania",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-udmr", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-prm-founded-1991-06-20",
+    "date": "1991-06-20",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea PRM",
+    "titleEn": "PRM founded",
+    "descriptionRo": "Partidul România Mare a fost fondat de Corneliu Vadim Tudor și Eugen Barbu.",
+    "descriptionEn": "The Greater Romania Party was founded by Corneliu Vadim Tudor and Eugen Barbu.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Greater_Romania_Party",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-prm", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-pur-founded-1991-12-18",
+    "date": "1991-12-18",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea PUR",
+    "titleEn": "PUR founded",
+    "descriptionRo": "Partidul Umanist Român a fost fondat la 18 decembrie 1991 și a devenit ulterior Partidul Conservator.",
+    "descriptionEn": "The Romanian Humanist Party was founded on 18 December 1991 and later became the Conservative Party.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Conservative_Party_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pur", "role": "subject" }
+    ]
+  },
+  {
     "id": "formation-event-cdr-formed-1991-11-26",
     "date": "1991-11-26",
     "eventType": "alliance_formed",
@@ -110,6 +166,36 @@
     ]
   },
   {
+    "id": "formation-event-pur-renamed-pc-2005-05-07",
+    "date": "2005-05-07",
+    "eventType": "party_renamed",
+    "titleRo": "PUR devine Partidul Conservator",
+    "titleEn": "PUR becomes the Conservative Party",
+    "descriptionRo": "Partidul Umanist Român a adoptat numele Partidul Conservator la 7 mai 2005.",
+    "descriptionEn": "The Romanian Humanist Party adopted the Conservative Party name on 7 May 2005.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Conservative_Party_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pur", "role": "renamed_from" },
+      { "entityType": "party", "entityId": "party-pc", "role": "renamed_to" }
+    ]
+  },
+  {
+    "id": "formation-event-punr-absorbed-into-pc-2006-02-12",
+    "date": "2006-02-12",
+    "eventType": "party_absorbed",
+    "titleRo": "PUNR este absorbit de PC",
+    "titleEn": "PUNR absorbed into PC",
+    "descriptionRo": "PUNR a fost absorbit în Partidul Conservator la 12 februarie 2006.",
+    "descriptionEn": "PUNR was absorbed into the Conservative Party on 12 February 2006.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Romanian_National_Unity_Party",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-punr", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-pc", "role": "absorber" }
+    ]
+  },
+  {
     "id": "formation-event-da-dissolved-2007-04-05",
     "date": "2007-04-05",
     "eventType": "alliance_dissolved",
@@ -139,6 +225,40 @@
       { "entityType": "party", "entityId": "party-pd", "role": "absorbed" },
       { "entityType": "formation", "entityId": "formation-pld", "role": "absorbed" },
       { "entityType": "party", "entityId": "party-pdl", "role": "absorber" }
+    ]
+  },
+  {
+    "id": "formation-event-ard-formed-2012-09-16",
+    "date": "2012-09-16",
+    "eventType": "alliance_formed",
+    "titleRo": "Formarea Alianței România Dreaptă",
+    "titleEn": "Right Romania Alliance formed",
+    "descriptionRo": "ARD a fost o alianță electorală formată de PDL, PNȚCD și Forța Civică pentru alegerile parlamentare din 2012.",
+    "descriptionEn": "ARD was an electoral alliance formed by PDL, PNȚCD and Civic Force for the 2012 parliamentary election.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Right_Romania_Alliance",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-ard", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pdl", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pntcd", "role": "alliance_member" },
+      { "entityType": "formation", "entityId": "party-formation-2012-fc", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-ard-dissolved-2012-12-10",
+    "date": "2012-12-10",
+    "eventType": "alliance_dissolved",
+    "titleRo": "ARD se dizolvă",
+    "titleEn": "Right Romania Alliance dissolves",
+    "descriptionRo": "ARD s-a dizolvat pe 10 decembrie 2012, după alegerile parlamentare.",
+    "descriptionEn": "ARD dissolved on 10 December 2012, after the parliamentary election.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Right_Romania_Alliance",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-ard", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pdl", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pntcd", "role": "alliance_member" },
+      { "entityType": "formation", "entityId": "party-formation-2012-fc", "role": "alliance_member" }
     ]
   },
   {
@@ -174,6 +294,38 @@
       { "entityType": "party", "entityId": "party-psd", "role": "alliance_member" },
       { "entityType": "party", "entityId": "party-pc", "role": "alliance_member" },
       { "entityType": "party", "entityId": "party-unpr", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-psd-unpr-pc-formed-2014-02-10",
+    "date": "2014-02-10",
+    "eventType": "alliance_formed",
+    "titleRo": "PSD, UNPR și PC formează Uniunea Social Democrată",
+    "titleEn": "PSD, UNPR and PC form the Social Democratic Union",
+    "descriptionRo": "Alianța PSD-UNPR-PC a fost stabilită inițial pe 10 februarie 2014 ca Uniunea Social Democrată, apoi înregistrată ca alianță PSD-UNPR-PC.",
+    "descriptionEn": "The PSD-UNPR-PC alliance was initially established on 10 February 2014 as the Social Democratic Union, then registered as the PSD-UNPR-PC alliance.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/PSD%E2%80%93UNPR%E2%80%93ALDE_Alliance",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-psd-unpr-pc", "role": "subject" },
+      { "entityType": "party", "entityId": "party-psd", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-unpr", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-pc", "role": "alliance_member" }
+    ]
+  },
+  {
+    "id": "formation-event-pmp-founded-2014-01-29",
+    "date": "2014-01-29",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea PMP",
+    "titleEn": "PMP founded",
+    "descriptionRo": "Partidul Mișcarea Populară a fost relansat ca partid pe 29 ianuarie 2014, după ce apăruse inițial ca fundație politică în 2013.",
+    "descriptionEn": "The People's Movement Party was relaunched as a party on 29 January 2014, after initially appearing as a political foundation in 2013.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/People%27s_Movement_Party",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pmp", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pdl", "role": "split_from" }
     ]
   },
   {
@@ -240,6 +392,23 @@
     ]
   },
   {
+    "id": "formation-event-psd-unpr-alde-formed-2015-06-19",
+    "date": "2015-06-19",
+    "eventType": "alliance_formed",
+    "titleRo": "ALDE intră în alianța PSD-UNPR-ALDE",
+    "titleEn": "ALDE enters the PSD-UNPR-ALDE alliance",
+    "descriptionRo": "După fuziunea PC-PLR, ALDE a intrat în alianța cu PSD și UNPR, devenită PSD-UNPR-ALDE.",
+    "descriptionEn": "After the PC-PLR merger, ALDE entered the alliance with PSD and UNPR, which became PSD-UNPR-ALDE.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/PSD%E2%80%93UNPR%E2%80%93ALDE_Alliance",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-psd-unpr-alde", "role": "subject" },
+      { "entityType": "party", "entityId": "party-psd", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-unpr", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-alde", "role": "alliance_member" }
+    ]
+  },
+  {
     "id": "formation-event-ppdd-merged-into-unpr-2015-06-29",
     "date": "2015-06-29",
     "eventType": "party_absorbed",
@@ -252,6 +421,51 @@
     "entities": [
       { "entityType": "party", "entityId": "party-pp-dd", "role": "absorbed" },
       { "entityType": "party", "entityId": "party-unpr", "role": "absorber" }
+    ]
+  },
+  {
+    "id": "formation-event-unpr-pmp-merger-announced-2016-07-12",
+    "date": "2016-07-12",
+    "eventType": "other",
+    "titleRo": "UNPR anunță fuziunea cu PMP, ulterior eșuată",
+    "titleEn": "UNPR announces merger with PMP, later failed",
+    "descriptionRo": "Traian Băsescu a anunțat fuziunea UNPR în PMP, dar procesul a eșuat și UNPR a fost reorganizat ulterior.",
+    "descriptionEn": "Traian Băsescu announced UNPR's merger into PMP, but the process failed and UNPR was later reorganized.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/National_Union_for_the_Progress_of_Romania",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-unpr", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pmp", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-pro-romania-founded-2017-05-29",
+    "date": "2017-05-29",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea PRO România",
+    "titleEn": "PRO Romania founded",
+    "descriptionRo": "PRO România a fost fondat de Victor Ponta, Sorin Cîmpeanu și Daniel Constantin și a fost înregistrat ulterior la 20 februarie 2018.",
+    "descriptionEn": "PRO Romania was founded by Victor Ponta, Sorin Cîmpeanu and Daniel Constantin and later registered on 20 February 2018.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/PRO_Romania",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pro-romania", "role": "subject" },
+      { "entityType": "party", "entityId": "party-psd", "role": "split_from" },
+      { "entityType": "party", "entityId": "party-alde", "role": "split_from" }
+    ]
+  },
+  {
+    "id": "formation-event-aur-founded-2019-09-19",
+    "date": "2019-09-19",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea AUR",
+    "titleEn": "AUR founded",
+    "descriptionRo": "Alianța pentru Unirea Românilor a fost fondată în România la 19 septembrie 2019.",
+    "descriptionEn": "The Alliance for the Union of Romanians was founded in Romania on 19 September 2019.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Alliance_for_the_Union_of_Romanians",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-aur", "role": "subject" }
     ]
   },
   {
@@ -284,6 +498,21 @@
       { "entityType": "party", "entityId": "party-plus", "role": "absorbed" },
       { "entityType": "party", "entityId": "party-usr", "role": "absorber" },
       { "entityType": "formation", "entityId": "formation-usr-plus", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-pot-founded-2023-07-31",
+    "date": "2023-07-31",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea POT",
+    "titleEn": "POT founded",
+    "descriptionRo": "Partidul Oamenilor Tineri a fost fondat de Anamaria Gavrilă, după plecarea acesteia din AUR.",
+    "descriptionEn": "The Party of Young People was founded by Anamaria Gavrilă after she had left AUR.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Party_of_Young_People",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pot", "role": "subject" },
+      { "entityType": "party", "entityId": "party-aur", "role": "split_from" }
     ]
   }
 ]
