@@ -1954,3 +1954,18 @@ Verification:
   - deleted raw local PDFs after extraction;
   - generated `19` auto matches, `17` manual-review matches, and `358`
     no-match rows against current app political-entity candidates.
+
+## 2026-05-22 — Approved Tribunal Political Entity Sources
+
+- Promoted conservative Tribunal matches into curated source files:
+  - `data/curated/tribunal-political-entity-sources.json`;
+  - `data/curated/tribunal-political-entity-sources.md`.
+- Approved `18` official Tribunal source links for current app
+  party/formation identities, excluding suspicious abbreviation-only matches
+  such as the unrelated `P.P.D.D` row.
+- Kept the output as source metadata only; court hearing dates are not
+  automatically timeline/founding dates.
+- CDEP connectivity from this desktop connection timed out across `cdep.ro`,
+  `www.cdep.ro`, `http`, and `https`, while the user reported successful
+  phone access. Treat this as possible local IP/network blocking and avoid
+  aggressive CDEP crawling from this connection.

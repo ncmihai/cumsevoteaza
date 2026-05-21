@@ -1,0 +1,514 @@
+[
+  {
+    "id": "tribunal-source-formation-formation-psd-pc-alliance-4",
+    "entityType": "formation",
+    "entityId": "formation-psd-pc",
+    "approvalStatus": "auto_verified",
+    "registryKind": "alliance",
+    "tribunalEntityId": "tribunal-alliance-4",
+    "position": 4,
+    "legalName": "ALIANŢA POLITICĂ PARTIDUL SOCIAL DEMOCRAT + PARTIDUL CONSERVATOR",
+    "shortName": "PSD + PC",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-aliante/poz-4-a.pdf",
+    "sourceKind": "official",
+    "caseNumber": "18096/3/2008",
+    "decisionNumber": "16/06.06.2008",
+    "hearingDate": "2012-04-10",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 100,
+      "reason": "exact_short_name",
+      "matchedLabel": "PSD+PC",
+      "matchedIds": [
+        "group-senate-psd-pc"
+      ]
+    },
+    "note": "Exact short name PSD+PC; canonical app formation exists from curated event data."
+  },
+  {
+    "id": "tribunal-source-party-party-pnl-party-1",
+    "entityType": "party",
+    "entityId": "party-pnl",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-1",
+    "position": 1,
+    "legalName": "PARTIDUL NAŢIONAL LIBERAL",
+    "shortName": "P.N.L",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-1-26-ian-2015-2.pdf",
+    "sourceKind": "official",
+    "caseNumber": "26874/3/2014",
+    "decisionNumber": "1127",
+    "hearingDate": "2014-10-06",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "PNL",
+      "matchedIds": [
+        "group-deputies-pnl",
+        "group-senate-pnl",
+        "party-pnl"
+      ]
+    },
+    "note": "Exact legal name PNL."
+  },
+  {
+    "id": "tribunal-source-party-party-psd-party-2",
+    "entityType": "party",
+    "entityId": "party-psd",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-2",
+    "position": 2,
+    "legalName": "PARTIDUL SOCIAL DEMOCRAT",
+    "shortName": "P.S.D",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-2-ian-2025_.pdf",
+    "sourceKind": "official",
+    "caseNumber": "186/3/2007",
+    "decisionNumber": "3/24.01.2007",
+    "hearingDate": "2007-12-11",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "PSD",
+      "matchedIds": [
+        "group-deputies-psd",
+        "group-senate-psd",
+        "party-psd"
+      ]
+    },
+    "note": "Exact legal name PSD."
+  },
+  {
+    "id": "tribunal-source-party-party-pd-party-3",
+    "entityType": "party",
+    "entityId": "party-pd",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-3",
+    "position": 3,
+    "legalName": "PARTIDUL DEMOCRAT",
+    "shortName": "P.D",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-3-dec-2015.pdf",
+    "sourceKind": "official",
+    "caseNumber": "26874/3/2014",
+    "decisionNumber": "1127",
+    "hearingDate": "2014-10-06",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "PD",
+      "matchedIds": [
+        "group-senate-pd",
+        "party-pd"
+      ]
+    },
+    "note": "Exact legal name PD."
+  },
+  {
+    "id": "tribunal-source-party-party-pntcd-party-4",
+    "entityType": "party",
+    "entityId": "party-pntcd",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-4",
+    "position": 4,
+    "legalName": "PARTIDUL NAŢIONAL ŢĂRĂNESC CREŞTIN DEMOCRAT",
+    "shortName": "P.N.Ţ.C.D",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-4-dec-2025.pdf",
+    "sourceKind": "official",
+    "caseNumber": "34880/2/2005",
+    "decisionNumber": "32/16.10.2007",
+    "hearingDate": "2007-05-18",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "PNȚCD",
+      "matchedIds": [
+        "group-deputies-pntcd",
+        "group-senate-pntcd",
+        "party-pntcd"
+      ]
+    },
+    "note": "Exact legal name PNȚCD."
+  },
+  {
+    "id": "tribunal-source-party-party-prm-party-10",
+    "entityType": "party",
+    "entityId": "party-prm",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-10",
+    "position": 10,
+    "legalName": "PARTIDUL ROMÂNIA MARE",
+    "shortName": "P.R.M",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-10-PRM-dec-2025_1.pdf",
+    "sourceKind": "official",
+    "caseNumber": "47342/3/2005",
+    "decisionNumber": "43 din 09.09.2005",
+    "hearingDate": "2004-12-22",
+    "definitiveDate": "2019-04-10",
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "PRM",
+      "matchedIds": [
+        "group-deputies-prm",
+        "group-senate-prm",
+        "party-prm"
+      ]
+    },
+    "note": "Exact legal name PRM."
+  },
+  {
+    "id": "tribunal-source-party-party-per-party-15",
+    "entityType": "party",
+    "entityId": "party-per",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-15",
+    "position": 15,
+    "legalName": "PARTIDUL ECOLOGIST ROMÂN",
+    "shortName": "P.E.R",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-15-iunie-2024.pdf",
+    "sourceKind": "official",
+    "caseNumber": "43915/3/2007",
+    "decisionNumber": "10/22.05.2006",
+    "hearingDate": "2007-12-27",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "PER",
+      "matchedIds": [
+        "group-senate-per",
+        "party-per"
+      ]
+    },
+    "note": "Exact legal name PER."
+  },
+  {
+    "id": "tribunal-source-party-party-psm-party-25",
+    "entityType": "party",
+    "entityId": "party-psm",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-25",
+    "position": 25,
+    "legalName": "PARTIDUL SOCIALIST AL MUNCII",
+    "shortName": "P.S.M",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-25.pdf",
+    "sourceKind": "official",
+    "caseNumber": null,
+    "decisionNumber": null,
+    "hearingDate": "2003-12-05",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "PSM",
+      "matchedIds": [
+        "group-senate-psm",
+        "party-psm"
+      ]
+    },
+    "note": "Exact legal name PSM."
+  },
+  {
+    "id": "tribunal-source-party-party-unpr-party-48",
+    "entityType": "party",
+    "entityId": "party-unpr",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-48",
+    "position": 48,
+    "legalName": "PARTIDUL UNIUNEA NAŢIONALĂ PENTRU PROGRESUL ROMÂNIEI –U.N.P.R",
+    "shortName": "U.N.P.R",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-48-martie-2025.pdf",
+    "sourceKind": "official",
+    "caseNumber": "24336/3/2015",
+    "decisionNumber": "1/DEC/P",
+    "hearingDate": "2015-07-15",
+    "definitiveDate": "2025-02-19",
+    "matcher": {
+      "status": "auto_match",
+      "score": 94,
+      "reason": "exact_compact_label",
+      "matchedLabel": "UNPR",
+      "matchedIds": [
+        "group-deputies-unpr",
+        "group-senate-unpr",
+        "party-unpr"
+      ]
+    },
+    "note": "Compact short name UNPR and legal name matches."
+  },
+  {
+    "id": "tribunal-source-party-party-pmp-party-62",
+    "entityType": "party",
+    "entityId": "party-pmp",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-62",
+    "position": 62,
+    "legalName": "PARTIDUL MIŞCAREA POPULARĂ",
+    "shortName": null,
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-62-aug-2025.pdf",
+    "sourceKind": "official",
+    "caseNumber": "25684/3/2013",
+    "decisionNumber": "30 DEC din 16.09.2013",
+    "hearingDate": "2014-01-29",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "PMP",
+      "matchedIds": [
+        "group-deputies-pmp",
+        "group-senate-pmp",
+        "party-pmp"
+      ]
+    },
+    "note": "Exact legal name PMP."
+  },
+  {
+    "id": "tribunal-source-party-party-pnl-party-66",
+    "entityType": "party",
+    "entityId": "party-pnl",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-66",
+    "position": 66,
+    "legalName": "PARTIDUL NAŢIONAL LIBERAL",
+    "shortName": null,
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-66-martie-2026.pdf",
+    "sourceKind": "official",
+    "caseNumber": "26874/3/2014",
+    "decisionNumber": "1127",
+    "hearingDate": "2014-10-06",
+    "definitiveDate": "2025-02-27",
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "PNL",
+      "matchedIds": [
+        "group-deputies-pnl",
+        "group-senate-pnl",
+        "party-pnl"
+      ]
+    },
+    "note": "Duplicate/current Tribunal registry row for exact legal name PNL."
+  },
+  {
+    "id": "tribunal-source-party-party-alde-party-87",
+    "entityType": "party",
+    "entityId": "party-alde",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-87",
+    "position": 87,
+    "legalName": "PARTIDUL LIBERALILOR ŞI DEMOCRAŢILOR – ALDE",
+    "shortName": "ALDE",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-87-iun-2024_.pdf",
+    "sourceKind": "official",
+    "caseNumber": "24066/3/2015",
+    "decisionNumber": "37 P",
+    "hearingDate": "2015-09-03",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 100,
+      "reason": "exact_short_name",
+      "matchedLabel": "ALDE",
+      "matchedIds": [
+        "group-deputies-alde",
+        "group-senate-alde",
+        "party-alde"
+      ]
+    },
+    "note": "Exact short name ALDE."
+  },
+  {
+    "id": "tribunal-source-party-party-pro-romania-party-158",
+    "entityType": "party",
+    "entityId": "party-pro-romania",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-158",
+    "position": 158,
+    "legalName": "PARTIDUL PRO ROMÂNIA",
+    "shortName": "PRO România",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-158-iulie-2024.pdf",
+    "sourceKind": "official",
+    "caseNumber": "18966/3/2017",
+    "decisionNumber": "58/DEC/P",
+    "hearingDate": "2017-10-27",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 100,
+      "reason": "exact_short_name",
+      "matchedLabel": "PRO România",
+      "matchedIds": [
+        "group-deputies-pro-romania",
+        "party-pro-romania"
+      ]
+    },
+    "note": "Exact short name PRO România."
+  },
+  {
+    "id": "tribunal-source-party-party-plus-party-181",
+    "entityType": "party",
+    "entityId": "party-plus",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-181",
+    "position": 181,
+    "legalName": "PARTIDUL LIBERTATE, UNITATE ŞI SOLIDARITATE",
+    "shortName": "PLUS",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-181-mar-2023.pdf",
+    "sourceKind": "official",
+    "caseNumber": "31929/3/2018",
+    "decisionNumber": "58/DEC/P",
+    "hearingDate": "2021-04-16",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "PLUS",
+      "matchedIds": [
+        "group-senate-plus",
+        "party-plus"
+      ]
+    },
+    "note": "Exact legal name PLUS."
+  },
+  {
+    "id": "tribunal-source-party-party-aur-party-203",
+    "entityType": "party",
+    "entityId": "party-aur",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-203",
+    "position": 203,
+    "legalName": "ALIANŢA PENTRU UNIREA ROMÂNILOR",
+    "shortName": "AUR",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-203-febr-2026.pdf",
+    "sourceKind": "official",
+    "caseNumber": "24194/3/2019",
+    "decisionNumber": "63/DEC/P",
+    "hearingDate": "2019-09-19",
+    "definitiveDate": "2022-06-17",
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "AUR",
+      "matchedIds": [
+        "group-deputies-aur",
+        "group-senate-aur",
+        "party-aur"
+      ]
+    },
+    "note": "Exact legal name AUR."
+  },
+  {
+    "id": "tribunal-source-party-party-sos-ro-party-248",
+    "entityType": "party",
+    "entityId": "party-sos-ro",
+    "approvalStatus": "manual_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-248",
+    "position": 248,
+    "legalName": "PARTIDUL S.O.S. ROMÂNIA",
+    "shortName": "S.O.S. RO",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-248-martie-2026.pdf",
+    "sourceKind": "official",
+    "caseNumber": "25097/3/2021",
+    "decisionNumber": "71/dec/p",
+    "hearingDate": "2021-11-23",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 100,
+      "reason": "exact_short_name",
+      "matchedLabel": "S.O.S. RO",
+      "matchedIds": [
+        "group-senate-s-o-s-ro"
+      ]
+    },
+    "note": "Exact legal name S.O.S. România; matcher preferred a Senate group candidate, so canonical party id is set manually."
+  },
+  {
+    "id": "tribunal-source-party-party-pot-party-293",
+    "entityType": "party",
+    "entityId": "party-pot",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-293",
+    "position": 293,
+    "legalName": "PARTIDUL OAMENILOR TINERI",
+    "shortName": "POT",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-293-nov-2025.pdf",
+    "sourceKind": "official",
+    "caseNumber": "2881/3/2023",
+    "decisionNumber": "19/DEC/P",
+    "hearingDate": "2023-03-09",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 96,
+      "reason": "exact_label_or_name",
+      "matchedLabel": "POT",
+      "matchedIds": [
+        "group-deputies-pot",
+        "group-senate-pot",
+        "party-pot"
+      ]
+    },
+    "note": "Exact legal name POT."
+  },
+  {
+    "id": "tribunal-source-party-party-pace-party-311",
+    "entityType": "party",
+    "entityId": "party-pace",
+    "approvalStatus": "auto_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-311",
+    "position": 311,
+    "legalName": "PARTIDUL ALIANŢA CREŞTINILOR EUROPENI",
+    "shortName": "PACE",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-311.pdf",
+    "sourceKind": "official",
+    "caseNumber": "13668/3/2020",
+    "decisionNumber": "48/DEC/P",
+    "hearingDate": "2020-07-31",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "auto_match",
+      "score": 100,
+      "reason": "exact_short_name",
+      "matchedLabel": "PACE",
+      "matchedIds": [
+        "group-senate-pace",
+        "party-pace"
+      ]
+    },
+    "note": "Exact short name PACE."
+  }
+]

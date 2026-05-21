@@ -910,7 +910,12 @@ implementation steps.
   raw PDF files after extraction.
 - [x] Add file-only Tribunal-to-app entity matcher with confidence levels and
   manual-review files.
-- [ ] Review Tribunal match output and approve canonical party/formation links.
+- [x] Review safe Tribunal matches and promote `18` canonical party/formation
+  source links into curated source files.
+- [ ] Review remaining Tribunal `needs_review` matches manually before
+  promoting them.
+- [ ] Add importer/UI usage for curated Tribunal source links on party profile
+  pages.
 - [ ] Continue source review for UNPR legal registration date at Tribunalul
   București, PSD+PC dissolution date, ApR founding date, and
   minority-organization modeling.

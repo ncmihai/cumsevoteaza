@@ -401,6 +401,19 @@ Tribunal registry source:
   - `data/parliament-pipeline/tribunal-registry/reports/index-summary.md`
   - `data/parliament-pipeline/tribunal-registry/reports/pdf-summary.md`
   - `data/parliament-pipeline/tribunal-registry/reports/match-review.md`
+- Curated approved source output:
+  - `data/curated/tribunal-political-entity-sources.json`
+  - `data/curated/tribunal-political-entity-sources.md`
+- Note: Tribunal registry hearing/decision dates are source metadata. They must
+  not be treated as party founding dates unless a separate curated timeline
+  event explicitly makes that interpretation.
+
+CDEP availability note:
+- On 2026-05-22, CDEP profile URLs timed out from this local desktop
+  connection for `cdep.ro`, `www.cdep.ro`, `http`, and `https`, while the same
+  site was reported to work from the user's phone. This suggests a local
+  network/IP route block or drop is plausible. Keep future CDEP crawls slow,
+  resumable, and easy to pause.
 
 Initial source set:
 - `https://en.wikipedia.org/wiki/National_Salvation_Front_(Romania)`
