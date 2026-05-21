@@ -54,6 +54,7 @@ npm run pipeline:tribunal -- fetch-index
 npm run pipeline:tribunal -- parse-index
 npm run pipeline:tribunal -- fetch-pdfs --limit 20
 npm run pipeline:tribunal -- parse-pdfs
+npm run pipeline:tribunal -- match-app-entities
 ```
 
 The same commands are available through the umbrella CLI:
@@ -94,8 +95,10 @@ data/parliament-pipeline/tribunal-registry/raw/index-alte-forme-de-asociere.html
 data/parliament-pipeline/tribunal-registry/raw/pdfs/
 data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl
 data/parliament-pipeline/tribunal-registry/parsed/tribunal_pdf_metadata.jsonl
+data/parliament-pipeline/tribunal-registry/parsed/tribunal_app_entity_matches.jsonl
 data/parliament-pipeline/tribunal-registry/reports/index-summary.md
 data/parliament-pipeline/tribunal-registry/reports/pdf-summary.md
+data/parliament-pipeline/tribunal-registry/reports/match-review.md
 ```
 
 The raw PDF directory is intentionally local-only under `data/parliament-pipeline/`,
@@ -103,7 +106,9 @@ which is ignored by git. The durable artifact is the parsed JSONL metadata.
 If `pypdf` is installed locally, `parse-pdfs` also attempts text extraction;
 otherwise it still records file size, hash, index metadata, and extracted dates
 from the registry page text. Matching to app party/formation IDs remains a
-later step.
+file-only review step through `match-app-entities`. The matcher ranks Tribunal
+records against `data/curated/political-entity-candidates.json` and writes both
+machine-readable matches and a manual-review markdown report.
 
 The TypeScript importer consumes these files and performs DB writes:
 

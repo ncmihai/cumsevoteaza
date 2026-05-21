@@ -393,11 +393,14 @@ Tribunal registry source:
   - `npm run pipeline:tribunal -- parse-index`
   - `npm run pipeline:tribunal -- fetch-pdfs`
   - `npm run pipeline:tribunal -- parse-pdfs`
+  - `npm run pipeline:tribunal -- match-app-entities`
 - Current output:
   - `data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl`
   - `data/parliament-pipeline/tribunal-registry/parsed/tribunal_pdf_metadata.jsonl`
+  - `data/parliament-pipeline/tribunal-registry/parsed/tribunal_app_entity_matches.jsonl`
   - `data/parliament-pipeline/tribunal-registry/reports/index-summary.md`
   - `data/parliament-pipeline/tribunal-registry/reports/pdf-summary.md`
+  - `data/parliament-pipeline/tribunal-registry/reports/match-review.md`
 
 Initial source set:
 - `https://en.wikipedia.org/wiki/National_Salvation_Front_(Romania)`

@@ -1936,3 +1936,21 @@ Verification:
 - PDF text extraction is optional: the command records `unavailable` when
   `pypdf` is not installed, while still extracting useful dates/case numbers
   from the index text.
+
+## 2026-05-22 — Tribunal Registry App Entity Matcher
+
+- Added `tribunal-registry match-app-entities` as a file-only review step.
+- The matcher ranks Tribunal legal registry rows against
+  `data/curated/political-entity-candidates.json` using short names, legal
+  names, boilerplate-stripped labels, and token overlap.
+- Outputs:
+  - `data/parliament-pipeline/tribunal-registry/parsed/tribunal_app_entity_matches.jsonl`;
+  - `data/parliament-pipeline/tribunal-registry/reports/match-review.md`.
+- No DB writes are performed; manual review remains required before using
+  Tribunal matches as canonical party/formation sources.
+- Local full pass completed after this change:
+  - fetched/covered `394` PDFs from Tribunal registry rows;
+  - parsed text for `394` PDFs with `pypdf`;
+  - deleted raw local PDFs after extraction;
+  - generated `19` auto matches, `17` manual-review matches, and `358`
+    no-match rows against current app political-entity candidates.

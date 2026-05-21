@@ -77,8 +77,10 @@ DOMAINS = [
             "data/parliament-pipeline/tribunal-registry/raw/pdfs/*.pdf",
             "data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl",
             "data/parliament-pipeline/tribunal-registry/parsed/tribunal_pdf_metadata.jsonl",
+            "data/parliament-pipeline/tribunal-registry/parsed/tribunal_app_entity_matches.jsonl",
             "data/parliament-pipeline/tribunal-registry/reports/index-summary.md",
             "data/parliament-pipeline/tribunal-registry/reports/pdf-summary.md",
+            "data/parliament-pipeline/tribunal-registry/reports/match-review.md",
         ],
         "dbWriter": "None yet; Python writes files only.",
     },
@@ -126,6 +128,7 @@ def main() -> None:
     add_tribunal_parse_index(tribunal_sub)
     add_tribunal_fetch_pdfs(tribunal_sub)
     add_tribunal_parse_pdfs(tribunal_sub)
+    add_tribunal_match_app_entities(tribunal_sub)
 
     args = parser.parse_args()
     if args.command == "domains":
@@ -217,6 +220,14 @@ def add_tribunal_parse_pdfs(sub: argparse._SubParsersAction[argparse.ArgumentPar
     parser.add_argument("--report", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/reports/pdf-summary.md"))
 
 
+def add_tribunal_match_app_entities(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = sub.add_parser("match-app-entities", help="Match Tribunal rows against app party/formation candidates.")
+    parser.add_argument("--tribunal", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/parsed/tribunal_pdf_metadata.jsonl"))
+    parser.add_argument("--candidates", type=Path, default=Path("data/curated/political-entity-candidates.json"))
+    parser.add_argument("--out", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/parsed/tribunal_app_entity_matches.jsonl"))
+    parser.add_argument("--report", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/reports/match-review.md"))
+
+
 def run_cdep_command(args: argparse.Namespace) -> None:
     cdep = load_cdep_probe()
     if args.cdep_command == "roster-urls":
@@ -260,6 +271,12 @@ def run_tribunal_command(args: argparse.Namespace) -> None:
         write_jsonl(rows, args.out)
         write_tribunal_pdf_report(rows, args.report)
         print_json({"records": len(rows), "out": str(args.out), "report": str(args.report), "byStatus": count_by(rows, "pdfStatus")})
+        return
+    if args.tribunal_command == "match-app-entities":
+        rows = match_tribunal_app_entities(read_jsonl(args.tribunal), read_json(args.candidates))
+        write_jsonl(rows, args.out)
+        write_tribunal_match_report(rows, args.report)
+        print_json({"records": len(rows), "out": str(args.out), "report": str(args.report), "byStatus": count_by(rows, "matchStatus")})
         return
     raise SystemExit(f"Unsupported Tribunal command: {args.tribunal_command}")
 
@@ -387,6 +404,12 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         raise SystemExit(f"Missing JSONL file: {path}")
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def read_json(path: Path) -> Any:
+    if not path.exists():
+        raise SystemExit(f"Missing JSON file: {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def filtered_tribunal_records(records: list[dict[str, Any]], kind: str, positions: list[int], limit: int) -> list[dict[str, Any]]:
@@ -538,6 +561,214 @@ def write_tribunal_pdf_report(rows: list[dict[str, Any]], out: Path) -> None:
     for row in stored_rows[:20]:
         lines.append(f"- `{row['kind']}` #{row.get('position')}: {row.get('legalName')} ({row.get('byteSize')} bytes)")
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def match_tribunal_app_entities(tribunal_rows: list[dict[str, Any]], candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    candidate_index = [candidate_match_record(candidate) for candidate in candidates]
+    rows = []
+    for row in tribunal_rows:
+        ranked = sorted(
+            (
+                score_tribunal_candidate(row, candidate)
+                for candidate in candidate_index
+            ),
+            key=lambda item: item["score"],
+            reverse=True,
+        )
+        matches = [item for item in ranked if item["score"] > 0][:5]
+        best = matches[0] if matches else None
+        score = int(best["score"]) if best else 0
+        rows.append(
+            {
+                "tribunalEntityId": row["entityId"],
+                "kind": row.get("kind"),
+                "position": row.get("position"),
+                "legalName": row.get("legalName"),
+                "shortName": row.get("shortName"),
+                "sourceUrl": row.get("sourceUrl"),
+                "caseNumber": preferred_extracted_value(row, "caseNumber"),
+                "decisionNumber": preferred_extracted_value(row, "decisionNumber"),
+                "hearingDate": preferred_extracted_value(row, "hearingDate"),
+                "definitiveDate": preferred_extracted_value(row, "definitiveDate"),
+                "matchStatus": "auto_match" if score >= 92 else "needs_review" if score >= 65 else "no_match",
+                "bestScore": score,
+                "matches": matches,
+            }
+        )
+    return rows
+
+
+def candidate_match_record(candidate: dict[str, Any]) -> dict[str, Any]:
+    labels = [candidate.get("label") or "", *(candidate.get("names") or [])]
+    normalized = unique_strings([normalize_match_text(label) for label in labels if label])
+    compact = unique_strings([compact_match_text(label) for label in labels if label])
+    stripped = unique_strings([strip_entity_boilerplate(label) for label in labels if label])
+    return {
+        "label": candidate.get("label"),
+        "likelyKind": candidate.get("likelyKind"),
+        "ids": candidate.get("ids") or [],
+        "partyIds": candidate.get("partyIds") or [],
+        "names": candidate.get("names") or [],
+        "legislatures": candidate.get("legislatures") or [],
+        "normalized": normalized,
+        "compact": compact,
+        "stripped": stripped,
+    }
+
+
+def score_tribunal_candidate(row: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
+    legal_name = row.get("legalName") or ""
+    short_name = row.get("shortName") or ""
+    tribunal_values = [value for value in [short_name, legal_name] if value]
+    legal_normalized = normalize_match_text(legal_name) if legal_name else ""
+    short_normalized = normalize_match_text(short_name) if short_name else ""
+    tribunal_normalized = unique_strings([normalize_match_text(value) for value in tribunal_values])
+    tribunal_compact = unique_strings([compact_match_text(value) for value in tribunal_values])
+    tribunal_stripped = unique_strings([strip_entity_boilerplate(value) for value in tribunal_values])
+    score = 0
+    reason = ""
+    if legal_normalized and legal_normalized in candidate["normalized"]:
+        score, reason = 96, "exact_label_or_name"
+    elif short_normalized and short_normalized in candidate["normalized"]:
+        score, reason = short_name_score(short_name)
+    elif any(value in candidate["compact"] for value in tribunal_compact):
+        score, reason = compact_label_score(tribunal_compact)
+    elif any(value in candidate["stripped"] for value in tribunal_stripped if value):
+        score, reason = 84, "exact_boilerplate_stripped"
+    else:
+        score, reason = token_similarity_score(tribunal_stripped, candidate["stripped"])
+    return {
+        "score": score,
+        "reason": reason,
+        "label": candidate["label"],
+        "kind": candidate["likelyKind"],
+        "ids": candidate["ids"],
+        "partyIds": candidate["partyIds"],
+        "legislatures": candidate["legislatures"],
+    }
+
+
+def short_name_score(short_name: str) -> tuple[int, str]:
+    compact = compact_match_text(short_name)
+    if len(compact) <= 3:
+        return 88, "exact_short_name_needs_review"
+    return 100, "exact_short_name"
+
+
+def compact_label_score(values: list[str]) -> tuple[int, str]:
+    shortest = min((len(value) for value in values if value), default=0)
+    if shortest <= 3:
+        return 88, "exact_compact_label_needs_review"
+    return 94, "exact_compact_label"
+
+
+def token_similarity_score(left_values: list[str], right_values: list[str]) -> tuple[int, str]:
+    best_score = 0
+    best_reason = ""
+    for left in left_values:
+        left_tokens = set(left.split())
+        if not left_tokens:
+            continue
+        for right in right_values:
+            right_tokens = set(right.split())
+            if not right_tokens:
+                continue
+            overlap = len(left_tokens & right_tokens)
+            denominator = max(len(left_tokens), len(right_tokens))
+            score = int((overlap / denominator) * 80)
+            if overlap >= 2 and score > best_score:
+                best_score = score
+                best_reason = "token_overlap"
+    return best_score, best_reason
+
+
+def preferred_extracted_value(row: dict[str, Any], key: str) -> str | None:
+    pdf = row.get("pdfExtracted") or {}
+    index = row.get("indexExtracted") or {}
+    return pdf.get(key) or index.get(key)
+
+
+def write_tribunal_match_report(rows: list[dict[str, Any]], out: Path) -> None:
+    out.parent.mkdir(parents=True, exist_ok=True)
+    by_status = count_by(rows, "matchStatus")
+    lines = [
+        "# Tribunalul București App Entity Match Review",
+        "",
+        "File-only match report. Review before using any match as canonical data.",
+        "",
+        "## Counts",
+        "",
+    ]
+    for status, count in sorted(by_status.items()):
+        lines.append(f"- `{status}`: {count}")
+    lines.extend(["", "## Needs Review / No Match", ""])
+    lines.append("| Kind | # | Tribunal name | Short | Best match | Score | Reason | Source |")
+    lines.append("| --- | ---: | --- | --- | --- | ---: | --- | --- |")
+    for row in [item for item in rows if item["matchStatus"] != "auto_match"][:200]:
+        best = row["matches"][0] if row["matches"] else {}
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    escape_cell(str(row.get("kind") or "")),
+                    escape_cell(str(row.get("position") or "")),
+                    escape_cell(str(row.get("legalName") or "")),
+                    escape_cell(str(row.get("shortName") or "")),
+                    escape_cell(str(best.get("label") or "-")),
+                    escape_cell(str(row.get("bestScore") or 0)),
+                    escape_cell(str(best.get("reason") or "-")),
+                    escape_cell(str(row.get("sourceUrl") or "")),
+                ]
+            )
+            + " |"
+        )
+    lines.extend(["", "## Auto Matches", ""])
+    lines.append("| Kind | # | Tribunal name | App match | Score | Source |")
+    lines.append("| --- | ---: | --- | --- | ---: | --- |")
+    for row in [item for item in rows if item["matchStatus"] == "auto_match"][:100]:
+        best = row["matches"][0] if row["matches"] else {}
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    escape_cell(str(row.get("kind") or "")),
+                    escape_cell(str(row.get("position") or "")),
+                    escape_cell(str(row.get("legalName") or "")),
+                    escape_cell(str(best.get("label") or "")),
+                    escape_cell(str(row.get("bestScore") or 0)),
+                    escape_cell(str(row.get("sourceUrl") or "")),
+                ]
+            )
+            + " |"
+        )
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def normalize_match_text(value: str) -> str:
+    normalized = value.translate(str.maketrans("ăâîșşțţĂÂÎȘŞȚŢ", "aaiss ttAAISS TT".replace(" ", ""))).lower()
+    return re.sub(r"[^a-z0-9]+", " ", normalized).strip()
+
+
+def compact_match_text(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", normalize_match_text(value))
+
+
+def strip_entity_boilerplate(value: str) -> str:
+    text = normalize_match_text(value)
+    text = re.sub(
+        r"\b(partidul|partid|politic|politica|alianta|uniunea|miscarea|frontul|national|nationala|roman|romana|romaniei|din|de|si|pentru|al|a|ai|ale|the)\b",
+        " ",
+        text,
+    )
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def unique_strings(values: list[str]) -> list[str]:
+    return [value for value in dict.fromkeys(values) if value]
+
+
+def escape_cell(value: str) -> str:
+    return value.replace("|", "\\|").replace("\n", " ")
 
 
 @dataclass

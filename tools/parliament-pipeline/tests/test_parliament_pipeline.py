@@ -174,6 +174,66 @@ class ParliamentPipelineCliTest(unittest.TestCase):
             self.assertEqual(rows[0]["indexExtracted"]["hearingDate"], "2010-05-01")
             self.assertIn("Tribunalul București PDF Metadata Summary", report.read_text(encoding="utf-8"))
 
+    def test_tribunal_match_app_entities_writes_review_report(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = Path(tmp)
+            tribunal = tmp_dir / "tribunal_pdf_metadata.jsonl"
+            candidates = tmp_dir / "political-entity-candidates.json"
+            out = tmp_dir / "parsed" / "tribunal_app_entity_matches.jsonl"
+            report = tmp_dir / "reports" / "match-review.md"
+            tribunal.write_text(
+                json.dumps(
+                    {
+                        "entityId": "tribunal-party-203",
+                        "kind": "party",
+                        "position": 203,
+                        "legalName": "ALIANŢA PENTRU UNIREA ROMÂNILOR",
+                        "shortName": "AUR",
+                        "sourceUrl": "https://tribunalulbucuresti.ro/example.pdf",
+                        "indexExtracted": {"caseNumber": "24194/3/2019"},
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            candidates.write_text(
+                json.dumps(
+                    [
+                        {
+                            "label": "AUR",
+                            "likelyKind": "party",
+                            "ids": ["party-aur"],
+                            "names": ["Alianța pentru Unirea Românilor"],
+                            "partyIds": ["party-aur"],
+                            "legislatures": ["2024-2028"],
+                        }
+                    ],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            completed = self.run_pipeline(
+                "tribunal-registry",
+                "match-app-entities",
+                "--tribunal",
+                str(tribunal),
+                "--candidates",
+                str(candidates),
+                "--out",
+                str(out),
+                "--report",
+                str(report),
+            )
+            summary = json.loads(completed.stdout)
+            rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+            self.assertEqual(summary["byStatus"], {"auto_match": 1})
+            self.assertEqual(rows[0]["matches"][0]["ids"], ["party-aur"])
+            self.assertEqual(rows[0]["caseNumber"], "24194/3/2019")
+            self.assertIn("Tribunalul București App Entity Match Review", report.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -906,8 +906,11 @@ implementation steps.
   `382` parties, `10` alliances, `2` other associations.
 - [x] Add Tribunal PDF download/extraction commands that keep raw PDFs under
   ignored local pipeline data and emit parsed JSONL metadata.
-- [ ] Match Tribunal registry rows against app party/formation IDs with
-  confidence levels and manual-review files.
+- [x] Run full Tribunal PDF pass locally, parse all `394` PDFs, and delete
+  raw PDF files after extraction.
+- [x] Add file-only Tribunal-to-app entity matcher with confidence levels and
+  manual-review files.
+- [ ] Review Tribunal match output and approve canonical party/formation links.
 - [ ] Continue source review for UNPR legal registration date at Tribunalul
   București, PSD+PC dissolution date, ApR founding date, and
   minority-organization modeling.
