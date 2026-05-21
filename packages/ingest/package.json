@@ -29,6 +29,7 @@
     "people:backfill": "tsx src/cli.ts people:backfill",
     "governments:skeleton": "tsx src/cli.ts governments:skeleton",
     "political-formations:seed": "tsx src/cli.ts political-formations:seed",
+    "political-entities:candidates": "tsx src/cli.ts political-entities:candidates",
     "discover:senate": "tsx src/cli.ts discover:senate",
     "discover:deputies": "tsx src/cli.ts discover:deputies",
     "discover:deputies-votes": "tsx src/cli.ts discover:deputies-votes",

@@ -40,6 +40,7 @@
     "ingest:people:backfill": "npm --workspace @cumsevoteaza/ingest run people:backfill --",
     "ingest:governments:skeleton": "npm --workspace @cumsevoteaza/ingest run governments:skeleton --",
     "ingest:political-formations:seed": "npm --workspace @cumsevoteaza/ingest run political-formations:seed --",
+    "ingest:political-entities:candidates": "npm --workspace @cumsevoteaza/ingest run political-entities:candidates --",
     "ingest:discover:senate": "npm --workspace @cumsevoteaza/ingest run discover:senate --",
     "ingest:discover:deputies": "npm --workspace @cumsevoteaza/ingest run discover:deputies --",
     "ingest:discover:deputies-votes": "npm --workspace @cumsevoteaza/ingest run discover:deputies-votes --",

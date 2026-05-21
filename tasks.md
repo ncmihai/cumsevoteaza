@@ -887,6 +887,8 @@ implementation steps.
 - [x] Add `npm run ingest:political-formations:seed` to upsert curated
   formation events.
 - [x] Render formation events as dated markers on member career timelines.
+- [x] Add `npm run ingest:political-entities:candidates` to generate the full
+  party/group/formation review backlog from imported DB labels.
 - [ ] Expand the curated event file with DA PNL-PD, CDR, ARD, PMP, UNPR, PC,
   PUR, and later party/formation changes after source review.
 - [ ] Add an audit page or report that lists member rows affected by curated

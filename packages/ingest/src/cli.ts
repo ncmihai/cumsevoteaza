@@ -29,6 +29,7 @@ import { snapshotFor } from "./parsers/utils";
 import { refreshReadModels } from "./read-models";
 import { resetRosterData } from "./roster-reset";
 import { crosscheckWikipediaRoster } from "./roster-crosscheck";
+import { writePoliticalEntityCandidates } from "./political-entity-candidates";
 import { seedPoliticalFormationEvents } from "./political-formation-events";
 import { wikipediaRosterToParsedRoster } from "./wikipedia-roster-import";
 import {
@@ -290,6 +291,14 @@ async function main() {
 
   if (command === "political-formations:seed") {
     console.log(JSON.stringify(await seedPoliticalFormationEvents({ eventsPath: flag("events") }), null, 2));
+    return;
+  }
+
+  if (command === "political-entities:candidates") {
+    console.log(JSON.stringify(await writePoliticalEntityCandidates({
+      jsonPath: flag("json"),
+      markdownPath: flag("markdown")
+    }), null, 2));
     return;
   }
 

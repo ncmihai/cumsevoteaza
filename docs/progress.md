@@ -1849,3 +1849,17 @@ Verification:
   - Local browser smoke-check for
     `/ro/members/lucian-nicolae-bode-deputies-30` showed the ACL and
     PDL-to-PNL event markers and corrected PDL/PNL dates.
+
+## 2026-05-21 — Political Entity Candidate Backlog
+
+- Added `npm run ingest:political-entities:candidates`.
+- The command reads imported party, parliamentary-group, member-affiliation,
+  and member-group labels from the database and writes:
+  - `data/curated/political-entity-candidates.json`;
+  - `data/curated/political-entity-candidates.md`.
+- Current Neon run found 113 distinct candidate labels across parties,
+  historical formations, non-affiliated states, minority organizations, and
+  parliamentary groups.
+- The report is intentionally marked `needs_source_review` so each entity can
+  be checked against Wikipedia/Google/official sources before becoming a
+  curated formation event.

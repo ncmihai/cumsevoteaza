@@ -1,0 +1,3164 @@
+[
+  {
+    "label": "PSD",
+    "normalizedLabel": "psd",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-psd",
+      "group-senate-psd",
+      "party-psd"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Social Democrat",
+      "Partidul Social Democrat"
+    ],
+    "partyIds": [
+      "party-psd"
+    ],
+    "memberCount": 2930,
+    "rowCount": 2930,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PNL",
+    "normalizedLabel": "pnl",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-pnl",
+      "group-senate-pnl",
+      "party-pnl"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Naţional Liberal",
+      "Partidul Național Liberal"
+    ],
+    "partyIds": [
+      "party-pnl"
+    ],
+    "memberCount": 1934,
+    "rowCount": 1934,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PDSR",
+    "normalizedLabel": "pdsr",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-pdsr",
+      "group-senate-pdsr",
+      "party-pdsr"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Democraţiei Sociale din România",
+      "Partidul Democrației Sociale din România"
+    ],
+    "partyIds": [
+      "party-pdsr"
+    ],
+    "memberCount": 879,
+    "rowCount": 879,
+    "legislatures": [
+      "2000-2004",
+      "1996-2000",
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PDL",
+    "normalizedLabel": "pdl",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-pdl",
+      "group-senate-pdl",
+      "party-pdl"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Democrat Liberal",
+      "Partidul Democrat Liberal"
+    ],
+    "partyIds": [
+      "party-pdl"
+    ],
+    "memberCount": 723,
+    "rowCount": 723,
+    "legislatures": [
+      "2012-2016",
+      "2008-2012",
+      "2004-2008"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "UDMR",
+    "normalizedLabel": "udmr",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-udmr",
+      "group-senate-udmr",
+      "party-udmr"
+    ],
+    "names": [
+      "Grupul parlamentar al Uniunii Democrate Maghiare din România",
+      "Uniunea Democrată Maghiară din România"
+    ],
+    "partyIds": [
+      "party-udmr"
+    ],
+    "memberCount": 716,
+    "rowCount": 716,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PRM",
+    "normalizedLabel": "prm",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-prm",
+      "group-senate-prm",
+      "party-prm"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului România Mare",
+      "Partidul România Mare"
+    ],
+    "partyIds": [
+      "party-prm"
+    ],
+    "memberCount": 530,
+    "rowCount": 530,
+    "legislatures": [
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "independent",
+    "normalizedLabel": "independent",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-independent",
+      "party-formation-1992-independent",
+      "party-formation-1996-independent",
+      "party-formation-2000-independent",
+      "party-formation-2004-independent",
+      "party-formation-2008-independent",
+      "party-formation-2012-independent",
+      "party-formation-2024-independent"
+    ],
+    "names": [
+      "independent"
+    ],
+    "partyIds": [
+      "party-formation-1990-independent",
+      "party-formation-1992-independent",
+      "party-formation-1996-independent",
+      "party-formation-2000-independent",
+      "party-formation-2004-independent",
+      "party-formation-2008-independent",
+      "party-formation-2012-independent",
+      "party-formation-2024-independent"
+    ],
+    "memberCount": 451,
+    "rowCount": 451,
+    "legislatures": [
+      "2024-2028",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Neafiliați",
+    "normalizedLabel": "neafiliati",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-unaffiliated",
+      "group-senate-neafiliati",
+      "group-senate-unaffiliated"
+    ],
+    "names": [
+      "Deputaţi neafiliaţi",
+      "Senatori neafiliați",
+      "Senatori neafiliaţi"
+    ],
+    "partyIds": [],
+    "memberCount": 429,
+    "rowCount": 429,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "FSN",
+    "normalizedLabel": "fsn",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-fsn",
+      "party-fsn"
+    ],
+    "names": [
+      "Frontul Salvării Naționale",
+      "Grup parlamentar FSN"
+    ],
+    "partyIds": [
+      "party-fsn"
+    ],
+    "memberCount": 412,
+    "rowCount": 412,
+    "legislatures": [
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Frontului Salvării Naţionale",
+    "normalizedLabel": "frontului salvarii nationale",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-1",
+      "group-deputies-1990-1992-1",
+      "group-senate-1990-1992-1"
+    ],
+    "names": [
+      "Grupul parlamentar al Frontului Salvării Naţionale"
+    ],
+    "partyIds": [],
+    "memberCount": 396,
+    "rowCount": 396,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "USR",
+    "normalizedLabel": "usr",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-usr",
+      "group-senate-usr",
+      "party-usr"
+    ],
+    "names": [
+      "Grupul parlamentar al Uniunii Salvaţi România",
+      "Uniunea Salvați România"
+    ],
+    "partyIds": [
+      "party-usr"
+    ],
+    "memberCount": 384,
+    "rowCount": 384,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PNȚCD",
+    "normalizedLabel": "pntcd",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-pntcd",
+      "group-senate-pntcd",
+      "party-pntcd"
+    ],
+    "names": [
+      "Grup parlamentar PNȚCD",
+      "Grupul parlamentar Partidul Naţional Ţărănesc Creştin Democrat Civic-Ecologist",
+      "Partidul Național Țărănesc Creștin Democrat"
+    ],
+    "partyIds": [
+      "party-pntcd"
+    ],
+    "memberCount": 341,
+    "rowCount": 341,
+    "legislatures": [
+      "2012-2016",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PD",
+    "normalizedLabel": "pd",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-pd",
+      "party-pd"
+    ],
+    "names": [
+      "Grup parlamentar PD",
+      "Partidul Democrat"
+    ],
+    "partyIds": [
+      "party-pd"
+    ],
+    "memberCount": 295,
+    "rowCount": 295,
+    "legislatures": [
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "AUR",
+    "normalizedLabel": "aur",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-aur",
+      "group-senate-aur",
+      "party-aur"
+    ],
+    "names": [
+      "Alianța pentru Unirea Românilor",
+      "Grupul parlamentar AUR"
+    ],
+    "partyIds": [
+      "party-aur"
+    ],
+    "memberCount": 291,
+    "rowCount": 291,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Minorități",
+    "normalizedLabel": "minoritati",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-minoritati",
+      "party-minoritati"
+    ],
+    "names": [
+      "Grupul parlamentar al minorităţilor naţionale",
+      "Minorități naționale"
+    ],
+    "partyIds": [
+      "party-minoritati"
+    ],
+    "memberCount": 171,
+    "rowCount": 171,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PUNR",
+    "normalizedLabel": "punr",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-punr",
+      "group-senate-punr",
+      "party-punr"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Unităţii Naţionale Române",
+      "Partidul Unității Naționale Române"
+    ],
+    "partyIds": [
+      "party-punr"
+    ],
+    "memberCount": 156,
+    "rowCount": 156,
+    "legislatures": [
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Partidului Democrat",
+    "normalizedLabel": "partidului democrat",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-13",
+      "group-deputies-1992-1996-13",
+      "group-deputies-2000-2004-3",
+      "group-senate-1992-1996-3",
+      "group-senate-1996-2000-3",
+      "group-senate-2000-2004-3",
+      "group-senate-2004-2008-4"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Democrat"
+    ],
+    "partyIds": [],
+    "memberCount": 155,
+    "rowCount": 155,
+    "legislatures": [
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "FAFPCCA",
+    "normalizedLabel": "fafpcca",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2016-fara-adeziune-la-formatiunea-politica-pentru-care-a-candidat-la-alegeri",
+      "party-formation-2020-fara-adeziune-la-formatiunea-politica-pentru-care-a-candidat-la-alegeri",
+      "party-formation-2024-fara-adeziune-la-formatiunea-politica-pentru-care-a-candidat-la-alegeri"
+    ],
+    "names": [
+      "Fără adeziune la formaţiunea politică pentru care a candidat la alegeri"
+    ],
+    "partyIds": [
+      "party-formation-2016-fara-adeziune-la-formatiunea-politica-pentru-care-a-candidat-la-alegeri",
+      "party-formation-2020-fara-adeziune-la-formatiunea-politica-pentru-care-a-candidat-la-alegeri",
+      "party-formation-2024-fara-adeziune-la-formatiunea-politica-pentru-care-a-candidat-la-alegeri"
+    ],
+    "memberCount": 152,
+    "rowCount": 152,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "UNPR",
+    "normalizedLabel": "unpr",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-unpr",
+      "group-senate-unpr",
+      "party-unpr"
+    ],
+    "names": [
+      "Grupul parlamentar al Uniunii Naţionale pentru Progresul României (Grupul Progresist)",
+      "Uniunea Națională pentru Progresul României"
+    ],
+    "partyIds": [
+      "party-unpr"
+    ],
+    "memberCount": 149,
+    "rowCount": 149,
+    "legislatures": [
+      "2012-2016"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "ALDE",
+    "normalizedLabel": "alde",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-alde",
+      "group-senate-alde",
+      "party-alde"
+    ],
+    "names": [
+      "Alianța Liberalilor și Democraților",
+      "Grupul parlamentar ALDE (Alianţa liberalilor şi democraţilor)"
+    ],
+    "partyIds": [
+      "party-alde"
+    ],
+    "memberCount": 87,
+    "rowCount": 87,
+    "legislatures": [
+      "2016-2020",
+      "2012-2016"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PC",
+    "normalizedLabel": "pc",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-pc",
+      "party-pc"
+    ],
+    "names": [
+      "Grup parlamentar PC",
+      "Partidul Conservator"
+    ],
+    "partyIds": [
+      "party-pc"
+    ],
+    "memberCount": 86,
+    "rowCount": 86,
+    "legislatures": [
+      "2012-2016",
+      "2008-2012",
+      "2004-2008"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PP-DD",
+    "normalizedLabel": "pp dd",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-pp-dd",
+      "party-pp-dd"
+    ],
+    "names": [
+      "Grup parlamentar PP-DD",
+      "Partidul Poporului - Dan Diaconescu"
+    ],
+    "partyIds": [
+      "party-pp-dd"
+    ],
+    "memberCount": 68,
+    "rowCount": 68,
+    "legislatures": [
+      "2012-2016"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "POT",
+    "normalizedLabel": "pot",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-pot",
+      "group-senate-pot",
+      "party-pot"
+    ],
+    "names": [
+      "Grupul parlamentar POT",
+      "Partidul Oamenilor Tineri"
+    ],
+    "partyIds": [
+      "party-pot"
+    ],
+    "memberCount": 62,
+    "rowCount": 62,
+    "legislatures": [
+      "2024-2028"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Uniunea Social Democrată - Parti",
+    "normalizedLabel": "uniunea social democrata parti",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-1996-2000-3",
+      "group-deputies-1996-2000-9",
+      "group-deputies-3",
+      "group-deputies-9"
+    ],
+    "names": [
+      "Grupul parlamentar Uniunea Social Democrată - Partidul Democrat",
+      "Grupul parlamentar Uniunea Social Democrată - Partidul Social Democrat Român"
+    ],
+    "partyIds": [],
+    "memberCount": 59,
+    "rowCount": 59,
+    "legislatures": [
+      "1996-2000"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Partidului Naţional Creştin Demo",
+    "normalizedLabel": "partidului national crestin demo",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-1992-1996-2",
+      "group-senate-1996-2000-1"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Naţional Creştin Democrat"
+    ],
+    "partyIds": [],
+    "memberCount": 58,
+    "rowCount": 58,
+    "legislatures": [
+      "1996-2000",
+      "1992-1996"
+    ],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Democrat Popular",
+    "normalizedLabel": "democrat popular",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-2012-2016-4"
+    ],
+    "names": [
+      "Grupul parlamentar Democrat Popular"
+    ],
+    "partyIds": [],
+    "memberCount": 52,
+    "rowCount": 52,
+    "legislatures": [
+      "2012-2016"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Dreptate şi Adevăr PNL-PD",
+    "normalizedLabel": "dreptate si adevar pnl pd",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-2004-2008-1"
+    ],
+    "names": [
+      "Grupul Parlamentar Dreptate şi Adevăr PNL-PD"
+    ],
+    "partyIds": [],
+    "memberCount": 52,
+    "rowCount": 52,
+    "legislatures": [
+      "2004-2008"
+    ],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PSDR",
+    "normalizedLabel": "psdr",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-psdr",
+      "group-senate-psdr",
+      "party-psdr"
+    ],
+    "names": [
+      "Grup parlamentar PSDR",
+      "Grupul parlamentar social-democrat al Partidului Social Democrat Român",
+      "Partidul Social Democrat Român"
+    ],
+    "partyIds": [
+      "party-psdr"
+    ],
+    "memberCount": 52,
+    "rowCount": 52,
+    "legislatures": [
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "FDSN",
+    "normalizedLabel": "fdsn",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-fdsn",
+      "party-fdsn"
+    ],
+    "names": [
+      "Frontul Democrat al Salvării Naționale",
+      "Grup parlamentar FDSN"
+    ],
+    "partyIds": [
+      "party-fdsn"
+    ],
+    "memberCount": 51,
+    "rowCount": 51,
+    "legislatures": [
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Partidului Conservator",
+    "normalizedLabel": "partidului conservator",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-2004-2008-6",
+      "group-senate-2004-2008-6"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Conservator"
+    ],
+    "partyIds": [],
+    "memberCount": 47,
+    "rowCount": 47,
+    "legislatures": [
+      "2004-2008"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PUR",
+    "normalizedLabel": "pur",
+    "likelyKind": "party",
+    "ids": [
+      "party-pur"
+    ],
+    "names": [
+      "Partidul Umanist din România"
+    ],
+    "partyIds": [
+      "party-pur"
+    ],
+    "memberCount": 47,
+    "rowCount": 47,
+    "legislatures": [
+      "2004-2008",
+      "2000-2004"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PRO România",
+    "normalizedLabel": "pro romania",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-pro-romania",
+      "party-pro-romania"
+    ],
+    "names": [
+      "Grupul parlamentar PRO România",
+      "PRO România"
+    ],
+    "partyIds": [
+      "party-pro-romania"
+    ],
+    "memberCount": 44,
+    "rowCount": 44,
+    "legislatures": [
+      "2016-2020"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Liberal Conservator",
+    "normalizedLabel": "liberal conservator",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-2012-2016-7",
+      "group-senate-2012-2016-7"
+    ],
+    "names": [
+      "Grupul parlamentar Liberal Conservator"
+    ],
+    "partyIds": [],
+    "memberCount": 42,
+    "rowCount": 42,
+    "legislatures": [
+      "2012-2016"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PL '93",
+    "normalizedLabel": "pl 93",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-pl-93",
+      "party-pl-93"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Liberal 1993 si al Partidului Aliantei Civice",
+      "Partidul Liberal 1993"
+    ],
+    "partyIds": [
+      "party-pl-93"
+    ],
+    "memberCount": 42,
+    "rowCount": 42,
+    "legislatures": [
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PMP",
+    "normalizedLabel": "pmp",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-pmp",
+      "group-senate-pmp",
+      "party-pmp"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Mişcarea Populară",
+      "Partidul Mișcarea Populară"
+    ],
+    "partyIds": [
+      "party-pmp"
+    ],
+    "memberCount": 40,
+    "rowCount": 40,
+    "legislatures": [
+      "2016-2020"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "SOS",
+    "normalizedLabel": "sos",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2024-sos"
+    ],
+    "names": [
+      "SOS"
+    ],
+    "partyIds": [
+      "party-formation-2024-sos"
+    ],
+    "memberCount": 40,
+    "rowCount": 40,
+    "legislatures": [
+      "2024-2028"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "SOS RO",
+    "normalizedLabel": "sos ro",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-sos-ro",
+      "group-senate-sos-ro",
+      "party-sos-ro"
+    ],
+    "names": [
+      "Grupul parlamentar SOS România",
+      "SOS România"
+    ],
+    "partyIds": [
+      "party-sos-ro"
+    ],
+    "memberCount": 40,
+    "rowCount": 40,
+    "legislatures": [
+      "2024-2028"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "progresist",
+    "normalizedLabel": "progresist",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-2008-2012-6",
+      "group-senate-2008-2012-5"
+    ],
+    "names": [
+      "Grupul parlamentar progresist"
+    ],
+    "partyIds": [],
+    "memberCount": 35,
+    "rowCount": 35,
+    "legislatures": [
+      "2008-2012"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "UPR",
+    "normalizedLabel": "upr",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-deputies-upr",
+      "party-upr"
+    ],
+    "names": [
+      "Grupul parlamentar Uniţi pentru România",
+      "Uniți pentru România"
+    ],
+    "partyIds": [
+      "party-upr"
+    ],
+    "memberCount": 32,
+    "rowCount": 32,
+    "legislatures": [
+      "2024-2028"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "deputaţilor independenţi",
+    "normalizedLabel": "deputatilor independenti",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-2008-2012-7",
+      "group-deputies-7"
+    ],
+    "names": [
+      "Grupul parlamentar al deputaţilor independenţi"
+    ],
+    "partyIds": [],
+    "memberCount": 29,
+    "rowCount": 29,
+    "legislatures": [
+      "2008-2012"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "ecologist şi social-democrat",
+    "normalizedLabel": "ecologist si social democrat",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-1990-1992-5",
+      "group-deputies-5"
+    ],
+    "names": [
+      "Grupul parlamentar ecologist şi social-democrat"
+    ],
+    "partyIds": [],
+    "memberCount": 27,
+    "rowCount": 27,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "P.S.D. (social-democrat şi umani",
+    "normalizedLabel": "p s d social democrat si umani",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-2000-2004-1"
+    ],
+    "names": [
+      "Grupul parlamentar al P.S.D. (social-democrat şi umanist)"
+    ],
+    "partyIds": [],
+    "memberCount": 26,
+    "rowCount": 26,
+    "legislatures": [
+      "2000-2004"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PER",
+    "normalizedLabel": "per",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-per",
+      "party-per"
+    ],
+    "names": [
+      "Grup parlamentar PER",
+      "Partidul Ecologist Român"
+    ],
+    "partyIds": [
+      "party-per"
+    ],
+    "memberCount": 25,
+    "rowCount": 25,
+    "legislatures": [
+      "2016-2020",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PLUS",
+    "normalizedLabel": "plus",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-plus",
+      "party-plus"
+    ],
+    "names": [
+      "Grup parlamentar PLUS",
+      "Partidul Libertate, Unitate și Solidaritate"
+    ],
+    "partyIds": [
+      "party-plus"
+    ],
+    "memberCount": 25,
+    "rowCount": 25,
+    "legislatures": [
+      "2020-2024"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Partidului Poporului - Dan Diaco",
+    "normalizedLabel": "partidului poporului dan diaco",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-2012-2016-4"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Poporului - Dan Diaconescu"
+    ],
+    "partyIds": [],
+    "memberCount": 22,
+    "rowCount": 22,
+    "legislatures": [
+      "2012-2016"
+    ],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PDAR",
+    "normalizedLabel": "pdar",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-pdar",
+      "party-pdar"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Democrat Agrar din România",
+      "Partidul Democrat Agrar din România"
+    ],
+    "partyIds": [
+      "party-pdar"
+    ],
+    "memberCount": 21,
+    "rowCount": 21,
+    "legislatures": [
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Alianţei pentru Unirea Românilor",
+    "normalizedLabel": "aliantei pentru unirea romanilor",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-2020-2024-4"
+    ],
+    "names": [
+      "Grupul parlamentar al Alianţei pentru Unirea Românilor"
+    ],
+    "partyIds": [],
+    "memberCount": 19,
+    "rowCount": 19,
+    "legislatures": [
+      "2020-2024"
+    ],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "democrat-agrar şi social-democra",
+    "normalizedLabel": "democrat agrar si social democra",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-1990-1992-8",
+      "group-deputies-8"
+    ],
+    "names": [
+      "Grupul parlamentar democrat-agrar şi social-democrat"
+    ],
+    "partyIds": [],
+    "memberCount": 19,
+    "rowCount": 19,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PAC",
+    "normalizedLabel": "pac",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-pac",
+      "party-pac"
+    ],
+    "names": [
+      "Grup parlamentar PAC",
+      "Partidul Alianța Civică"
+    ],
+    "partyIds": [
+      "party-pac"
+    ],
+    "memberCount": 19,
+    "rowCount": 19,
+    "legislatures": [
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Partidului Democrat care se tran",
+    "normalizedLabel": "partidului democrat care se tran",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-2004-2008-4"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Democrat care se transformă în Grupul parlamentar al Partidului Democrat"
+    ],
+    "partyIds": [],
+    "memberCount": 18,
+    "rowCount": 18,
+    "legislatures": [
+      "2004-2008"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PSM",
+    "normalizedLabel": "psm",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-psm",
+      "party-psm"
+    ],
+    "names": [
+      "Grup parlamentar PSM",
+      "Partidul Socialist al Muncii"
+    ],
+    "partyIds": [
+      "party-psm"
+    ],
+    "memberCount": 18,
+    "rowCount": 18,
+    "legislatures": [
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "MER",
+    "normalizedLabel": "mer",
+    "likelyKind": "party",
+    "ids": [
+      "party-mer"
+    ],
+    "names": [
+      "Mișcarea Ecologistă din România"
+    ],
+    "partyIds": [
+      "party-mer"
+    ],
+    "memberCount": 16,
+    "rowCount": 16,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Partidului Naţional Ţărănesc - c",
+    "normalizedLabel": "partidului national taranesc c",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-1990-1992-4",
+      "group-deputies-4"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Naţional Ţărănesc - creştin şi democrat"
+    ],
+    "partyIds": [],
+    "memberCount": 14,
+    "rowCount": 14,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "socialist",
+    "normalizedLabel": "socialist",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-1992-1996-20",
+      "group-deputies-20"
+    ],
+    "names": [
+      "Grupul parlamentar socialist"
+    ],
+    "partyIds": [],
+    "memberCount": 14,
+    "rowCount": 14,
+    "legislatures": [
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "de orientare civic-liberală",
+    "normalizedLabel": "de orientare civic liberala",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-1992-1996-9"
+    ],
+    "names": [
+      "Grupul parlamentar de orientare civic-liberală"
+    ],
+    "partyIds": [],
+    "memberCount": 13,
+    "rowCount": 13,
+    "legislatures": [
+      "1992-1996"
+    ],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "FD",
+    "normalizedLabel": "fd",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2020-fd"
+    ],
+    "names": [
+      "FD"
+    ],
+    "partyIds": [
+      "party-formation-2020-fd"
+    ],
+    "memberCount": 13,
+    "rowCount": 13,
+    "legislatures": [
+      "2020-2024"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "\"Partida Naţională\"",
+    "normalizedLabel": "partida nationala",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-1992-1996-8"
+    ],
+    "names": [
+      "Grupul parlamentar \"Partida Naţională\""
+    ],
+    "partyIds": [],
+    "memberCount": 12,
+    "rowCount": 12,
+    "legislatures": [
+      "1992-1996"
+    ],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PACE",
+    "normalizedLabel": "pace",
+    "likelyKind": "mixed",
+    "ids": [
+      "group-senate-pace",
+      "party-pace"
+    ],
+    "names": [
+      "Grupul parlamentar PACE - Întâi Romania",
+      "PACE - Întâi România"
+    ],
+    "partyIds": [
+      "party-pace"
+    ],
+    "memberCount": 12,
+    "rowCount": 12,
+    "legislatures": [
+      "2024-2028"
+    ],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Unităţii Naţionale a Românilor",
+    "normalizedLabel": "unitatii nationale a romanilor",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-1990-1992-6",
+      "group-deputies-6"
+    ],
+    "names": [
+      "Grupul parlamentar al Unităţii Naţionale a Românilor"
+    ],
+    "partyIds": [],
+    "memberCount": 12,
+    "rowCount": 12,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "DSCR",
+    "normalizedLabel": "dscr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-1992-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-1996-uniunea-democrata-a-sirbilor-si-carasovenilor-din-romania",
+      "party-formation-1996-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2000-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2004-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2008-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2012-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2016-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2020-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2024-uniunea-democratica-a-slovacilor-si-cehilor-din-romania"
+    ],
+    "names": [
+      "Uniunea Democrată a Sîrbilor şi Caraşovenilor din România",
+      "Uniunea Democratică a Slovacilor şi Cehilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-1992-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-1996-uniunea-democrata-a-sirbilor-si-carasovenilor-din-romania",
+      "party-formation-1996-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2000-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2004-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2008-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2012-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2016-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2020-uniunea-democratica-a-slovacilor-si-cehilor-din-romania",
+      "party-formation-2024-uniunea-democratica-a-slovacilor-si-cehilor-din-romania"
+    ],
+    "memberCount": 11,
+    "rowCount": 11,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "ER",
+    "normalizedLabel": "er",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-uniunea-elena-din-romania",
+      "party-formation-1992-uniunea-elena-din-romania",
+      "party-formation-1996-uniunea-elena-din-romania",
+      "party-formation-2000-uniunea-elena-din-romania",
+      "party-formation-2004-uniunea-elena-din-romania",
+      "party-formation-2008-uniunea-elena-din-romania",
+      "party-formation-2012-uniunea-elena-din-romania",
+      "party-formation-2016-uniunea-elena-din-romania",
+      "party-formation-2020-uniunea-elena-din-romania",
+      "party-formation-2024-uniunea-elena-din-romania"
+    ],
+    "names": [
+      "Uniunea Elenă din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-uniunea-elena-din-romania",
+      "party-formation-1992-uniunea-elena-din-romania",
+      "party-formation-1996-uniunea-elena-din-romania",
+      "party-formation-2000-uniunea-elena-din-romania",
+      "party-formation-2004-uniunea-elena-din-romania",
+      "party-formation-2008-uniunea-elena-din-romania",
+      "party-formation-2012-uniunea-elena-din-romania",
+      "party-formation-2016-uniunea-elena-din-romania",
+      "party-formation-2020-uniunea-elena-din-romania",
+      "party-formation-2024-uniunea-elena-din-romania"
+    ],
+    "memberCount": 11,
+    "rowCount": 11,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "FDGR",
+    "normalizedLabel": "fdgr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-1992-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-1996-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2000-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2004-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2008-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2012-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2016-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2020-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2024-forumul-democrat-al-germanilor-din-romania"
+    ],
+    "names": [
+      "Forumul Democrat al Germanilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-1992-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-1996-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2000-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2004-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2008-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2012-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2016-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2020-forumul-democrat-al-germanilor-din-romania",
+      "party-formation-2024-forumul-democrat-al-germanilor-din-romania"
+    ],
+    "memberCount": 11,
+    "rowCount": 11,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Partidului Alianţei Civice",
+    "normalizedLabel": "partidului aliantei civice",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-deputies-18",
+      "group-deputies-1992-1996-18",
+      "group-senate-1992-1996-6"
+    ],
+    "names": [
+      "Grupul parlamentar al Partidului Alianţei Civice"
+    ],
+    "partyIds": [],
+    "memberCount": 11,
+    "rowCount": 11,
+    "legislatures": [
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PR",
+    "normalizedLabel": "pr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-uniunea-polonezilor-din-romania",
+      "party-formation-1992-uniunea-polonezilor-din-romania",
+      "party-formation-1996-uniunea-polonezilor-din-romania",
+      "party-formation-2000-uniunea-polonezilor-din-romania",
+      "party-formation-2004-uniunea-polonezilor-din-romania",
+      "party-formation-2008-uniunea-polonezilor-din-romania",
+      "party-formation-2012-uniunea-polonezilor-din-romania",
+      "party-formation-2016-uniunea-polonezilor-din-romania",
+      "party-formation-2020-uniunea-polonezilor-din-romania",
+      "party-formation-2024-uniunea-polonezilor-din-romania"
+    ],
+    "names": [
+      "Uniunea Polonezilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-uniunea-polonezilor-din-romania",
+      "party-formation-1992-uniunea-polonezilor-din-romania",
+      "party-formation-1996-uniunea-polonezilor-din-romania",
+      "party-formation-2000-uniunea-polonezilor-din-romania",
+      "party-formation-2004-uniunea-polonezilor-din-romania",
+      "party-formation-2008-uniunea-polonezilor-din-romania",
+      "party-formation-2012-uniunea-polonezilor-din-romania",
+      "party-formation-2016-uniunea-polonezilor-din-romania",
+      "party-formation-2020-uniunea-polonezilor-din-romania",
+      "party-formation-2024-uniunea-polonezilor-din-romania"
+    ],
+    "memberCount": 11,
+    "rowCount": 11,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "UR",
+    "normalizedLabel": "ur",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-uniunea-ucrainenilor-din-romania",
+      "party-formation-1992-uniunea-ucrainenilor-din-romania",
+      "party-formation-1996-uniunea-ucrainenilor-din-romania",
+      "party-formation-2000-uniunea-ucrainenilor-din-romania",
+      "party-formation-2004-uniunea-ucrainenilor-din-romania",
+      "party-formation-2008-uniunea-ucrainenilor-din-romania",
+      "party-formation-2012-uniunea-ucrainenilor-din-romania",
+      "party-formation-2016-uniunea-ucrainenilor-din-romania",
+      "party-formation-2020-uniunea-ucrainenilor-din-romania",
+      "party-formation-2024-uniunea-ucrainenilor-din-romania"
+    ],
+    "names": [
+      "Uniunea Ucrainenilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-uniunea-ucrainenilor-din-romania",
+      "party-formation-1992-uniunea-ucrainenilor-din-romania",
+      "party-formation-1996-uniunea-ucrainenilor-din-romania",
+      "party-formation-2000-uniunea-ucrainenilor-din-romania",
+      "party-formation-2004-uniunea-ucrainenilor-din-romania",
+      "party-formation-2008-uniunea-ucrainenilor-din-romania",
+      "party-formation-2012-uniunea-ucrainenilor-din-romania",
+      "party-formation-2016-uniunea-ucrainenilor-din-romania",
+      "party-formation-2020-uniunea-ucrainenilor-din-romania",
+      "party-formation-2024-uniunea-ucrainenilor-din-romania"
+    ],
+    "memberCount": 11,
+    "rowCount": 11,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "AR",
+    "normalizedLabel": "ar",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-uniunea-armenilor-din-romania",
+      "party-formation-1992-uniunea-armenilor-din-romania",
+      "party-formation-1996-uniunea-armenilor-din-romania",
+      "party-formation-2000-uniunea-armenilor-din-romania",
+      "party-formation-2004-uniunea-armenilor-din-romania",
+      "party-formation-2008-uniunea-armenilor-din-romania",
+      "party-formation-2012-uniunea-armenilor-din-romania",
+      "party-formation-2016-uniunea-armenilor-din-romania",
+      "party-formation-2020-uniunea-armenilor-din-romania",
+      "party-formation-2024-uniunea-armenilor-din-romania"
+    ],
+    "names": [
+      "Uniunea Armenilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-uniunea-armenilor-din-romania",
+      "party-formation-1992-uniunea-armenilor-din-romania",
+      "party-formation-1996-uniunea-armenilor-din-romania",
+      "party-formation-2000-uniunea-armenilor-din-romania",
+      "party-formation-2004-uniunea-armenilor-din-romania",
+      "party-formation-2008-uniunea-armenilor-din-romania",
+      "party-formation-2012-uniunea-armenilor-din-romania",
+      "party-formation-2016-uniunea-armenilor-din-romania",
+      "party-formation-2020-uniunea-armenilor-din-romania",
+      "party-formation-2024-uniunea-armenilor-din-romania"
+    ],
+    "memberCount": 10,
+    "rowCount": 10,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "DTR",
+    "normalizedLabel": "dtr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-uniunea-democrata-turca-din-romania",
+      "party-formation-1992-uniunea-democrata-turca-din-romania",
+      "party-formation-1996-uniunea-democrata-turca-din-romania",
+      "party-formation-2000-uniunea-democrata-turca-din-romania",
+      "party-formation-2004-uniunea-democrata-turca-din-romania",
+      "party-formation-2008-uniunea-democrata-turca-din-romania",
+      "party-formation-2012-uniunea-democrata-turca-din-romania",
+      "party-formation-2016-uniunea-democrata-turca-din-romania",
+      "party-formation-2020-uniunea-democrata-turca-din-romania",
+      "party-formation-2024-uniunea-democrata-turca-din-romania"
+    ],
+    "names": [
+      "Uniunea Democrată Turcă din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-uniunea-democrata-turca-din-romania",
+      "party-formation-1992-uniunea-democrata-turca-din-romania",
+      "party-formation-1996-uniunea-democrata-turca-din-romania",
+      "party-formation-2000-uniunea-democrata-turca-din-romania",
+      "party-formation-2004-uniunea-democrata-turca-din-romania",
+      "party-formation-2008-uniunea-democrata-turca-din-romania",
+      "party-formation-2012-uniunea-democrata-turca-din-romania",
+      "party-formation-2016-uniunea-democrata-turca-din-romania",
+      "party-formation-2020-uniunea-democrata-turca-din-romania",
+      "party-formation-2024-uniunea-democrata-turca-din-romania"
+    ],
+    "memberCount": 10,
+    "rowCount": 10,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "RLR",
+    "normalizedLabel": "rlr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1992-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-1996-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2000-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2004-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2008-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2012-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2016-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2020-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2024-comunitatea-rusilor-lipoveni-din-romania"
+    ],
+    "names": [
+      "Comunitatea Ruşilor Lipoveni din România"
+    ],
+    "partyIds": [
+      "party-formation-1992-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-1996-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2000-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2004-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2008-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2012-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2016-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2020-comunitatea-rusilor-lipoveni-din-romania",
+      "party-formation-2024-comunitatea-rusilor-lipoveni-din-romania"
+    ],
+    "memberCount": 10,
+    "rowCount": 10,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "DTTR",
+    "normalizedLabel": "dttr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-1992-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-1996-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2000-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2004-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2008-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2012-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2020-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2024-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania"
+    ],
+    "names": [
+      "Uniunea Democrată a Tătarilor Turco-Musulmani din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-1992-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-1996-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2000-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2004-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2008-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2012-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2020-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania",
+      "party-formation-2024-uniunea-democrata-a-tatarilor-turco-musulmani-din-romania"
+    ],
+    "memberCount": 9,
+    "rowCount": 9,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000",
+      "1992-1996",
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "BBR",
+    "normalizedLabel": "bbr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1992-uniunea-bulgara-din-banat-romania",
+      "party-formation-2000-uniunea-bulgara-din-banat-romania",
+      "party-formation-2004-uniunea-bulgara-din-banat-romania",
+      "party-formation-2008-uniunea-bulgara-din-banat-romania",
+      "party-formation-2012-uniunea-bulgara-din-banat-romania",
+      "party-formation-2016-uniunea-bulgara-din-banat-romania",
+      "party-formation-2020-uniunea-bulgara-din-banat-romania",
+      "party-formation-2024-uniunea-bulgara-din-banat-romania"
+    ],
+    "names": [
+      "Uniunea Bulgara din Banat - România",
+      "Uniunea Bulgară din Banat - România"
+    ],
+    "partyIds": [
+      "party-formation-1992-uniunea-bulgara-din-banat-romania",
+      "party-formation-2000-uniunea-bulgara-din-banat-romania",
+      "party-formation-2004-uniunea-bulgara-din-banat-romania",
+      "party-formation-2008-uniunea-bulgara-din-banat-romania",
+      "party-formation-2012-uniunea-bulgara-din-banat-romania",
+      "party-formation-2016-uniunea-bulgara-din-banat-romania",
+      "party-formation-2020-uniunea-bulgara-din-banat-romania",
+      "party-formation-2024-uniunea-bulgara-din-banat-romania"
+    ],
+    "memberCount": 8,
+    "rowCount": 8,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "FCER",
+    "normalizedLabel": "fcer",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1996-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2000-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2004-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2008-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2012-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2016-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2020-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2024-federatia-comunitatilor-evreiesti-din-romania"
+    ],
+    "names": [
+      "Federaţia Comunităţilor Evreieşti din România"
+    ],
+    "partyIds": [
+      "party-formation-1996-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2000-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2004-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2008-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2012-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2016-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2020-federatia-comunitatilor-evreiesti-din-romania",
+      "party-formation-2024-federatia-comunitatilor-evreiesti-din-romania"
+    ],
+    "memberCount": 8,
+    "rowCount": 8,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1996-2000"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "SR",
+    "normalizedLabel": "sr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1992-uniunea-sarbilor-din-romania",
+      "party-formation-2000-uniunea-sarbilor-din-romania",
+      "party-formation-2004-uniunea-sarbilor-din-romania",
+      "party-formation-2008-uniunea-sarbilor-din-romania",
+      "party-formation-2012-uniunea-sarbilor-din-romania",
+      "party-formation-2016-uniunea-sarbilor-din-romania",
+      "party-formation-2020-uniunea-sarbilor-din-romania",
+      "party-formation-2024-uniunea-sarbilor-din-romania"
+    ],
+    "names": [
+      "Uniunea Sârbilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1992-uniunea-sarbilor-din-romania",
+      "party-formation-2000-uniunea-sarbilor-din-romania",
+      "party-formation-2004-uniunea-sarbilor-din-romania",
+      "party-formation-2008-uniunea-sarbilor-din-romania",
+      "party-formation-2012-uniunea-sarbilor-din-romania",
+      "party-formation-2016-uniunea-sarbilor-din-romania",
+      "party-formation-2020-uniunea-sarbilor-din-romania",
+      "party-formation-2024-uniunea-sarbilor-din-romania"
+    ],
+    "memberCount": 8,
+    "rowCount": 8,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004",
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "AMR",
+    "normalizedLabel": "amr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2000-asociatia-macedonenilor-din-romania",
+      "party-formation-2004-asociatia-macedonenilor-din-romania",
+      "party-formation-2008-asociatia-macedonenilor-din-romania",
+      "party-formation-2012-asociatia-macedonenilor-din-romania",
+      "party-formation-2016-asociatia-macedonenilor-din-romania",
+      "party-formation-2020-asociatia-macedonenilor-din-romania",
+      "party-formation-2024-asociatia-macedonenilor-din-romania"
+    ],
+    "names": [
+      "Asociaţia Macedonenilor din România"
+    ],
+    "partyIds": [
+      "party-formation-2000-asociatia-macedonenilor-din-romania",
+      "party-formation-2004-asociatia-macedonenilor-din-romania",
+      "party-formation-2008-asociatia-macedonenilor-din-romania",
+      "party-formation-2012-asociatia-macedonenilor-din-romania",
+      "party-formation-2016-asociatia-macedonenilor-din-romania",
+      "party-formation-2020-asociatia-macedonenilor-din-romania",
+      "party-formation-2024-asociatia-macedonenilor-din-romania"
+    ],
+    "memberCount": 7,
+    "rowCount": 7,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "CR",
+    "normalizedLabel": "cr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2000-uniunea-croatilor-din-romania",
+      "party-formation-2004-uniunea-croatilor-din-romania",
+      "party-formation-2008-uniunea-croatilor-din-romania",
+      "party-formation-2012-uniunea-croatilor-din-romania",
+      "party-formation-2016-uniunea-croatilor-din-romania",
+      "party-formation-2020-uniunea-croatilor-din-romania",
+      "party-formation-2024-uniunea-croatilor-din-romania"
+    ],
+    "names": [
+      "Uniunea Croaţilor din România"
+    ],
+    "partyIds": [
+      "party-formation-2000-uniunea-croatilor-din-romania",
+      "party-formation-2004-uniunea-croatilor-din-romania",
+      "party-formation-2008-uniunea-croatilor-din-romania",
+      "party-formation-2012-uniunea-croatilor-din-romania",
+      "party-formation-2016-uniunea-croatilor-din-romania",
+      "party-formation-2020-uniunea-croatilor-din-romania",
+      "party-formation-2024-uniunea-croatilor-din-romania"
+    ],
+    "memberCount": 7,
+    "rowCount": 7,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "CRR",
+    "normalizedLabel": "crr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2000-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2004-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2008-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2012-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2016-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2020-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2024-uniunea-culturala-a-rutenilor-din-romania"
+    ],
+    "names": [
+      "Uniunea Culturală a Rutenilor din România"
+    ],
+    "partyIds": [
+      "party-formation-2000-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2004-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2008-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2012-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2016-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2020-uniunea-culturala-a-rutenilor-din-romania",
+      "party-formation-2024-uniunea-culturala-a-rutenilor-din-romania"
+    ],
+    "memberCount": 7,
+    "rowCount": 7,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008",
+      "2000-2004"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "AIRR",
+    "normalizedLabel": "airr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2004-asociatia-italienilor-din-romania-ro-as-it",
+      "party-formation-2008-asociatia-italienilor-din-romania-ro-as-it",
+      "party-formation-2012-asociatia-italienilor-din-romania-ro-as-it",
+      "party-formation-2016-asociatia-italienilor-din-romania-ro-as-it",
+      "party-formation-2020-asociatia-italienilor-din-romania-ro-as-it",
+      "party-formation-2024-asociatia-italienilor-din-romania-ro-as-it"
+    ],
+    "names": [
+      "Asociaţia Italienilor din România - RO.AS.IT."
+    ],
+    "partyIds": [
+      "party-formation-2004-asociatia-italienilor-din-romania-ro-as-it",
+      "party-formation-2008-asociatia-italienilor-din-romania-ro-as-it",
+      "party-formation-2012-asociatia-italienilor-din-romania-ro-as-it",
+      "party-formation-2016-asociatia-italienilor-din-romania-ro-as-it",
+      "party-formation-2020-asociatia-italienilor-din-romania-ro-as-it",
+      "party-formation-2024-asociatia-italienilor-din-romania-ro-as-it"
+    ],
+    "memberCount": 6,
+    "rowCount": 6,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PAR",
+    "normalizedLabel": "par",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-par",
+      "party-formation-1996-par"
+    ],
+    "names": [
+      "PAR"
+    ],
+    "partyIds": [
+      "party-formation-1996-par"
+    ],
+    "memberCount": 6,
+    "rowCount": 6,
+    "legislatures": [
+      "1996-2000"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "ALAR",
+    "normalizedLabel": "alar",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2004-asociatia-liga-albanezilor-din-romania",
+      "party-formation-2008-asociatia-liga-albanezilor-din-romania",
+      "party-formation-2012-asociatia-liga-albanezilor-din-romania",
+      "party-formation-2016-asociatia-liga-albanezilor-din-romania",
+      "party-formation-2024-asociatia-liga-albanezilor-din-romania"
+    ],
+    "names": [
+      "Asociaţia Liga Albanezilor din România"
+    ],
+    "partyIds": [
+      "party-formation-2004-asociatia-liga-albanezilor-din-romania",
+      "party-formation-2008-asociatia-liga-albanezilor-din-romania",
+      "party-formation-2012-asociatia-liga-albanezilor-din-romania",
+      "party-formation-2016-asociatia-liga-albanezilor-din-romania",
+      "party-formation-2024-asociatia-liga-albanezilor-din-romania"
+    ],
+    "memberCount": 5,
+    "rowCount": 5,
+    "legislatures": [
+      "2024-2028",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012",
+      "2004-2008"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "APR\"",
+    "normalizedLabel": "apr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2008-asociatia-partida-romilor-pro-europa",
+      "party-formation-2012-asociatia-partida-romilor-pro-europa",
+      "party-formation-2016-asociatia-partida-romilor-pro-europa",
+      "party-formation-2020-asociatia-partida-romilor-pro-europa",
+      "party-formation-2024-asociatia-partida-romilor-pro-europa"
+    ],
+    "names": [
+      "Asociaţia Partida Romilor \"Pro-Europa\""
+    ],
+    "partyIds": [
+      "party-formation-2008-asociatia-partida-romilor-pro-europa",
+      "party-formation-2012-asociatia-partida-romilor-pro-europa",
+      "party-formation-2016-asociatia-partida-romilor-pro-europa",
+      "party-formation-2020-asociatia-partida-romilor-pro-europa",
+      "party-formation-2024-asociatia-partida-romilor-pro-europa"
+    ],
+    "memberCount": 5,
+    "rowCount": 5,
+    "legislatures": [
+      "2024-2028",
+      "2020-2024",
+      "2016-2020",
+      "2012-2016",
+      "2008-2012"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PPU-SL",
+    "normalizedLabel": "ppu sl",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2020-ppu-sl"
+    ],
+    "names": [
+      "PPU-SL"
+    ],
+    "partyIds": [
+      "party-formation-2020-ppu-sl"
+    ],
+    "memberCount": 5,
+    "rowCount": 5,
+    "legislatures": [
+      "2020-2024"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "FC",
+    "normalizedLabel": "fc",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2012-fc"
+    ],
+    "names": [
+      "FC"
+    ],
+    "partyIds": [
+      "party-formation-2012-fc"
+    ],
+    "memberCount": 4,
+    "rowCount": 4,
+    "legislatures": [
+      "2012-2016"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Partida Romilor",
+    "normalizedLabel": "partida romilor",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1992-partida-romilor",
+      "party-formation-1996-partida-romilor",
+      "party-formation-2000-partida-romilor"
+    ],
+    "names": [
+      "Partida Romilor"
+    ],
+    "partyIds": [
+      "party-formation-1992-partida-romilor",
+      "party-formation-1996-partida-romilor",
+      "party-formation-2000-partida-romilor"
+    ],
+    "memberCount": 3,
+    "rowCount": 3,
+    "legislatures": [
+      "2000-2004",
+      "1996-2000",
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PUSL",
+    "normalizedLabel": "pusl",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2024-pusl"
+    ],
+    "names": [
+      "PUSL"
+    ],
+    "partyIds": [
+      "party-formation-2024-pusl"
+    ],
+    "memberCount": 3,
+    "rowCount": 3,
+    "legislatures": [
+      "2024-2028"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "\"BR",
+    "normalizedLabel": "br",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1996-comunitatea-bratstvo-a-bulgarilor-din-romania"
+    ],
+    "names": [
+      "Comunitatea \"Bratstvo\" a Bulgarilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1996-comunitatea-bratstvo-a-bulgarilor-din-romania"
+    ],
+    "memberCount": 2,
+    "rowCount": 2,
+    "legislatures": [
+      "1996-2000"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "FER",
+    "normalizedLabel": "fer",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1996-fer"
+    ],
+    "names": [
+      "FER"
+    ],
+    "partyIds": [
+      "party-formation-1996-fer"
+    ],
+    "memberCount": 2,
+    "rowCount": 2,
+    "legislatures": [
+      "1996-2000"
+    ],
+    "chambers": [
+      "deputies",
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "GDC",
+    "normalizedLabel": "gdc",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-gdc"
+    ],
+    "names": [
+      "GDC"
+    ],
+    "partyIds": [
+      "party-formation-1990-gdc"
+    ],
+    "memberCount": 2,
+    "rowCount": 2,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "BBACBB",
+    "normalizedLabel": "bbacbb",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-uniunea-bulgara-din-banat-asociatia-culturala-bulgara-din-bucuresti"
+    ],
+    "names": [
+      "Uniunea Bulgară din Banat - Asociaţia Culturală Bulgară din Bucureşti"
+    ],
+    "partyIds": [
+      "party-formation-1990-uniunea-bulgara-din-banat-asociatia-culturala-bulgara-din-bucuresti"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "CAR",
+    "normalizedLabel": "car",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1996-uniunea-culturala-a-albanezilor-din-romania"
+    ],
+    "names": [
+      "Uniunea Culturala a Albanezilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1996-uniunea-culturala-a-albanezilor-din-romania"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1996-2000"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "DRR",
+    "normalizedLabel": "drr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-uniunea-democrata-a-romilor-din-romania"
+    ],
+    "names": [
+      "Uniunea Democrată a Romilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-uniunea-democrata-a-romilor-din-romania"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "DSR",
+    "normalizedLabel": "dsr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-uniunea-democrata-a-sarbilor-din-romania"
+    ],
+    "names": [
+      "Uniunea Democrată a Sârbilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-uniunea-democrata-a-sarbilor-din-romania"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "FCR",
+    "normalizedLabel": "fcr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2024-forumul-cehilor-din-romania"
+    ],
+    "names": [
+      "Forumul Cehilor din România"
+    ],
+    "partyIds": [
+      "party-formation-2024-forumul-cehilor-din-romania"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "2024-2028"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "IR",
+    "normalizedLabel": "ir",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1992-comunitatea-italiana-din-romania"
+    ],
+    "names": [
+      "Comunitatea Italiană din România"
+    ],
+    "partyIds": [
+      "party-formation-1992-comunitatea-italiana-din-romania"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1992-1996"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "IRSI",
+    "normalizedLabel": "irsi",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1996-comunitatea-italiana-din-romania-socola-iasi"
+    ],
+    "names": [
+      "Comunitatea Italiana din Romania - Socola, Iaşi"
+    ],
+    "partyIds": [
+      "party-formation-1996-comunitatea-italiana-din-romania-socola-iasi"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1996-2000"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "IRSINI",
+    "normalizedLabel": "irsini",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2000-comunitatea-italiana-din-romania-str-trei-ierarhi-nr-2-iasi"
+    ],
+    "names": [
+      "Comunitatea Italiană din România, Str.Trei Ierarhi nr.2 - Iaşi"
+    ],
+    "partyIds": [
+      "party-formation-2000-comunitatea-italiana-din-romania-str-trei-ierarhi-nr-2-iasi"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "2000-2004"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "LAR",
+    "normalizedLabel": "lar",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-2000-liga-albanezilor-din-romania"
+    ],
+    "names": [
+      "Liga Albanezilor din România"
+    ],
+    "partyIds": [
+      "party-formation-2000-liga-albanezilor-din-romania"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "2000-2004"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "LR",
+    "normalizedLabel": "lr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-comunitatea-lipovenilor-din-romania"
+    ],
+    "names": [
+      "Comunitatea Lipovenilor din România"
+    ],
+    "partyIds": [
+      "party-formation-1990-comunitatea-lipovenilor-din-romania"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PDM",
+    "normalizedLabel": "pdm",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-pdm"
+    ],
+    "names": [
+      "PDM"
+    ],
+    "partyIds": [
+      "party-formation-1990-pdm"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PLS",
+    "normalizedLabel": "pls",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-pls"
+    ],
+    "names": [
+      "PLS"
+    ],
+    "partyIds": [
+      "party-formation-1990-pls"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PRNR",
+    "normalizedLabel": "prnr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-prnr"
+    ],
+    "names": [
+      "PRNR"
+    ],
+    "partyIds": [
+      "party-formation-1990-prnr"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PTLDR",
+    "normalizedLabel": "ptldr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-ptldr"
+    ],
+    "names": [
+      "PTLDR"
+    ],
+    "partyIds": [
+      "party-formation-1990-ptldr"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "ULB",
+    "normalizedLabel": "ulb",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "party-formation-1990-ulb"
+    ],
+    "names": [
+      "ULB"
+    ],
+    "partyIds": [
+      "party-formation-1990-ulb"
+    ],
+    "memberCount": 1,
+    "rowCount": 1,
+    "legislatures": [
+      "1990-1992"
+    ],
+    "chambers": [
+      "deputies"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "ARD",
+    "normalizedLabel": "ard",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-ard"
+    ],
+    "names": [
+      "ARD"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Liberal (P.L.'93)",
+    "normalizedLabel": "liberal p l 93",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-liberal-p-l-93"
+    ],
+    "names": [
+      "Liberal (P.L.'93)"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Necunoscut",
+    "normalizedLabel": "necunoscut",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-necunoscut"
+    ],
+    "names": [
+      "Necunoscut"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "OCL-(PNLAT)",
+    "normalizedLabel": "ocl pnlat",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-ocl-pnlat"
+    ],
+    "names": [
+      "OCL-(PNLAT)"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "OCL-(PNLCD)",
+    "normalizedLabel": "ocl pnlcd",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-ocl-pnlcd"
+    ],
+    "names": [
+      "OCL-(PNLCD)"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "P.D. (F.S.N.)",
+    "normalizedLabel": "p d f s n",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-p-d-f-s-n"
+    ],
+    "names": [
+      "P.D. (F.S.N.)"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "P.D.S.R.",
+    "normalizedLabel": "p d s r",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-p-d-s-r"
+    ],
+    "names": [
+      "P.D.S.R."
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "Partida Nationala (P.R.M.)",
+    "normalizedLabel": "partida nationala p r m",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-partida-nationala-p-r-m"
+    ],
+    "names": [
+      "Partida Nationala (P.R.M.)"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PLDR",
+    "normalizedLabel": "pldr",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-pldr"
+    ],
+    "names": [
+      "PLDR"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "PSD+PC",
+    "normalizedLabel": "psd pc",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-psd-pc"
+    ],
+    "names": [
+      "PSD+PC"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "S.O.S. RO",
+    "normalizedLabel": "s o s ro",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-s-o-s-ro"
+    ],
+    "names": [
+      "S.O.S. RO"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  },
+  {
+    "label": "USL",
+    "normalizedLabel": "usl",
+    "likelyKind": "historical_formation",
+    "ids": [
+      "group-senate-usl"
+    ],
+    "names": [
+      "USL"
+    ],
+    "partyIds": [],
+    "memberCount": 0,
+    "rowCount": 0,
+    "legislatures": [],
+    "chambers": [
+      "senate"
+    ],
+    "reviewStatus": "needs_source_review"
+  }
+]
