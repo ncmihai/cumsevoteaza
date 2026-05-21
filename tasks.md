@@ -904,7 +904,8 @@ implementation steps.
   parsing party/alliance/association index pages into JSONL.
 - [x] Run the Tribunal index fetch/parse locally:
   `382` parties, `10` alliances, `2` other associations.
-- [ ] Add Tribunal PDF download/extraction for selected matched entities.
+- [x] Add Tribunal PDF download/extraction commands that keep raw PDFs under
+  ignored local pipeline data and emit parsed JSONL metadata.
 - [ ] Match Tribunal registry rows against app party/formation IDs with
   confidence levels and manual-review files.
 - [ ] Continue source review for UNPR legal registration date at Tribunalul

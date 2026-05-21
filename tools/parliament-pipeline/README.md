@@ -52,6 +52,8 @@ Run the Tribunalul București legal registry index pipeline:
 ```bash
 npm run pipeline:tribunal -- fetch-index
 npm run pipeline:tribunal -- parse-index
+npm run pipeline:tribunal -- fetch-pdfs --limit 20
+npm run pipeline:tribunal -- parse-pdfs
 ```
 
 The same commands are available through the umbrella CLI:
@@ -89,13 +91,19 @@ Tribunal registry index output is file-only:
 data/parliament-pipeline/tribunal-registry/raw/index-partide-politice.html
 data/parliament-pipeline/tribunal-registry/raw/index-aliante-politice.html
 data/parliament-pipeline/tribunal-registry/raw/index-alte-forme-de-asociere.html
+data/parliament-pipeline/tribunal-registry/raw/pdfs/
 data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl
+data/parliament-pipeline/tribunal-registry/parsed/tribunal_pdf_metadata.jsonl
 data/parliament-pipeline/tribunal-registry/reports/index-summary.md
+data/parliament-pipeline/tribunal-registry/reports/pdf-summary.md
 ```
 
-This first Tribunal step parses index records and PDF links only. PDF download,
-PDF text extraction, legal event extraction, and matching to app party/formation
-IDs are later steps.
+The raw PDF directory is intentionally local-only under `data/parliament-pipeline/`,
+which is ignored by git. The durable artifact is the parsed JSONL metadata.
+If `pypdf` is installed locally, `parse-pdfs` also attempts text extraction;
+otherwise it still records file size, hash, index metadata, and extracted dates
+from the registry page text. Matching to app party/formation IDs remains a
+later step.
 
 The TypeScript importer consumes these files and performs DB writes:
 

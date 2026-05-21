@@ -131,6 +131,49 @@ class ParliamentPipelineCliTest(unittest.TestCase):
             self.assertEqual(rows[-1]["shortName"], "POT")
             self.assertIn("Tribunalul București Registry Index Summary", report.read_text(encoding="utf-8"))
 
+    def test_tribunal_parse_pdfs_writes_metadata_without_committing_raw_pdf(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = Path(tmp)
+            entities = tmp_dir / "entities.jsonl"
+            pdf_dir = tmp_dir / "pdfs"
+            out = tmp_dir / "parsed" / "tribunal_pdf_metadata.jsonl"
+            report = tmp_dir / "reports" / "pdf-summary.md"
+            record = {
+                "id": "tribunal-party-48",
+                "kind": "party",
+                "position": 48,
+                "listedDate": None,
+                "legalName": "PARTIDUL UNIUNEA NAŢIONALĂ PENTRU PROGRESUL ROMÂNIEI",
+                "shortName": "U.N.P.R",
+                "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-48.pdf",
+                "rawParagraphText": "înregistrat conform dispoziţiilor sentinţei civile nr. 12/P pronunţate de Tribunalul Bucureşti, în dosarul nr. 1234/3/2010, în şedinţa publică din data de 01.05.2010, definitivă la data de 10.05.2010.",
+            }
+            entities.write_text(json.dumps(record, ensure_ascii=False) + "\n", encoding="utf-8")
+            pdf_path = pdf_dir / "party" / "48-partidul-uniunea-nationala-pentru-progresul-romaniei.pdf"
+            pdf_path.parent.mkdir(parents=True)
+            pdf_path.write_bytes(b"%PDF-1.4 fake local fixture")
+
+            completed = self.run_pipeline(
+                "tribunal-registry",
+                "parse-pdfs",
+                "--entities",
+                str(entities),
+                "--pdf-dir",
+                str(pdf_dir),
+                "--out",
+                str(out),
+                "--report",
+                str(report),
+            )
+            summary = json.loads(completed.stdout)
+            rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+            self.assertEqual(summary["records"], 1)
+            self.assertEqual(rows[0]["pdfStatus"], "stored")
+            self.assertEqual(rows[0]["indexExtracted"]["caseNumber"], "1234/3/2010")
+            self.assertEqual(rows[0]["indexExtracted"]["hearingDate"], "2010-05-01")
+            self.assertIn("Tribunalul București PDF Metadata Summary", report.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

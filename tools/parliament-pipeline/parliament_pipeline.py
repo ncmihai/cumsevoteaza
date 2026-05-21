@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 import importlib.util
@@ -73,8 +74,11 @@ DOMAINS = [
         "purpose": "Tribunalul București legal party/alliance registry index snapshots and parsed PDF link records.",
         "outputs": [
             "data/parliament-pipeline/tribunal-registry/raw/index-*.html",
+            "data/parliament-pipeline/tribunal-registry/raw/pdfs/*.pdf",
             "data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl",
+            "data/parliament-pipeline/tribunal-registry/parsed/tribunal_pdf_metadata.jsonl",
             "data/parliament-pipeline/tribunal-registry/reports/index-summary.md",
+            "data/parliament-pipeline/tribunal-registry/reports/pdf-summary.md",
         ],
         "dbWriter": "None yet; Python writes files only.",
     },
@@ -120,6 +124,8 @@ def main() -> None:
     tribunal_sub = tribunal.add_subparsers(dest="tribunal_command", required=True)
     add_tribunal_fetch_index(tribunal_sub)
     add_tribunal_parse_index(tribunal_sub)
+    add_tribunal_fetch_pdfs(tribunal_sub)
+    add_tribunal_parse_pdfs(tribunal_sub)
 
     args = parser.parse_args()
     if args.command == "domains":
@@ -193,6 +199,24 @@ def add_tribunal_parse_index(sub: argparse._SubParsersAction[argparse.ArgumentPa
     parser.add_argument("--report", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/reports/index-summary.md"))
 
 
+def add_tribunal_fetch_pdfs(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = sub.add_parser("fetch-pdfs", help="Download Tribunal registry PDFs referenced by parsed index records.")
+    parser.add_argument("--entities", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl"))
+    parser.add_argument("--out", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/raw/pdfs"))
+    parser.add_argument("--kind", choices=["all", "party", "alliance", "other_association"], default="all")
+    parser.add_argument("--position", action="append", type=int, default=[], help="Registry position to fetch. Can be repeated.")
+    parser.add_argument("--limit", type=int, default=0, help="Maximum records to fetch after filters. 0 means all.")
+    parser.add_argument("--refresh", action="store_true", help="Refetch even when a PDF exists.")
+
+
+def add_tribunal_parse_pdfs(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = sub.add_parser("parse-pdfs", help="Parse downloaded Tribunal PDFs and index text into JSONL metadata.")
+    parser.add_argument("--entities", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl"))
+    parser.add_argument("--pdf-dir", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/raw/pdfs"))
+    parser.add_argument("--out", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/parsed/tribunal_pdf_metadata.jsonl"))
+    parser.add_argument("--report", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/reports/pdf-summary.md"))
+
+
 def run_cdep_command(args: argparse.Namespace) -> None:
     cdep = load_cdep_probe()
     if args.cdep_command == "roster-urls":
@@ -225,6 +249,18 @@ def run_tribunal_command(args: argparse.Namespace) -> None:
         write_tribunal_report(records, args.report)
         print_json({"records": len(records), "out": str(args.out), "report": str(args.report), "byKind": count_by(records, "kind")})
         return
+    if args.tribunal_command == "fetch-pdfs":
+        records = filtered_tribunal_records(read_jsonl(args.entities), args.kind, args.position, args.limit)
+        summary = fetch_tribunal_pdfs(records, args.out, refresh=args.refresh)
+        print_json(summary)
+        return
+    if args.tribunal_command == "parse-pdfs":
+        entities = read_jsonl(args.entities)
+        rows = parse_tribunal_pdfs(entities, args.pdf_dir)
+        write_jsonl(rows, args.out)
+        write_tribunal_pdf_report(rows, args.report)
+        print_json({"records": len(rows), "out": str(args.out), "report": str(args.report), "byStatus": count_by(rows, "pdfStatus")})
+        return
     raise SystemExit(f"Unsupported Tribunal command: {args.tribunal_command}")
 
 
@@ -248,6 +284,12 @@ def fetch_text(url: str) -> str:
     request = Request(url, headers={"User-Agent": "cumsevoteaza local research pipeline/0.1"})
     with urlopen(request, timeout=30) as response:
         return response.read().decode("utf-8", errors="replace")
+
+
+def fetch_bytes(url: str) -> bytes:
+    request = Request(url, headers={"User-Agent": "cumsevoteaza local research pipeline/0.1"})
+    with urlopen(request, timeout=60) as response:
+        return response.read()
 
 
 def parse_tribunal_index_dir(raw: Path) -> list[dict[str, Any]]:
@@ -301,6 +343,10 @@ def parse_tribunal_index_html(html: str, index: dict[str, str]) -> list[dict[str
 
 
 def write_tribunal_records(records: list[dict[str, Any]], out: Path) -> None:
+    write_jsonl(records, out)
+
+
+def write_jsonl(records: list[dict[str, Any]], out: Path) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", encoding="utf-8") as handle:
         for record in records:
@@ -335,6 +381,163 @@ def count_by(records: list[dict[str, Any]], key: str) -> dict[str, int]:
         value = str(record.get(key))
         counts[value] = counts.get(value, 0) + 1
     return counts
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        raise SystemExit(f"Missing JSONL file: {path}")
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def filtered_tribunal_records(records: list[dict[str, Any]], kind: str, positions: list[int], limit: int) -> list[dict[str, Any]]:
+    filtered = [
+        record for record in records
+        if (kind == "all" or record.get("kind") == kind)
+        and (not positions or record.get("position") in positions)
+    ]
+    return filtered[:limit] if limit > 0 else filtered
+
+
+def fetch_tribunal_pdfs(records: list[dict[str, Any]], out: Path, refresh: bool = False) -> dict[str, Any]:
+    out.mkdir(parents=True, exist_ok=True)
+    fetched_at = datetime.now(timezone.utc).isoformat()
+    results = []
+    for record in records:
+        path = tribunal_pdf_path(out, record)
+        if path.exists() and not refresh:
+            status = "cached"
+        else:
+            try:
+                pdf = fetch_bytes(record["sourceUrl"])
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(pdf)
+                status = "fetched"
+            except Exception as error:  # noqa: BLE001 - report per-record fetch failures.
+                results.append({**pdf_result_base(record, path), "status": "failed", "error": str(error)})
+                continue
+        results.append({**pdf_result_base(record, path), "status": status})
+    return {"fetchedAt": fetched_at, "records": len(records), "byStatus": count_by(results, "status"), "results": results}
+
+
+def tribunal_pdf_path(out: Path, record: dict[str, Any]) -> Path:
+    position = record.get("position") or stable_slug(record.get("legalName", "unknown"))
+    return out / str(record["kind"]) / f"{position}-{stable_slug(record.get('legalName', 'unknown'))}.pdf"
+
+
+def pdf_result_base(record: dict[str, Any], path: Path) -> dict[str, Any]:
+    return {
+        "id": record["id"],
+        "kind": record["kind"],
+        "position": record.get("position"),
+        "legalName": record.get("legalName"),
+        "sourceUrl": record["sourceUrl"],
+        "path": str(path),
+    }
+
+
+def parse_tribunal_pdfs(entities: list[dict[str, Any]], pdf_dir: Path) -> list[dict[str, Any]]:
+    parsed_at = datetime.now(timezone.utc).isoformat()
+    rows = []
+    for entity in entities:
+        path = tribunal_pdf_path(pdf_dir, entity)
+        row = {
+            "id": f"{entity['id']}-pdf",
+            "entityId": entity["id"],
+            "kind": entity["kind"],
+            "position": entity.get("position"),
+            "listedDate": entity.get("listedDate"),
+            "legalName": entity.get("legalName"),
+            "shortName": entity.get("shortName"),
+            "sourceUrl": entity.get("sourceUrl"),
+            "pdfPath": str(path),
+            "parsedAt": parsed_at,
+            "indexExtracted": extract_legal_metadata(entity.get("rawParagraphText") or ""),
+        }
+        if not path.exists():
+            rows.append({**row, "pdfStatus": "missing"})
+            continue
+        pdf_bytes = path.read_bytes()
+        text_result = extract_pdf_text(path)
+        rows.append(
+            {
+                **row,
+                "pdfStatus": "stored",
+                "byteSize": len(pdf_bytes),
+                "sha256": hashlib.sha256(pdf_bytes).hexdigest(),
+                "pdfTextStatus": text_result["status"],
+                "pdfTextLength": len(text_result.get("text") or ""),
+                "pdfExtracted": extract_legal_metadata(text_result.get("text") or ""),
+                "pdfTextSample": (text_result.get("text") or "")[:1000],
+                "pdfTextError": text_result.get("error"),
+            }
+        )
+    return rows
+
+
+def extract_pdf_text(path: Path) -> dict[str, Any]:
+    try:
+        from pypdf import PdfReader  # type: ignore
+    except Exception:
+        return {"status": "unavailable", "error": "pypdf is not installed"}
+    try:
+        reader = PdfReader(str(path))
+        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+        return {"status": "parsed" if text.strip() else "empty", "text": clean_text(text)}
+    except Exception as error:  # noqa: BLE001 - PDF parser failures are recorded per file.
+        return {"status": "failed", "error": str(error)}
+
+
+def extract_legal_metadata(text: str) -> dict[str, Any]:
+    cleaned = clean_text(text)
+    return {
+        "decisionNumber": first_match(cleaned, r"(?:sentin[țţ]ei|deciziei)\s+civile\s+nr\.?\s*([A-Za-z0-9./ -]+?)(?:\s+pronun|,|\s+în\s+dosar|$)"),
+        "caseNumber": first_match(cleaned, r"dosar(?:ul)?\s+nr\.?\s*([0-9]+/[0-9]+/[0-9]+)"),
+        "hearingDate": first_date_match(cleaned, r"(?:[șş]edin[țţ]a\s+public[ăa]\s+(?:din\s+data\s+de|de\s+la)|data\s+de)\s+"),
+        "definitiveDate": first_date_match(cleaned, r"definitiv[ăa]?(?:\s+la\s+data\s+de)?\s+"),
+    }
+
+
+def first_match(text: str, pattern: str) -> str | None:
+    match = re.search(pattern, text, flags=re.IGNORECASE)
+    return clean_text(match.group(1)).strip(" .,:;") if match else None
+
+
+def first_date_match(text: str, prefix_pattern: str) -> str | None:
+    match = re.search(prefix_pattern + r"(\d{1,2}[./]\d{1,2}[./]\d{4})", text, flags=re.IGNORECASE)
+    if not match:
+        return None
+    return normalize_date(match.group(1))
+
+
+def normalize_date(value: str) -> str | None:
+    match = re.match(r"(\d{1,2})[./](\d{1,2})[./](\d{4})", value.strip())
+    if not match:
+        return None
+    day, month, year = match.groups()
+    return f"{year}-{int(month):02d}-{int(day):02d}"
+
+
+def write_tribunal_pdf_report(rows: list[dict[str, Any]], out: Path) -> None:
+    out.parent.mkdir(parents=True, exist_ok=True)
+    by_status = count_by(rows, "pdfStatus")
+    stored_rows = [row for row in rows if row.get("pdfStatus") == "stored"]
+    by_text_status = count_by(stored_rows, "pdfTextStatus")
+    lines = [
+        "# Tribunalul București PDF Metadata Summary",
+        "",
+        "Raw PDFs are local-only. This report summarizes extracted metadata JSONL.",
+        "",
+        "## Counts",
+        "",
+    ]
+    for status, count in sorted(by_status.items()):
+        lines.append(f"- PDF `{status}`: {count}")
+    for status, count in sorted(by_text_status.items()):
+        lines.append(f"- Text `{status}`: {count}")
+    lines.extend(["", "## Sample Stored Records", ""])
+    for row in stored_rows[:20]:
+        lines.append(f"- `{row['kind']}` #{row.get('position')}: {row.get('legalName')} ({row.get('byteSize')} bytes)")
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 @dataclass

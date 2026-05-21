@@ -1924,3 +1924,15 @@ Verification:
   - `10` alliances;
   - `2` other associations.
 - Added parser tests with sample Tribunal-style HTML fixtures.
+
+## 2026-05-22 — Tribunal Registry PDF Metadata Pipeline
+
+- Added `tribunal-registry fetch-pdfs` to download registry PDFs referenced by
+  parsed index records into ignored local pipeline storage.
+- Added `tribunal-registry parse-pdfs` to emit
+  `tribunal_pdf_metadata.jsonl` with source URL, local PDF path, byte size,
+  SHA-256 hash, index-derived legal metadata, and optional PDF text metadata.
+- Raw PDFs remain outside git under `data/parliament-pipeline/`.
+- PDF text extraction is optional: the command records `unavailable` when
+  `pypdf` is not installed, while still extracting useful dates/case numbers
+  from the index text.
