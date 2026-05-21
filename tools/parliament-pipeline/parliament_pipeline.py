@@ -24,6 +24,8 @@ DOMAINS = [
             "data/cdep-history/parsed/rosters.jsonl",
             "data/cdep-history/reports/audit.json",
             "data/cdep-history/parsed/import-preview.json",
+            "data/cdep-history/parsed/assets.jsonl",
+            "data/cdep-history/reports/assets.json",
         ],
         "dbWriter": "npm run ingest:cdep-history:import -- --legislature=<year>",
     },
@@ -74,6 +76,7 @@ def main() -> None:
     add_cdep_crawl(cdep_sub)
     add_cdep_audit(cdep_sub)
     add_cdep_preview(cdep_sub)
+    add_cdep_asset_inventory(cdep_sub)
 
     args = parser.parse_args()
     if args.command == "domains":
@@ -124,6 +127,13 @@ def add_cdep_preview(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -
     parser.add_argument("--out", type=Path, default=Path("data/cdep-history/parsed/import-preview.json"))
 
 
+def add_cdep_asset_inventory(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = sub.add_parser("asset-inventory", help="Build a file-only inventory of official profile assets.")
+    parser.add_argument("--profiles", type=Path, default=Path("data/cdep-history/parsed/profiles.jsonl"))
+    parser.add_argument("--out", type=Path, default=Path("data/cdep-history/parsed/assets.jsonl"))
+    parser.add_argument("--report", type=Path, default=Path("data/cdep-history/reports/assets.json"))
+
+
 def run_cdep_command(args: argparse.Namespace) -> None:
     cdep = load_cdep_probe()
     if args.cdep_command == "roster-urls":
@@ -138,6 +148,9 @@ def run_cdep_command(args: argparse.Namespace) -> None:
         return
     if args.cdep_command == "preview-import":
         cdep.run_preview_import(args)
+        return
+    if args.cdep_command == "asset-inventory":
+        cdep.run_asset_inventory(args)
         return
     raise SystemExit(f"Unsupported CDEP command: {args.cdep_command}")
 

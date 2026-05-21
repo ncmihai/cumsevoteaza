@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import type { ChamberId } from "@cumsevoteaza/parliament-model";
+import { importStoredAssetsFromInventory, type AssetType } from "./asset-import";
 import { cleanupSupersededCdepHistoryRows } from "./cdep-history-cleanup";
 import { importCdepHistoryProfiles } from "./cdep-history-import";
 import { auditCurrentLegislature } from "./current-legislature-audit";
@@ -149,6 +150,22 @@ async function main() {
     console.log(JSON.stringify(result, null, 2));
     if (!hasFlag("confirm")) {
       console.log("Dry run only. Re-run with --confirm to delete superseded non-CDEP mandate/profile rows.");
+    }
+    return;
+  }
+
+  if (command === "assets:import") {
+    const result = await importStoredAssetsFromInventory({
+      assetsPath: flag("assets") ?? path.join(repoRoot, "data/cdep-history/parsed/assets.jsonl"),
+      assetType: assetTypeFlag(),
+      legislature: flag("legislature"),
+      limit: numberFlag("limit"),
+      persist: hasFlag("persist")
+    });
+    await writeImport("assets-import", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    if (!hasFlag("persist")) {
+      console.log("Dry run only. Re-run with --persist to upload to Blob and write stored_assets metadata.");
     }
     return;
   }
@@ -971,6 +988,11 @@ function senatePrefixesFlag(): Array<"B" | "BP" | "L" | "PLX"> | undefined {
 function chamberFlag(): "senate" | "deputies" | undefined {
   const value = flag("chamber");
   return value === "senate" || value === "deputies" ? value : undefined;
+}
+
+function assetTypeFlag(): AssetType | undefined {
+  const value = flag("asset-type");
+  return value === "photo" || value === "party_logo" || value === "cv" ? value : undefined;
 }
 
 function loadLocalEnv() {

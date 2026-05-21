@@ -59,6 +59,28 @@ export const compositionEventTypeEnum = pgEnum("composition_event_type", [
   "role_change",
   "other"
 ]);
+export const storedAssetEntityTypeEnum = pgEnum("stored_asset_entity_type", [
+  "member",
+  "person",
+  "party",
+  "formation",
+  "source_snapshot",
+  "pipeline_report"
+]);
+export const storedAssetTypeEnum = pgEnum("stored_asset_type", [
+  "photo",
+  "cv",
+  "party_logo",
+  "html_snapshot",
+  "report"
+]);
+export const storedAssetStatusEnum = pgEnum("stored_asset_status", [
+  "pending",
+  "stored",
+  "failed",
+  "missing",
+  "official_timeout"
+]);
 
 export const legislatures = pgTable("legislatures", {
   id: text("id").primaryKey(),
@@ -151,6 +173,30 @@ export const sourceDiscoveries = pgTable("source_discoveries", {
   sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id)
 }, (table) => ({
   sourceUrlIdx: uniqueIndex("source_discoveries_source_url_idx").on(table.sourceUrl)
+}));
+
+export const storedAssets = pgTable("stored_assets", {
+  id: text("id").primaryKey(),
+  entityType: storedAssetEntityTypeEnum("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  assetType: storedAssetTypeEnum("asset_type").notNull(),
+  legislatureId: text("legislature_id").references(() => legislatures.id),
+  chamber: chamberEnum("chamber"),
+  officialUrl: text("official_url"),
+  blobUrl: text("blob_url"),
+  contentHash: text("content_hash"),
+  mimeType: text("mime_type"),
+  byteSize: integer("byte_size"),
+  fetchStatus: storedAssetStatusEnum("fetch_status").notNull().default("pending"),
+  lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+  sourceSnapshotId: text("source_snapshot_id").references(() => sourceSnapshots.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => ({
+  entityIdx: index("stored_assets_entity_idx").on(table.entityType, table.entityId, table.assetType),
+  officialUrlIdx: index("stored_assets_official_url_idx").on(table.officialUrl),
+  contentHashIdx: index("stored_assets_content_hash_idx").on(table.contentHash),
+  statusIdx: index("stored_assets_status_idx").on(table.fetchStatus, table.lastAttemptAt)
 }));
 
 export const governments = pgTable("governments", {

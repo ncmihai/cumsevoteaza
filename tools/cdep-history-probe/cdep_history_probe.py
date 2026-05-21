@@ -136,6 +136,11 @@ def main() -> None:
     preview.add_argument("--profiles", type=Path, default=DEFAULT_OUT_DIR / "parsed" / "profiles.jsonl")
     preview.add_argument("--out", type=Path, default=DEFAULT_OUT_DIR / "parsed" / "import-preview.json")
 
+    assets = sub.add_parser("asset-inventory", help="Build a file-only inventory of official profile assets.")
+    assets.add_argument("--profiles", type=Path, default=DEFAULT_OUT_DIR / "parsed" / "profiles.jsonl")
+    assets.add_argument("--out", type=Path, default=DEFAULT_OUT_DIR / "parsed" / "assets.jsonl")
+    assets.add_argument("--report", type=Path, default=DEFAULT_OUT_DIR / "reports" / "assets.json")
+
     args = parser.parse_args()
     if args.command == "roster-urls":
         for item in roster_urls(args.legislature, args.chamber, args.include_reelected):
@@ -149,6 +154,9 @@ def main() -> None:
         return
     if args.command == "preview-import":
         run_preview_import(args)
+        return
+    if args.command == "asset-inventory":
+        run_asset_inventory(args)
         return
 
 
@@ -441,6 +449,9 @@ def parse_links_by_path(links: Iterable[Link], source_url: str, path_part: str) 
 
 def parse_action_links(links: Iterable[Link], source_url: str) -> list[dict[str, str]]:
     needles = [
+        "biografie",
+        "curriculum",
+        "cv",
         "initiative",
         "initiativa",
         "motiuni",
@@ -459,6 +470,139 @@ def parse_action_links(links: Iterable[Link], source_url: str) -> list[dict[str,
         key = canonical_url(absolute)
         rows[key] = {"url": key, "label": link.text}
     return list(rows.values())
+
+
+def run_asset_inventory(args: argparse.Namespace) -> None:
+    profiles = read_jsonl(args.profiles)
+    profile_by_key = {profile.get("profileKey"): profile for profile in profiles if profile.get("profileKey")}
+    person_groups = build_person_groups(profiles)
+    person_key_by_profile = {
+        profile_key: group_key
+        for group_key, profile_keys in person_groups.items()
+        for profile_key in profile_keys
+    }
+    rows = build_asset_inventory(profiles, profile_by_key, person_key_by_profile)
+    report = build_asset_inventory_report(profiles, rows, args.profiles)
+
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.report.parent.mkdir(parents=True, exist_ok=True)
+    write_jsonl(args.out, rows)
+    args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(report["summary"], ensure_ascii=False, indent=2))
+
+
+def build_asset_inventory(
+    profiles: list[dict[str, Any]],
+    profile_by_key: dict[str, dict[str, Any]],
+    person_key_by_profile: dict[str, str],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for profile in profiles:
+        for asset_type, urls in [
+            ("photo", profile.get("photoUrls", [])),
+            ("party_logo", profile.get("logoUrls", [])),
+        ]:
+            for official_url in urls:
+                row = build_asset_inventory_row(asset_type, official_url, profile, person_key_by_profile)
+                if row["id"] in seen:
+                    continue
+                seen.add(row["id"])
+                rows.append(row)
+
+        for link in profile.get("activityLinks", []):
+            if not is_cv_link(link):
+                continue
+            row = build_asset_inventory_row("cv", link.get("url", ""), profile, person_key_by_profile, label=link.get("label", ""))
+            if row["id"] in seen:
+                continue
+            seen.add(row["id"])
+            rows.append(row)
+
+    return sorted(rows, key=lambda item: (item["assetType"], item["legislature"], item["chamber"], item["entityId"], item["officialUrl"]))
+
+
+def build_asset_inventory_row(
+    asset_type: str,
+    official_url: str,
+    profile: dict[str, Any],
+    person_key_by_profile: dict[str, str],
+    label: str = "",
+) -> dict[str, Any]:
+    identity = profile.get("identity") or {}
+    profile_key = profile.get("profileKey") or profile_key_from_url(profile.get("url", "")) or ""
+    legislature = identity.get("legislature", "")
+    chamber = identity.get("chamber", "")
+    official_id = identity.get("officialId", "")
+    member_id = cdep_member_id(chamber, official_id, legislature)
+    canonical = canonical_url(official_url)
+    snapshot = profile.get("snapshot") or {}
+    return {
+        "id": f"asset-cdep-{asset_type}-{profile_key}-{short_hash(canonical)}",
+        "assetType": asset_type,
+        "entityType": "member",
+        "entityId": member_id,
+        "personKey": person_key_by_profile.get(profile_key, profile_key),
+        "profileKey": profile_key,
+        "memberId": member_id,
+        "name": profile.get("name", ""),
+        "legislature": legislature,
+        "legislatureId": legislature_id_from_year(legislature) if legislature in LEGISLATURES else "",
+        "chamber": chamber,
+        "officialId": official_id,
+        "officialUrl": canonical,
+        "sourceProfileUrl": profile.get("url", ""),
+        "sourceSnapshotContentHash": snapshot.get("contentHash", ""),
+        "sourceSnapshotFetchedAt": snapshot.get("fetchedAt", ""),
+        "label": label,
+    }
+
+
+def build_asset_inventory_report(
+    profiles: list[dict[str, Any]],
+    assets: list[dict[str, Any]],
+    profiles_path: Path,
+) -> dict[str, Any]:
+    by_type: dict[str, int] = {}
+    by_legislature: dict[str, int] = {}
+    for asset in assets:
+        by_type[asset["assetType"]] = by_type.get(asset["assetType"], 0) + 1
+        legislature = asset.get("legislatureId") or "unknown"
+        by_legislature[legislature] = by_legislature.get(legislature, 0) + 1
+
+    cv_profiles = [profile for profile in profiles if any(is_cv_link(link) for link in profile.get("activityLinks", []))]
+    unique_urls = {asset["officialUrl"] for asset in assets if asset.get("officialUrl")}
+    return {
+        "generatedAt": now_iso(),
+        "source": str(profiles_path),
+        "summary": {
+            "profiles": len(profiles),
+            "assets": len(assets),
+            "uniqueOfficialUrls": len(unique_urls),
+            "profilesWithPhotos": sum(1 for profile in profiles if profile.get("photoUrls")),
+            "profilesWithLogoUrls": sum(1 for profile in profiles if profile.get("logoUrls")),
+            "profilesWithCvLinks": len(cv_profiles),
+            "byAssetType": dict(sorted(by_type.items())),
+            "byLegislature": dict(sorted(by_legislature.items())),
+        },
+    }
+
+
+def is_cv_link(link: dict[str, str]) -> bool:
+    normalized = normalize_for_regex(f"{link.get('label', '')} {link.get('url', '')}")
+    return any(token in normalized for token in ["curriculum", "curriculum vitae", " cv", "cv.", "biografie"])
+
+
+def cdep_member_id(chamber: str, official_id: str, legislature: str) -> str:
+    if not chamber or not official_id:
+        return ""
+    if legislature == "2024":
+        return f"member-{chamber}-{official_id}"
+    return f"member-{chamber}-{legislature}-{official_id}"
+
+
+def short_hash(value: str, length: int = 12) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:length]
 
 
 def extract_profile_name(html_text: str, parsed: ParsedHtml) -> str:

@@ -1,4 +1,4 @@
-import { eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import type { DbClient } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
@@ -11,6 +11,7 @@ import {
   type IndividualVote,
   type Legislature,
   type Member,
+  type MemberCareerSegment,
   type MemberCommitteeMembership,
   type MemberGroupMembership,
   type MemberHistoryRow,
@@ -92,7 +93,9 @@ export interface MemberPageData {
   mandate?: MemberMandate;
   group?: ParliamentaryGroup;
   party?: Party;
+  profilePhotoUrl?: string;
   currentLogoUrl?: string;
+  careerSegments: MemberCareerSegment[];
   source?: SourceSnapshot;
   legislatures: Legislature[];
   selectedLegislature?: Legislature;
@@ -338,7 +341,9 @@ async function getMemberPageDataUncached(slug: string, options: { legislature?: 
     mandate: selectedMandate,
     group,
     party,
+    profilePhotoUrl: member.sourceIds.profilePhoto,
     currentLogoUrl: groupMembership?.logoUrl,
+    careerSegments: buildMemberCareerSegments(history, demoDataset.groups, demoDataset.parties),
     source,
     legislatures,
     selectedLegislature,
@@ -678,6 +683,12 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
     const parties = (await session.db.select().from(schema.parties)).map(mapParty);
     const memberships = membershipRows.map(mapMemberGroupMembership);
     const mandates = mandateRows.map(mapMemberMandate);
+    const storedAssetRows = memberIds.length > 0
+      ? await session.db
+          .select()
+          .from(schema.storedAssets)
+          .where(and(inArray(schema.storedAssets.entityId, memberIds), eq(schema.storedAssets.fetchStatus, "stored")))
+      : [];
     const legislatureRows = await session.db.select().from(schema.legislatures);
     const legislatures = legislatureRows
       .map(mapLegislature)
@@ -725,13 +736,21 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
       parties,
       votes: selectedVotes.individualVotes
     });
+    const profilePhotoUrl =
+      storedAssetUrl(storedAssetRows, "photo", member.id, selectedLegislature?.id, mandate?.chamber) ??
+      firstSourceId(relatedMembers, "profilePhoto");
+    const logoUrl =
+      storedAssetUrl(storedAssetRows, "party_logo", member.id, selectedLegislature?.id, mandate?.chamber) ??
+      currentMembership?.logoUrl;
 
     return {
       member,
       mandate,
       group,
       party,
-      currentLogoUrl: currentMembership?.logoUrl,
+      profilePhotoUrl,
+      currentLogoUrl: logoUrl,
+      careerSegments: buildMemberCareerSegments(history, groups, parties),
       source: sourceRow ? mapSource(sourceRow) : undefined,
       legislatures,
       selectedLegislature,
@@ -1623,6 +1642,66 @@ function normalizeSearch(value?: string): string {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+}
+
+function storedAssetUrl(
+  assets: Array<typeof schema.storedAssets.$inferSelect>,
+  assetType: "photo" | "party_logo" | "cv",
+  memberId: string,
+  legislatureId?: string,
+  chamber?: string
+): string | undefined {
+  const candidates = assets.filter((asset) => asset.assetType === assetType && asset.entityId === memberId && asset.blobUrl);
+  return (
+    candidates.find((asset) => asset.legislatureId === legislatureId && asset.chamber === chamber)?.blobUrl ??
+    candidates.find((asset) => asset.legislatureId === legislatureId)?.blobUrl ??
+    candidates[0]?.blobUrl ??
+    undefined
+  );
+}
+
+function firstSourceId(members: Member[], key: string): string | undefined {
+  return members.map((member) => member.sourceIds[key]).find(Boolean);
+}
+
+function buildMemberCareerSegments(
+  history: MemberHistoryRow[],
+  groups: ParliamentaryGroup[],
+  parties: Party[]
+): MemberCareerSegment[] {
+  const groupByLabel = new Map(groups.map((group) => [group.shortName, group]));
+  const partyByLabel = new Map(parties.map((party) => [party.shortName, party]));
+  const rows = history
+    .filter((row) => row.type === "party" || row.type === "group")
+    .sort((a, b) => a.startsOn.localeCompare(b.startsOn) || a.label.localeCompare(b.label));
+  const segments: MemberCareerSegment[] = [];
+  for (const row of rows) {
+    const previous = segments.at(-1);
+    if (
+      previous &&
+      previous.label === row.label &&
+      previous.chamber === row.chamber &&
+      previous.legislatureId === row.legislatureId &&
+      previous.endsOn === row.startsOn
+    ) {
+      previous.endsOn = row.endsOn;
+      continue;
+    }
+    const group = groupByLabel.get(row.label);
+    const party = partyByLabel.get(row.label);
+    segments.push({
+      id: `career-${row.id}`,
+      startsOn: row.startsOn,
+      endsOn: row.endsOn,
+      legislatureId: row.legislatureId,
+      chamber: row.chamber,
+      label: row.label,
+      details: row.details,
+      logoUrl: row.logoUrl,
+      color: group?.color ?? party?.color
+    });
+  }
+  return segments;
 }
 
 function buildMemberHistory(input: {

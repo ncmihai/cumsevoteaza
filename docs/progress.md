@@ -1760,3 +1760,64 @@ Verification:
   - directory SQL deduplicates rows by linked person identity where available.
 - Added follow-up tasks for a real parties/groups directory and future member
   ranking panels once absence and party-movement data quality is high enough.
+
+## 2026-05-21 — Official Asset Pipeline Steps 1-3
+
+- Added the file-first asset inventory step:
+  `npm run pipeline:parliament -- cdep-members asset-inventory`.
+- The current local CDEP profile parse produced:
+  - 5,289 profiles;
+  - 9,225 asset records;
+  - 4,801 unique official asset URLs;
+  - 4,919 profile photo records;
+  - 4,306 party/logo records.
+- Added `stored_assets` as the Postgres metadata table for Blob-backed assets,
+  with status fields for stored, missing, timeout, and failed fetches.
+- Added `npm run ingest:assets:import`:
+  - dry-run by default;
+  - requires `--persist` and `BLOB_READ_WRITE_TOKEN` before uploading;
+  - stores binary files in Vercel Blob and metadata in Postgres.
+- Verification:
+  - `npm run test:python-pipeline` passed;
+  - `npm --workspace @cumsevoteaza/ingest test` passed;
+  - `npm run typecheck` passed;
+  - `npm run ingest:assets:import -- --limit=10` dry-run passed;
+  - `npm run build` passed.
+
+## 2026-05-21 — Local Asset Migration Test
+
+- Applied the new Drizzle migration to the local Docker Postgres database by
+  explicitly overriding `DATABASE_URL` with the Docker URL.
+- Verified the local `stored_assets` table exists and currently has `0` rows.
+- Attempted a tiny persisted asset test:
+  `npm run ingest:assets:import -- --asset-type=photo --limit=3 --persist`.
+- The persisted test stopped before any fetch/upload because local env files do
+  not contain `BLOB_READ_WRITE_TOKEN`; only `DATABASE_URL` and
+  `CUMSEVOTEAZA_SITE_PASSWORD` are present locally.
+  `.env` and `.env.*` are gitignored, so the token can be added locally without
+  committing it.
+- After adding the Blob token locally, reran the persisted test for 3 photos.
+  The command reached the official asset fetch stage and recorded 3 failed
+  rows in local `stored_assets`; CDEP image requests timed out / failed while
+  the official site was not responding. Blob upload verification is postponed
+  until CDEP is reachable again.
+
+## 2026-05-21 — Member Asset UI And Career Strip
+
+- Wired member profile data to prefer successfully stored Blob assets from
+  `stored_assets` for profile photos and period party logos.
+- Added fallback behavior so member pages can still show official CDEP
+  `profilePhoto` and membership `logoUrl` values while Blob backfill is
+  postponed.
+- Added a Transfermarkt-style `Traseu parlamentar` / `Parliamentary path`
+  strip under the member header:
+  - segments are built from temporal party/group history rows;
+  - each segment shows period, chamber, color, and logo cue when available;
+  - the existing detailed `Istoric parlamentar` table remains the audit layer.
+- Local browser smoke-check:
+  - `/ro/members/lucian-nicolae-bode-deputies-30` renders the new timeline;
+  - no browser console errors were reported.
+- Verification:
+  - `npm run typecheck` passed;
+  - `npm run test` passed;
+  - `npm run build` passed.

@@ -456,7 +456,8 @@ implementation steps.
   - official investiture / coalition
   - computed governing support
 - [ ] Add historical-roster import plan for post-1989 legislatures.
-- [ ] Add member photo fields only after official source URLs are identified and stored.
+- [x] Add member photo fields after official source URLs were identified, with
+  Blob-backed asset fallback support for stored files.
 
 ## Verification
 
@@ -847,3 +848,30 @@ implementation steps.
 - [ ] Add a proper parties/groups directory or popover with legislature filters.
 - [ ] Add member ranking panels once absence, party-movement, and activity data
   are complete enough to avoid misleading users.
+
+## Official Asset Pipeline
+
+- [x] Add a Python file-first asset inventory command:
+  `npm run pipeline:parliament -- cdep-members asset-inventory`.
+- [x] Emit `data/cdep-history/parsed/assets.jsonl` and
+  `data/cdep-history/reports/assets.json` from parsed CDEP profile rows.
+- [x] Inventory official CDEP member photos and legislature-scoped party/logo
+  image URLs without writing to the database.
+- [x] Add `stored_assets` metadata table and Drizzle migration for Blob-backed
+  photos, CVs, party logos, source snapshots, and reports.
+- [x] Add `npm run ingest:assets:import` as a dry-run-first TypeScript command
+  that reads `assets.jsonl`.
+- [x] Upload assets to Vercel Blob only when `--persist` is passed and
+  `BLOB_READ_WRITE_TOKEN` is present.
+- [x] Store only asset metadata in Postgres: owner entity, source URL, Blob URL,
+  content hash, MIME type, byte size, fetch status, and attempt timestamp.
+- [x] Apply the `stored_assets` migration to local Docker Postgres.
+- [ ] Rerun the asset importer against a very small live batch once CDEP is
+  responsive again, then inspect `stored_assets` and Blob paths. The first
+  token-backed test recorded fetch failures because CDEP image URLs timed out.
+- [x] Wire stored member photos/logos into member profile data with fallback to
+  official CDEP profile photo and period logo URLs.
+- [x] Add a Transfermarkt-style member career strip showing party/group periods
+  under the profile header.
+- [ ] Wire CV assets into the profile once fresh CDEP crawls expose CV links and
+  the Blob importer stores at least one successful CV row.

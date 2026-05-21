@@ -43,6 +43,8 @@ npm run pipeline:parliament -- cdep-members crawl \
 npm run pipeline:parliament -- cdep-members audit --legislature 2004
 
 npm run pipeline:parliament -- cdep-members preview-import
+
+npm run pipeline:parliament -- cdep-members asset-inventory
 ```
 
 The existing direct command stays supported:
@@ -63,6 +65,8 @@ data/cdep-history/parsed/rosters.jsonl
 data/cdep-history/reports/summary.json
 data/cdep-history/reports/audit.json
 data/cdep-history/parsed/import-preview.json
+data/cdep-history/parsed/assets.jsonl
+data/cdep-history/reports/assets.json
 ```
 
 The TypeScript importer consumes these files and performs DB writes:
@@ -70,6 +74,10 @@ The TypeScript importer consumes these files and performs DB writes:
 ```bash
 npm run ingest:cdep-history:import -- --legislature=2004
 npm run ingest:cdep-history:import -- --legislature=2004 --persist
+npm run ingest:assets:import -- --limit=10
+npm run ingest:assets:import -- --asset-type=photo --legislature=2004 --limit=10 --persist
 ```
 
 Run `--persist` against local Postgres first, verify counts, then apply to Neon.
+Asset import also requires `BLOB_READ_WRITE_TOKEN`; without `--persist` it is a
+selection dry-run and does not upload files or write `stored_assets`.

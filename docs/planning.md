@@ -35,6 +35,9 @@ The product has two core surfaces:
 - Party logos and electoral signs are temporal visual evidence. They must be
   attached to a legislature/period/source context, not treated as one permanent
   party property.
+- Official profile photos, temporal party logos, CV files, and large reports
+  should be stored as Blob assets when possible. Postgres should keep only
+  metadata, ownership, source URL, content hash, status, and Blob URL.
 - V1 avoids political scoring, ideological labels, or editorial conclusions.
 - Romanian is default; English exists from the beginning.
 

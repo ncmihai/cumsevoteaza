@@ -4,6 +4,7 @@ import { chamberLabels, formatDate } from "@cumsevoteaza/parliament-model";
 import { getMemberPageData } from "@/lib/data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
 import { EngagementTracker } from "../../_components/EngagementTracker";
+import { MemberCareerTimeline } from "../../_components/MemberCareerTimeline";
 import { MemberHistoryTable } from "../../_components/MemberHistoryTable";
 import { SourceBadge } from "../../_components/SourceBadge";
 
@@ -25,7 +26,9 @@ export default async function MemberPage({
     history,
     group,
     party,
+    profilePhotoUrl,
     currentLogoUrl,
+    careerSegments,
     mandate,
     source,
     legislatures,
@@ -44,12 +47,23 @@ export default async function MemberPage({
       <EngagementTracker entityType="member" entityId={member.id} locale={locale} />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-4">
-          {currentLogoUrl ? (
-            <div className="mt-1 flex h-16 w-16 shrink-0 items-center justify-center border border-slate-300 bg-white p-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={currentLogoUrl} alt="" className="max-h-full max-w-full object-contain" />
-            </div>
-          ) : null}
+          <div className="relative mt-1 flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden border border-slate-300 bg-white">
+            {profilePhotoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profilePhotoUrl} alt="" className="h-full w-full object-cover" />
+            ) : currentLogoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={currentLogoUrl} alt="" className="max-h-16 max-w-16 object-contain" />
+            ) : (
+              <span className="text-3xl font-semibold text-slate-400">{member.displayName.slice(0, 1)}</span>
+            )}
+            {currentLogoUrl && profilePhotoUrl ? (
+              <span className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center border border-slate-300 bg-white p-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={currentLogoUrl} alt="" className="max-h-full max-w-full object-contain" />
+              </span>
+            ) : null}
+          </div>
           <div className="min-w-0">
             <div className="text-sm font-semibold uppercase text-blue-800">
               {group?.shortName ?? party?.shortName ?? "unknown"}
@@ -86,6 +100,8 @@ export default async function MemberPage({
           <div className="mt-1 text-2xl font-semibold text-slate-950">{selectedLegislature?.label ?? "-"}</div>
         </div>
       </section>
+
+      <MemberCareerTimeline segments={careerSegments} locale={locale} />
 
       <section className="mt-6">
         <h2 className="mb-3 text-2xl font-semibold text-slate-950">{messages.home.memberHistory}</h2>

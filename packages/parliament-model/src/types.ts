@@ -328,6 +328,18 @@ export interface MemberHistoryRow {
   proposals: number;
 }
 
+export interface MemberCareerSegment {
+  id: string;
+  startsOn: string;
+  endsOn?: string;
+  legislatureId?: string;
+  chamber: ChamberId;
+  label: string;
+  details?: string;
+  logoUrl?: string;
+  color?: string;
+}
+
 export interface NormalizedDataset {
   legislatures: Legislature[];
   parties: Party[];
