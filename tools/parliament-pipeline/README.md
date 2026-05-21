@@ -47,6 +47,20 @@ npm run pipeline:parliament -- cdep-members preview-import
 npm run pipeline:parliament -- cdep-members asset-inventory
 ```
 
+Run the Tribunalul București legal registry index pipeline:
+
+```bash
+npm run pipeline:tribunal -- fetch-index
+npm run pipeline:tribunal -- parse-index
+```
+
+The same commands are available through the umbrella CLI:
+
+```bash
+npm run pipeline:parliament -- tribunal-registry fetch-index
+npm run pipeline:parliament -- tribunal-registry parse-index
+```
+
 The existing direct command stays supported:
 
 ```bash
@@ -68,6 +82,20 @@ data/cdep-history/parsed/import-preview.json
 data/cdep-history/parsed/assets.jsonl
 data/cdep-history/reports/assets.json
 ```
+
+Tribunal registry index output is file-only:
+
+```text
+data/parliament-pipeline/tribunal-registry/raw/index-partide-politice.html
+data/parliament-pipeline/tribunal-registry/raw/index-aliante-politice.html
+data/parliament-pipeline/tribunal-registry/raw/index-alte-forme-de-asociere.html
+data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl
+data/parliament-pipeline/tribunal-registry/reports/index-summary.md
+```
+
+This first Tribunal step parses index records and PDF links only. PDF download,
+PDF text extraction, legal event extraction, and matching to app party/formation
+IDs are later steps.
 
 The TypeScript importer consumes these files and performs DB writes:
 

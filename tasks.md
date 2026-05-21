@@ -900,6 +900,13 @@ implementation steps.
 - [x] Add Romanian-source refinement events for FSN becoming a party,
   PSD+PC protocol signing, ApR absorption into PNL, PIN absorption into UNPR,
   ALDE absorption into PNL, and S.O.S. România founding.
+- [x] Add a file-first Tribunalul București registry pipeline for fetching and
+  parsing party/alliance/association index pages into JSONL.
+- [x] Run the Tribunal index fetch/parse locally:
+  `382` parties, `10` alliances, `2` other associations.
+- [ ] Add Tribunal PDF download/extraction for selected matched entities.
+- [ ] Match Tribunal registry rows against app party/formation IDs with
+  confidence levels and manual-review files.
 - [ ] Continue source review for UNPR legal registration date at Tribunalul
   București, PSD+PC dissolution date, ApR founding date, and
   minority-organization modeling.

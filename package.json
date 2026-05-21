@@ -51,6 +51,7 @@
     "ingest:refresh-read-models": "npm --workspace @cumsevoteaza/ingest run refresh-read-models --",
     "probe:cdep-history": "python3 tools/cdep-history-probe/cdep_history_probe.py",
     "pipeline:parliament": "python3 tools/parliament-pipeline/parliament_pipeline.py",
+    "pipeline:tribunal": "python3 tools/parliament-pipeline/parliament_pipeline.py tribunal-registry",
     "test:python-pipeline": "python3 -m unittest discover -s tools/parliament-pipeline/tests"
   },
   "devDependencies": {

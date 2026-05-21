@@ -378,6 +378,23 @@ Purpose:
 - They can split or annotate display timelines, for example PDL ending as a
   separate party in 2014 and the member continuing under PNL.
 
+Tribunal registry source:
+- `https://tribunalulbucuresti.ro/index.php/partide-si-aliante-politice/partide-politice`
+  - Official party registry index.
+  - Current parser run found `382` party PDF records.
+- `https://tribunalulbucuresti.ro/index.php/partide-si-aliante-politice/aliante-politice`
+  - Official political alliance registry index.
+  - Current parser run found `10` alliance PDF records.
+- `https://tribunalulbucuresti.ro/index.php/partide-si-aliante-politice/alte-forme-de-asociere-ale-partidelor`
+  - Official index for other party association forms.
+  - Current parser run found `2` PDF records.
+- Current command:
+  - `npm run pipeline:tribunal -- fetch-index`
+  - `npm run pipeline:tribunal -- parse-index`
+- Current output:
+  - `data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl`
+  - `data/parliament-pipeline/tribunal-registry/reports/index-summary.md`
+
 Initial source set:
 - `https://en.wikipedia.org/wiki/National_Salvation_Front_(Romania)`
   - FSN appeared on 22 December 1989 as a governing body.

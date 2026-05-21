@@ -85,6 +85,52 @@ class ParliamentPipelineCliTest(unittest.TestCase):
             self.assertEqual({row["entityId"] for row in rows}, {"member-deputies-2004-297"})
             self.assertEqual({row["legislatureId"] for row in rows}, {"leg-2004-2008"})
 
+    def test_tribunal_parse_index_writes_jsonl_and_report(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = Path(tmp)
+            raw = tmp_dir / "raw"
+            parsed = tmp_dir / "parsed" / "tribunal_entities.jsonl"
+            report = tmp_dir / "reports" / "index-summary.md"
+            raw.mkdir()
+            (raw / "index-partide-politice.html").write_text(
+                """
+                <p style="text-align: justify;"><a href="/images/articole/politice-partide/poz-48.pdf" target="_blank">48. PARTIDUL UNIUNEA NAŢIONALĂ PENTRU PROGRESUL ROMÂNIEI –U.N.P.R.</a></p>
+                <p style="text-align: justify;"><a href="/images/articole/politice-partide/poz-293.pdf" target="_blank">293. PARTIDUL POLITIC CU DENUMIREA „PARTIDUL OAMENILOR TINERI”</a> şi denumirea prescurtată POT</p>
+                """,
+                encoding="utf-8",
+            )
+            (raw / "index-aliante-politice.html").write_text(
+                """
+                <p><a href="/images/articole/politice-aliante/poz-9-Alianta_USR_PLUS.pdf">9. ALIANŢA 2020 USR PLUS</a></p>
+                """,
+                encoding="utf-8",
+            )
+            (raw / "index-alte-forme-de-asociere.html").write_text(
+                """
+                <p><a href="/images/articole/politice-alte/poz-1-aliantaPSL.pdf">1. ALIANŢA PENTRU SĂNĂTATE ŞI LIBERTATE</a></p>
+                """,
+                encoding="utf-8",
+            )
+
+            completed = self.run_pipeline(
+                "tribunal-registry",
+                "parse-index",
+                "--raw",
+                str(raw),
+                "--out",
+                str(parsed),
+                "--report",
+                str(report),
+            )
+            summary = json.loads(completed.stdout)
+            rows = [json.loads(line) for line in parsed.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+            self.assertEqual(summary["records"], 4)
+            self.assertEqual(summary["byKind"], {"alliance": 1, "other_association": 1, "party": 2})
+            self.assertEqual(rows[0]["kind"], "alliance")
+            self.assertEqual(rows[-1]["shortName"], "POT")
+            self.assertIn("Tribunalul București Registry Index Summary", report.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

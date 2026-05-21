@@ -2,15 +2,42 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass, field
+from html.parser import HTMLParser
 import importlib.util
 import json
+import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urljoin
+from urllib.request import Request, urlopen
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CDEP_PROBE_PATH = REPO_ROOT / "tools" / "cdep-history-probe" / "cdep_history_probe.py"
+TRIBUNAL_BASE_URL = "https://tribunalulbucuresti.ro"
+TRIBUNAL_INDEXES = [
+    {
+        "kind": "party",
+        "slug": "partide-politice",
+        "url": f"{TRIBUNAL_BASE_URL}/index.php/partide-si-aliante-politice/partide-politice",
+        "pdfPathMarker": "/politice-partide/",
+    },
+    {
+        "kind": "alliance",
+        "slug": "aliante-politice",
+        "url": f"{TRIBUNAL_BASE_URL}/index.php/partide-si-aliante-politice/aliante-politice",
+        "pdfPathMarker": "/politice-aliante/",
+    },
+    {
+        "kind": "other_association",
+        "slug": "alte-forme-de-asociere",
+        "url": f"{TRIBUNAL_BASE_URL}/index.php/partide-si-aliante-politice/alte-forme-de-asociere-ale-partidelor",
+        "pdfPathMarker": "/politice-alte/",
+    },
+]
 
 
 DOMAINS = [
@@ -39,6 +66,17 @@ DOMAINS = [
             "data/parliament-pipeline/votes-projects/reports/*.json",
         ],
         "dbWriter": "Existing TypeScript discovery/import commands",
+    },
+    {
+        "name": "tribunal-registry",
+        "status": "implemented-index",
+        "purpose": "Tribunalul București legal party/alliance registry index snapshots and parsed PDF link records.",
+        "outputs": [
+            "data/parliament-pipeline/tribunal-registry/raw/index-*.html",
+            "data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl",
+            "data/parliament-pipeline/tribunal-registry/reports/index-summary.md",
+        ],
+        "dbWriter": "None yet; Python writes files only.",
     },
 ]
 
@@ -78,6 +116,11 @@ def main() -> None:
     add_cdep_preview(cdep_sub)
     add_cdep_asset_inventory(cdep_sub)
 
+    tribunal = sub.add_parser("tribunal-registry", help="Run Tribunalul București legal registry pipeline commands.")
+    tribunal_sub = tribunal.add_subparsers(dest="tribunal_command", required=True)
+    add_tribunal_fetch_index(tribunal_sub)
+    add_tribunal_parse_index(tribunal_sub)
+
     args = parser.parse_args()
     if args.command == "domains":
         print_json({"domains": DOMAINS})
@@ -87,6 +130,9 @@ def main() -> None:
         return
     if args.command == "cdep-members":
         run_cdep_command(args)
+        return
+    if args.command == "tribunal-registry":
+        run_tribunal_command(args)
         return
 
 
@@ -134,6 +180,19 @@ def add_cdep_asset_inventory(sub: argparse._SubParsersAction[argparse.ArgumentPa
     parser.add_argument("--report", type=Path, default=Path("data/cdep-history/reports/assets.json"))
 
 
+def add_tribunal_fetch_index(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = sub.add_parser("fetch-index", help="Fetch Tribunalul București party/alliance index HTML snapshots.")
+    parser.add_argument("--out", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/raw"))
+    parser.add_argument("--refresh", action="store_true", help="Refetch even when the raw index file already exists.")
+
+
+def add_tribunal_parse_index(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = sub.add_parser("parse-index", help="Parse Tribunalul București index snapshots into JSONL records.")
+    parser.add_argument("--raw", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/raw"))
+    parser.add_argument("--out", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/parsed/tribunal_entities.jsonl"))
+    parser.add_argument("--report", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/reports/index-summary.md"))
+
+
 def run_cdep_command(args: argparse.Namespace) -> None:
     cdep = load_cdep_probe()
     if args.cdep_command == "roster-urls":
@@ -153,6 +212,236 @@ def run_cdep_command(args: argparse.Namespace) -> None:
         cdep.run_asset_inventory(args)
         return
     raise SystemExit(f"Unsupported CDEP command: {args.cdep_command}")
+
+
+def run_tribunal_command(args: argparse.Namespace) -> None:
+    if args.tribunal_command == "fetch-index":
+        summary = fetch_tribunal_indexes(args.out, refresh=args.refresh)
+        print_json(summary)
+        return
+    if args.tribunal_command == "parse-index":
+        records = parse_tribunal_index_dir(args.raw)
+        write_tribunal_records(records, args.out)
+        write_tribunal_report(records, args.report)
+        print_json({"records": len(records), "out": str(args.out), "report": str(args.report), "byKind": count_by(records, "kind")})
+        return
+    raise SystemExit(f"Unsupported Tribunal command: {args.tribunal_command}")
+
+
+def fetch_tribunal_indexes(out: Path, refresh: bool = False) -> dict[str, Any]:
+    out.mkdir(parents=True, exist_ok=True)
+    fetched_at = datetime.now(timezone.utc).isoformat()
+    results = []
+    for index in TRIBUNAL_INDEXES:
+        path = out / f"index-{index['slug']}.html"
+        if path.exists() and not refresh:
+            status = "cached"
+        else:
+            html = fetch_text(index["url"])
+            path.write_text(html, encoding="utf-8")
+            status = "fetched"
+        results.append({"kind": index["kind"], "url": index["url"], "path": str(path), "status": status})
+    return {"fetchedAt": fetched_at, "indexes": results}
+
+
+def fetch_text(url: str) -> str:
+    request = Request(url, headers={"User-Agent": "cumsevoteaza local research pipeline/0.1"})
+    with urlopen(request, timeout=30) as response:
+        return response.read().decode("utf-8", errors="replace")
+
+
+def parse_tribunal_index_dir(raw: Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for index in TRIBUNAL_INDEXES:
+        path = raw / f"index-{index['slug']}.html"
+        if not path.exists():
+            raise SystemExit(f"Missing Tribunal index snapshot: {path}. Run fetch-index first.")
+        html = path.read_text(encoding="utf-8")
+        records.extend(parse_tribunal_index_html(html, index))
+    return sorted(records, key=lambda item: (item["kind"], item.get("position") or 999999, item["legalName"]))
+
+
+def parse_tribunal_index_html(html: str, index: dict[str, str]) -> list[dict[str, Any]]:
+    parser = TribunalParagraphParser()
+    parser.feed(html)
+    records: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for paragraph in parser.paragraphs:
+        for link in paragraph.links:
+            href = link["href"]
+            if index["pdfPathMarker"] not in href:
+                continue
+            source_url = urljoin(TRIBUNAL_BASE_URL, href)
+            if source_url in seen:
+                continue
+            seen.add(source_url)
+            text = clean_text(link["text"])
+            paragraph_text = clean_text(paragraph.text)
+            position = extract_position(text)
+            legal_name = extract_legal_name(text)
+            short_name = extract_short_name(text, paragraph_text)
+            listed_date = extract_leading_date(text)
+            records.append(
+                {
+                    "id": f"tribunal-{index['kind']}-{position or stable_slug(legal_name)}",
+                    "kind": index["kind"],
+                    "position": position,
+                    "listedDate": listed_date,
+                    "legalName": legal_name,
+                    "shortName": short_name,
+                    "normalizedName": normalize_romanian_text(legal_name),
+                    "normalizedShortName": normalize_romanian_text(short_name) if short_name else None,
+                    "sourceUrl": source_url,
+                    "sourcePath": href,
+                    "rawLinkText": text,
+                    "rawParagraphText": paragraph_text,
+                }
+            )
+    return records
+
+
+def write_tribunal_records(records: list[dict[str, Any]], out: Path) -> None:
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("w", encoding="utf-8") as handle:
+        for record in records:
+            handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def write_tribunal_report(records: list[dict[str, Any]], out: Path) -> None:
+    out.parent.mkdir(parents=True, exist_ok=True)
+    by_kind = count_by(records, "kind")
+    lines = [
+        "# Tribunalul București Registry Index Summary",
+        "",
+        "File-first parser output for legal political entities. No database writes are performed.",
+        "",
+        "## Counts",
+        "",
+    ]
+    for kind in ["party", "alliance", "other_association"]:
+        lines.append(f"- `{kind}`: {by_kind.get(kind, 0)}")
+    lines.extend(["", "## Sample Records", ""])
+    for record in records[:20]:
+        short = f" / `{record['shortName']}`" if record.get("shortName") else ""
+        lines.append(f"- `{record['kind']}` #{record.get('position')}: {record['legalName']}{short}")
+    lines.extend(["", "## Next Parser Step", ""])
+    lines.append("Download selected PDFs, extract court file metadata, and match records against curated app party/formation IDs.")
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def count_by(records: list[dict[str, Any]], key: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for record in records:
+        value = str(record.get(key))
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
+@dataclass
+class ParsedParagraph:
+    text: str
+    links: list[dict[str, str]] = field(default_factory=list)
+
+
+class TribunalParagraphParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.paragraphs: list[ParsedParagraph] = []
+        self._in_p = False
+        self._p_parts: list[str] = []
+        self._p_links: list[dict[str, str]] = []
+        self._current_href: str | None = None
+        self._current_link_parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "p":
+            self._in_p = True
+            self._p_parts = []
+            self._p_links = []
+        if self._in_p and tag == "a":
+            attrs_dict = dict(attrs)
+            self._current_href = attrs_dict.get("href")
+            self._current_link_parts = []
+
+    def handle_endtag(self, tag: str) -> None:
+        if self._in_p and tag == "a" and self._current_href:
+            text = clean_text("".join(self._current_link_parts))
+            self._p_links.append({"href": self._current_href, "text": text})
+            self._current_href = None
+            self._current_link_parts = []
+        if tag == "p" and self._in_p:
+            text = clean_text("".join(self._p_parts))
+            if text or self._p_links:
+                self.paragraphs.append(ParsedParagraph(text=text, links=self._p_links))
+            self._in_p = False
+            self._p_parts = []
+            self._p_links = []
+
+    def handle_data(self, data: str) -> None:
+        if not self._in_p:
+            return
+        self._p_parts.append(data)
+        if self._current_href is not None:
+            self._current_link_parts.append(data)
+
+
+def clean_text(value: str) -> str:
+    return re.sub(r"\s+", " ", value.replace("\xa0", " ")).strip()
+
+
+def extract_position(text: str) -> int | None:
+    match = re.match(r"\s*(\d+)\.", text)
+    return int(match.group(1)) if match else None
+
+
+def extract_legal_name(text: str) -> str:
+    value = re.sub(r"^\s*\d+\.\s*", "", text).strip()
+    value = re.sub(r"^\d{1,2}\.\d{1,2}\.\d{4}\s*[–-]\s*", "", value).strip()
+    integral = re.search(r"denumirea(?:\s+integrală)?\s+[„\"]([^”\"]+)[”\"]", value, flags=re.IGNORECASE)
+    if integral:
+        return clean_text(integral.group(1)).strip(" .,;")
+    value = re.split(r"\s+[–-]\s+(?:cu\s+)?(?:denumirea|Denumirea|P\.|[A-ZĂÂÎȘŞȚŢ]\.)", value, maxsplit=1)[0].strip()
+    value = re.split(r"\s+şi\s+denumirea\s+prescurtată", value, maxsplit=1, flags=re.IGNORECASE)[0].strip()
+    return value.strip(" .,;")
+
+
+def extract_short_name(link_text: str, paragraph_text: str) -> str | None:
+    patterns = [
+        r"denumirea\s+prescurtată(?:\s+este)?\s*[:：]?\s*[–-]?\s*(?:[A-Za-zĂÂÎȘŞȚŢăâîșşțţ ]+)?[„\"]([^”\"]+)[”\"]",
+        r"denumirea\s+prescurtată(?:\s+este)?\s*[:：]?\s*([A-ZĂÂÎȘŞȚŢ0-9][A-ZĂÂÎȘŞȚŢ0-9 .+\-]{1,40}?)(?:\s+-|,|\(|$)",
+        r"\s+[–-]\s*([A-ZĂÂÎȘŞȚŢ0-9][A-ZĂÂÎȘŞȚŢ0-9 .+\\-]{1,30})\s*$",
+    ]
+    for source in [paragraph_text, link_text]:
+        for index, pattern in enumerate(patterns):
+            if index == 2 and extract_leading_date(source):
+                continue
+            match = re.search(pattern, source, flags=re.IGNORECASE)
+            if not match:
+                continue
+            candidate = clean_text(match.group(1)).strip(" .,;:”“\"")
+            if candidate and not candidate.lower().startswith("cu denumirea"):
+                return candidate
+    return None
+
+
+def extract_leading_date(text: str) -> str | None:
+    value = re.sub(r"^\s*\d+\.\s*", "", text).strip()
+    match = re.match(r"(\d{1,2})\.(\d{1,2})\.(\d{4})\s*[–-]", value)
+    if not match:
+        return None
+    day, month, year = match.groups()
+    return f"{year}-{int(month):02d}-{int(day):02d}"
+
+
+def normalize_romanian_text(value: str) -> str:
+    table = str.maketrans("ăâîșşțţĂÂÎȘŞȚŢ", "aaiss ttAAISS TT".replace(" ", ""))
+    normalized = value.translate(table).lower()
+    return re.sub(r"[^a-z0-9]+", "-", normalized).strip("-")
+
+
+def stable_slug(value: str) -> str:
+    slug = normalize_romanian_text(value)
+    return slug or "unknown"
 
 
 def load_cdep_probe() -> Any:

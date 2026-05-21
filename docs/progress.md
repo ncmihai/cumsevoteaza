@@ -1907,3 +1907,20 @@ Verification:
   - S.O.S. România founded.
 - Reduced the deferred list to legal-registration dates, PSD+PC dissolution,
   ApR founding day, and minority-organization modeling.
+
+## 2026-05-21 — Tribunal Registry Index Pipeline
+
+- Added `npm run pipeline:tribunal` as a shortcut for the Tribunalul București
+  legal registry pipeline.
+- Implemented `tribunal-registry fetch-index` to snapshot:
+  - `partide-politice`;
+  - `aliante-politice`;
+  - `alte-forme-de-asociere-ale-partidelor`.
+- Implemented `tribunal-registry parse-index` to emit file-first JSONL records
+  with registry kind, position, listed date, legal name, short name, normalized
+  names, source URL, and raw source text.
+- Live parse result:
+  - `382` parties;
+  - `10` alliances;
+  - `2` other associations.
+- Added parser tests with sample Tribunal-style HTML fixtures.
