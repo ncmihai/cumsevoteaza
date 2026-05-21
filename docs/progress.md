@@ -2001,3 +2001,11 @@ Verification:
 - Updated `Compoziții` alignment resolution so parties/groups outside a known coalition default to `opposition`; periods without coalition data remain `unknown`.
 - Marked the Bolojan skeleton period as ending after the 2026-05-05 no-confidence event, with an interim Bolojan period after that date.
 - Documented that computed support from vote behavior must stay separate from official/manual coalition alignment.
+
+## 2026-05-22 — Party History Data/UI Foundation
+
+- Added a dedicated curated government-party alignment module for broader post-1989 coalition/support rows.
+- Expanded the political formation timeline with the Patrulaterul roșu support marker tied to PDSR, PRM, PUNR, and PSM.
+- Added a curated unresolved-entity review shortlist so ambiguous historical labels are not promoted automatically.
+- Extended party page data with formation events and government participation rows.
+- Reworked party pages to show a historical timeline and government/support participation panel before member/vote lists.

@@ -10,18 +10,48 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
   const messages = messagesFor(locale);
   const data = await getPartyPageData(slug);
   if (!data) notFound();
-  const { party, members, groupTotals, votes, tribunalSources, sourceKind } = data;
+  const { party, members, groupTotals, votes, tribunalSources, formationEvents, governmentParticipations, sourceKind } = data;
   const labels = partyPageLabels[locale];
+  const latestGovernment = governmentParticipations[0];
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
       <EngagementTracker entityType="party" entityId={party.id} locale={locale} />
-      <div className="flex items-center gap-3">
-        <span className="h-4 w-4 rounded-full" style={{ backgroundColor: party.color }} />
-        <div className="text-sm font-semibold uppercase text-blue-800">{party.shortName}</div>
+      <div className="flex flex-wrap items-start justify-between gap-4 border border-slate-300 bg-white p-5">
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="h-4 w-4 rounded-full" style={{ backgroundColor: party.color }} />
+            <div className="text-sm font-semibold uppercase text-[#309898]">{party.shortName}</div>
+          </div>
+          <h1 className="mt-2 text-4xl font-semibold text-slate-950">{party.name}</h1>
+          <span className="mt-3 inline-block rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
+        </div>
+        <div className="grid min-w-56 gap-2 text-sm text-slate-700">
+          <div className="border border-slate-200 px-3 py-2">
+            <div className="text-xs font-semibold uppercase text-slate-500">{labels.timelineTitle}</div>
+            <div className="text-lg font-semibold text-slate-950">{formationEvents.length}</div>
+          </div>
+          <div className="border border-slate-200 px-3 py-2">
+            <div className="text-xs font-semibold uppercase text-slate-500">{labels.governmentTitle}</div>
+            <div className="text-lg font-semibold text-slate-950">{governmentParticipations.length}</div>
+          </div>
+        </div>
       </div>
-      <h1 className="mt-2 text-4xl font-semibold text-slate-950">{party.name}</h1>
-      <span className="mt-3 inline-block rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
+
+      {latestGovernment ? (
+        <section className="mt-6 border border-slate-300 bg-white p-4">
+          <div className="text-xs font-semibold uppercase text-[#309898]">{labels.latestGovernmentEyebrow}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <h2 className="text-xl font-semibold text-slate-950">{latestGovernment.government.name}</h2>
+            <span className="rounded border border-slate-300 px-2 py-1 text-xs uppercase text-slate-600">
+              {alignmentLabel(latestGovernment.alignment, locale)}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-slate-600">
+            {formatPeriod(latestGovernment.startsOn, latestGovernment.endsOn, locale)} · {basisLabel(latestGovernment.basis, locale)}
+          </p>
+        </section>
+      ) : null}
 
       {tribunalSources.length > 0 ? (
         <section className="mt-6 border border-slate-300 bg-white">
@@ -55,6 +85,62 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
           </div>
         </section>
       ) : null}
+
+      <section className="mt-6 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="border border-slate-300 bg-white">
+          <div className="border-b border-slate-300 px-4 py-3">
+            <div className="text-xs font-semibold uppercase text-[#309898]">{labels.timelineEyebrow}</div>
+            <h2 className="mt-1 text-xl font-semibold text-slate-950">{labels.timelineTitle}</h2>
+          </div>
+          <div className="relative px-4 py-4">
+            {formationEvents.length > 0 ? (
+              <ol className="space-y-4 border-l-2 border-slate-300 pl-5">
+                {formationEvents.map((event) => (
+                  <li key={event.id} className="relative">
+                    <span className="absolute -left-[1.72rem] top-1 h-3 w-3 rounded-full border-2 border-white bg-[#309898]" />
+                    <div className="text-sm font-semibold text-slate-500">{formatDate(event.date, locale)}</div>
+                    <div className="mt-1 font-semibold text-slate-950">{locale === "ro" ? event.titleRo : event.titleEn}</div>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{locale === "ro" ? event.descriptionRo : event.descriptionEn}</p>
+                    {event.sourceUrl ? (
+                      <a href={event.sourceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-[#309898]">
+                        {labels.sourceLink}
+                      </a>
+                    ) : null}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-slate-600">{labels.emptyTimeline}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="border border-slate-300 bg-white">
+          <div className="border-b border-slate-300 px-4 py-3">
+            <div className="text-xs font-semibold uppercase text-[#309898]">{labels.governmentEyebrow}</div>
+            <h2 className="mt-1 text-xl font-semibold text-slate-950">{labels.governmentTitle}</h2>
+          </div>
+          <div className="divide-y divide-slate-200">
+            {governmentParticipations.length > 0 ? (
+              governmentParticipations.map((item) => (
+                <div key={`${item.government.id}-${item.startsOn}-${item.alignment}`} className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-slate-950">{item.government.name}</div>
+                      <div className="mt-1 text-sm text-slate-600">{formatPeriod(item.startsOn, item.endsOn, locale)}</div>
+                    </div>
+                    <span className="shrink-0 rounded border border-slate-300 px-2 py-1 text-xs uppercase text-slate-600">
+                      {alignmentLabel(item.alignment, locale)}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="px-4 py-3 text-sm text-slate-600">{labels.emptyGovernments}</p>
+            )}
+          </div>
+        </div>
+      </section>
 
       <section className="mt-6 grid gap-5 md:grid-cols-2">
         <div className="border border-slate-300 bg-white">
@@ -98,7 +184,15 @@ const partyPageLabels = {
     registryPosition: "poziția",
     hearingDate: "ședință",
     caseNumber: "dosar",
-    noDate: "dată neextrasă"
+    noDate: "dată neextrasă",
+    timelineEyebrow: "Istoric politic",
+    timelineTitle: "Timeline partid / formațiuni",
+    governmentEyebrow: "Guvernare",
+    governmentTitle: "Guverne și susținere",
+    latestGovernmentEyebrow: "Cea mai recentă aliniere guvernamentală",
+    sourceLink: "Sursă",
+    emptyTimeline: "Nu există încă evenimente istorice curate pentru această entitate.",
+    emptyGovernments: "Nu există încă aliniere guvernamentală curată pentru această entitate."
   },
   en: {
     registryEyebrow: "Official registry",
@@ -108,6 +202,52 @@ const partyPageLabels = {
     registryPosition: "position",
     hearingDate: "hearing",
     caseNumber: "case",
-    noDate: "date not extracted"
+    noDate: "date not extracted",
+    timelineEyebrow: "Political history",
+    timelineTitle: "Party / formation timeline",
+    governmentEyebrow: "Government",
+    governmentTitle: "Governments and support",
+    latestGovernmentEyebrow: "Latest government alignment",
+    sourceLink: "Source",
+    emptyTimeline: "No curated historical events exist yet for this entity.",
+    emptyGovernments: "No curated government alignment exists yet for this entity."
   }
 };
+
+function alignmentLabel(value: string, locale: AppLocale): string {
+  const labels = {
+    ro: {
+      government: "guvernare",
+      governing_support: "susținere",
+      opposition: "opoziție",
+      mixed: "mixt",
+      unaffiliated: "neafiliat",
+      unknown: "necunoscut"
+    },
+    en: {
+      government: "government",
+      governing_support: "support",
+      opposition: "opposition",
+      mixed: "mixed",
+      unaffiliated: "unaffiliated",
+      unknown: "unknown"
+    }
+  };
+  return labels[locale][value as keyof typeof labels.ro] ?? value;
+}
+
+function basisLabel(value: string, locale: AppLocale): string {
+  if (value === "computed_vote_support") return locale === "ro" ? "calculat din voturi" : "computed from votes";
+  if (value === "official_investiture" || value === "official_coalition") return locale === "ro" ? "sursă oficială" : "official source";
+  return locale === "ro" ? "curare manuală" : "manual curation";
+}
+
+function formatDate(value: string, locale: AppLocale): string {
+  return new Intl.DateTimeFormat(locale === "ro" ? "ro-RO" : "en", { year: "numeric", month: "short", day: "2-digit" }).format(
+    new Date(`${value}T00:00:00Z`)
+  );
+}
+
+function formatPeriod(startsOn: string, endsOn: string | undefined, locale: AppLocale): string {
+  return `${formatDate(startsOn, locale)} - ${endsOn ? formatDate(endsOn, locale) : locale === "ro" ? "prezent" : "present"}`;
+}

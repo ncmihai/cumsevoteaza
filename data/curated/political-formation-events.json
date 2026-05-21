@@ -635,5 +635,23 @@
       { "entityType": "party", "entityId": "party-pot", "role": "subject" },
       { "entityType": "party", "entityId": "party-aur", "role": "split_from" }
     ]
+  },
+  {
+    "id": "formation-event-patrulaterul-rosu-support-1992-11-19",
+    "date": "1992-11-19",
+    "eventType": "alliance_formed",
+    "titleRo": "Patrulaterul roșu susține guvernarea Văcăroiu",
+    "titleEn": "The Red Quadrilateral supports the Văcăroiu government",
+    "descriptionRo": "PDSR a guvernat în perioada Văcăroiu cu sprijin parlamentar din partea PRM, PUNR și PSM. Evenimentul este folosit ca reper pentru alinierea de tip susținere guvernamentală, nu ca partid sau alianță electorală unică.",
+    "descriptionEn": "PDSR governed during the Văcăroiu period with parliamentary support from PRM, PUNR and PSM. This event is used as a governing-support marker, not as a single party or electoral alliance.",
+    "sourceUrl": "https://ro.wikipedia.org/wiki/Patrulaterul_ro%C8%99u",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "formation", "entityId": "formation-patrulaterul-rosu", "role": "subject" },
+      { "entityType": "party", "entityId": "party-pdsr", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-prm", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-punr", "role": "alliance_member" },
+      { "entityType": "party", "entityId": "party-psm", "role": "alliance_member" }
+    ]
   }
 ]

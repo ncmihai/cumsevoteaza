@@ -36,6 +36,20 @@ describe("government skeleton", () => {
         alignment: "governing_support"
       })
     );
+    expect(data.partyAlignments).toContainEqual(
+      expect.objectContaining({
+        governmentId: "government-boc-2008-2012",
+        partyId: "party-pdl",
+        alignment: "government"
+      })
+    );
+    expect(data.partyAlignments).toContainEqual(
+      expect.objectContaining({
+        governmentId: "government-ciorbea-1996-1998",
+        partyId: "party-pntcd",
+        alignment: "government"
+      })
+    );
   });
 
   it("sorts government starts newest to oldest", () => {

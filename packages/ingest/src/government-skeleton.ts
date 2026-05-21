@@ -1,4 +1,5 @@
 import type { CompositionEvent, Government, GovernmentPartyAlignment, GovernmentRole, Person } from "@cumsevoteaza/parliament-model";
+import { partyAlignmentsForGovernment } from "./government-party-alignments";
 
 const sourceUrl = "https://en.wikipedia.org/wiki/List_of_heads_of_government_of_Romania";
 
@@ -276,7 +277,7 @@ export function governmentSkeletonData(): {
       return [...(end ? [start, end] : [start]), ...extraEvents];
     }),
     partyAlignments: governments.flatMap((item) =>
-      (item.partyAlignments ?? []).map((alignment) => ({
+      [...(item.partyAlignments ?? []), ...partyAlignmentsForGovernment(item.slug, item.startsOn, item.endsOn)].map((alignment) => ({
         id: `government-party-alignment-${item.slug}-${alignment.partyId}-${alignment.startsOn ?? item.startsOn}`,
         governmentId: `government-${item.slug}`,
         partyId: alignment.partyId,

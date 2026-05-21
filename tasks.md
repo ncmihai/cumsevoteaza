@@ -924,6 +924,12 @@ implementation steps.
   `docs/cdep-access.md`.
 - [x] Show approved Tribunal source links on party pages.
 - [x] Deduplicate identical member career timeline segments.
+- [x] Move the broader curated government-party alignment batch into a
+  dedicated ingest module.
+- [x] Add a human-review unresolved entity shortlist for labels that should
+  not become parties/formations automatically.
+- [x] Start revamping party pages around historical timeline events and
+  government participation panels.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want
@@ -933,7 +939,7 @@ implementation steps.
   minority-organization modeling.
 - [ ] Add an audit page or report that lists member rows affected by curated
   formation-event normalization.
-- [ ] Design party profile pages for legal parties, not alliances:
+- [x] Design party profile pages for legal parties, not alliances:
   post-1989 timeline first, original founding/re-establishment context,
   legislature vote/activity summaries, alliance/merger events, and dissolved
   state where applicable.

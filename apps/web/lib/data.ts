@@ -8,6 +8,9 @@ import {
   type Bill,
   type BillEvent,
   type DocumentSource,
+  type AlignmentBasis,
+  type Government,
+  type GovernanceAlignment,
   type GroupVoteTotal,
   type IndividualVote,
   type Legislature,
@@ -144,8 +147,18 @@ export interface PartyPageData {
   members: Member[];
   groupTotals: GroupVoteTotal[];
   votes: Vote[];
+  formationEvents: PoliticalFormationEvent[];
+  governmentParticipations: PartyGovernmentParticipation[];
   tribunalSources: TribunalPoliticalEntitySource[];
   sourceKind: "database" | "demo";
+}
+
+export interface PartyGovernmentParticipation {
+  government: Government;
+  alignment: GovernanceAlignment;
+  basis: AlignmentBasis;
+  startsOn: string;
+  endsOn?: string;
 }
 
 export interface TribunalPoliticalEntitySource {
@@ -398,7 +411,17 @@ async function getPartyPageDataUncached(slug: string): Promise<PartyPageData | u
   );
   const groupTotals = demoDataset.groupVoteTotals.filter((total) => groupIds.has(total.groupId));
   const votes = demoDataset.votes.filter((vote) => groupTotals.some((total) => total.voteId === vote.id));
-  return { party, groups, members, groupTotals, votes, tribunalSources: tribunalSourcesForEntity("party", party.id), sourceKind: "demo" };
+  return {
+    party,
+    groups,
+    members,
+    groupTotals,
+    votes,
+    formationEvents: [],
+    governmentParticipations: [],
+    tribunalSources: tribunalSourcesForEntity("party", party.id),
+    sourceKind: "demo"
+  };
 }
 
 async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
@@ -856,7 +879,43 @@ async function tryDatabaseParty(slug: string): Promise<PartyPageData | undefined
     const members = memberRows.map(mapMember);
     const groupTotals = totalRows.map(mapGroupVoteTotal);
     const votes = voteRows.map(mapVote);
-    return { party, groups, members, groupTotals, votes, tribunalSources: tribunalSourcesForEntity("party", party.id), sourceKind: "database" };
+    const [formationEventRows, formationEventEntityRows, governmentAlignmentRows, governmentRows] = await Promise.all([
+      session.db.select().from(schema.politicalFormationEvents),
+      session.db.select().from(schema.politicalFormationEventEntities),
+      session.db.select().from(schema.governmentPartyAlignments).where(eq(schema.governmentPartyAlignments.partyId, party.id)),
+      session.db.select().from(schema.governments)
+    ]);
+    const formationEvents = mapPoliticalFormationEvents(formationEventRows, formationEventEntityRows)
+      .filter((event) => event.entities.some((entity) => entity.entityType === "party" && entity.entityId === party.id))
+      .sort((a, b) => a.date.localeCompare(b.date) || a.titleRo.localeCompare(b.titleRo, "ro"));
+    const governmentsById = new Map(governmentRows.map((row) => [row.id, mapGovernment(row)]));
+    const governmentParticipations = governmentAlignmentRows
+      .flatMap((row): PartyGovernmentParticipation[] => {
+        const government = governmentsById.get(row.governmentId);
+        return government
+          ? [
+              {
+                government,
+                alignment: row.alignment,
+                basis: row.basis,
+                startsOn: row.startsOn,
+                endsOn: row.endsOn ?? undefined
+              }
+            ]
+          : [];
+      })
+      .sort((a, b) => b.startsOn.localeCompare(a.startsOn) || a.government.name.localeCompare(b.government.name, "ro"));
+    return {
+      party,
+      groups,
+      members,
+      groupTotals,
+      votes,
+      formationEvents,
+      governmentParticipations,
+      tribunalSources: tribunalSourcesForEntity("party", party.id),
+      sourceKind: "database"
+    };
   } catch {
     return undefined;
   } finally {
@@ -927,6 +986,21 @@ function mapParty(row: typeof schema.parties.$inferSelect): Party {
     shortName: row.shortName,
     name: row.name,
     color: row.color
+  };
+}
+
+function mapGovernment(row: typeof schema.governments.$inferSelect): Government {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    legislatureId: row.legislatureId ?? undefined,
+    primeMinisterPersonId: row.primeMinisterPersonId ?? undefined,
+    startsOn: row.startsOn,
+    endsOn: row.endsOn ?? undefined,
+    basis: row.basis,
+    investitureVoteId: row.investitureVoteId ?? undefined,
+    sourceSnapshotId: row.sourceSnapshotId ?? undefined
   };
 }
 
