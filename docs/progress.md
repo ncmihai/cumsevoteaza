@@ -1994,3 +1994,10 @@ Verification:
   intentionally unpromoted despite abbreviation similarity.
 - Added an ACD Tribunal-backed formation event so PNL/PC member timelines can
   show the legal-registry milestone around the 2011-2014 alliance context.
+
+## 2026-05-22 — Coalition Alignment Rule
+
+- Seeded first manual party-government alignment rows for recent governments and the Văcăroiu / Patrulaterul roșu support case.
+- Updated `Compoziții` alignment resolution so parties/groups outside a known coalition default to `opposition`; periods without coalition data remain `unknown`.
+- Marked the Bolojan skeleton period as ending after the 2026-05-05 no-confidence event, with an interim Bolojan period after that date.
+- Documented that computed support from vote behavior must stay separate from official/manual coalition alignment.

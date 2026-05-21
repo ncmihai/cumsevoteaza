@@ -669,6 +669,10 @@ implementation steps.
 - Smoke-check `/ro/compozitii` on Vercel after the 2020 roster deploy and confirm 2020 government stops show imported chamber data.
 - Deputies are now imported from official CDEP profile pages for every legislature from 1990-present; next roster gap is historical Senate.
 - Add composition alignment imports for governments/coalitions so seat maps can distinguish government support vs opposition by period.
+  - [x] Seed first manual party-government alignments for recent governments and the Văcăroiu / Patrulaterul roșu support case.
+  - [x] Make composition resolver default non-coalition parties/groups to `opposition` only when coalition data exists for that date.
+  - [ ] Curate more government-party alignment periods from official sources and Romanian Wikipedia.
+  - [ ] Add a Python audit pipeline that extracts party/government/alliance history from Romanian Wikipedia into reviewable JSONL before DB import.
 - Expand member profile importers for earlier legislatures.
 - Replace member and party pages with DB read models after roster import exists.
 - Add source snapshot inspection pages or admin-only views.

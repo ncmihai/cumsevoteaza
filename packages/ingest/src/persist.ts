@@ -8,6 +8,7 @@ import type {
   CompositionEvent,
   DocumentSource,
   Government,
+  GovernmentPartyAlignment,
   GovernmentRole,
   GroupVoteTotal,
   IndividualVote,
@@ -533,18 +534,26 @@ export async function persistGovernmentSkeleton(input: {
   governments: Government[];
   roles: GovernmentRole[];
   events: CompositionEvent[];
+  partyAlignments?: GovernmentPartyAlignment[];
+  obsoleteGovernmentIds?: string[];
 }) {
   const session = createDbSession();
   try {
+    await deleteObsoleteGovernments(session.db, input.obsoleteGovernmentIds ?? []);
     await Promise.all(input.people.map((person) => upsertPerson(session.db, person)));
     await Promise.all(input.governments.map((government) => upsertGovernment(session.db, government)));
     await Promise.all(input.roles.map((role) => upsertGovernmentRole(session.db, role)));
     await Promise.all(input.events.map((event) => upsertCompositionEvent(session.db, event)));
+    const partyAlignments = await filterExistingPartyAlignments(session.db, input.partyAlignments ?? []);
+    await Promise.all(partyAlignments.map((alignment) => upsertGovernmentPartyAlignment(session.db, alignment)));
     return {
       people: input.people.length,
       governments: input.governments.length,
       roles: input.roles.length,
-      events: input.events.length
+      events: input.events.length,
+      partyAlignments: partyAlignments.length,
+      skippedPartyAlignments: (input.partyAlignments ?? []).length - partyAlignments.length,
+      obsoleteGovernmentsDeleted: input.obsoleteGovernmentIds?.length ?? 0
     };
   } finally {
     await session.close();
@@ -667,6 +676,51 @@ async function upsertCompositionEvent(db: Db, event: CompositionEvent) {
         partyId: event.partyId,
         groupId: event.groupId,
         sourceSnapshotId: event.sourceSnapshotId
+      }
+    });
+}
+
+async function filterExistingPartyAlignments(db: Db, alignments: GovernmentPartyAlignment[]): Promise<GovernmentPartyAlignment[]> {
+  const partyIds = [...new Set(alignments.map((alignment) => alignment.partyId))];
+  if (partyIds.length === 0) return [];
+  const rows = await db.select({ id: schema.parties.id }).from(schema.parties).where(inArray(schema.parties.id, partyIds));
+  const existingPartyIds = new Set(rows.map((row) => row.id));
+  return alignments.filter((alignment) => existingPartyIds.has(alignment.partyId));
+}
+
+async function deleteObsoleteGovernments(db: Db, governmentIds: string[]) {
+  if (governmentIds.length === 0) return;
+  await db.delete(schema.governmentPartyAlignments).where(inArray(schema.governmentPartyAlignments.governmentId, governmentIds));
+  await db.delete(schema.governmentGroupAlignments).where(inArray(schema.governmentGroupAlignments.governmentId, governmentIds));
+  await db.delete(schema.memberGovernanceAlignments).where(inArray(schema.memberGovernanceAlignments.governmentId, governmentIds));
+  await db.delete(schema.compositionEvents).where(inArray(schema.compositionEvents.governmentId, governmentIds));
+  await db.delete(schema.governmentRoles).where(inArray(schema.governmentRoles.governmentId, governmentIds));
+  await db.delete(schema.governments).where(inArray(schema.governments.id, governmentIds));
+}
+
+async function upsertGovernmentPartyAlignment(db: Db, alignment: GovernmentPartyAlignment) {
+  await db
+    .insert(schema.governmentPartyAlignments)
+    .values({
+      id: alignment.id,
+      governmentId: alignment.governmentId,
+      partyId: alignment.partyId,
+      alignment: alignment.alignment,
+      basis: alignment.basis,
+      startsOn: alignment.startsOn,
+      endsOn: alignment.endsOn,
+      sourceSnapshotId: alignment.sourceSnapshotId
+    })
+    .onConflictDoUpdate({
+      target: schema.governmentPartyAlignments.id,
+      set: {
+        governmentId: alignment.governmentId,
+        partyId: alignment.partyId,
+        alignment: alignment.alignment,
+        basis: alignment.basis,
+        startsOn: alignment.startsOn,
+        endsOn: alignment.endsOn,
+        sourceSnapshotId: alignment.sourceSnapshotId
       }
     });
 }

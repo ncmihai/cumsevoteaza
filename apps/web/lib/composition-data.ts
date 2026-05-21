@@ -327,6 +327,7 @@ function buildComposition(input: {
   const legislatureById = new Map(input.legislatures.map((legislature) => [legislature.id, legislature]));
   const groupById = new Map(input.groups.map((group) => [group.id, group]));
   const partyById = new Map(input.parties.map((party) => [party.id, party]));
+  const hasKnownOfficialAlignment = hasActiveOfficialAlignment(input, input.asOf);
 
   const chambers: ChamberComposition[] = (["deputies", "senate"] as ChamberId[]).map((chamber) => {
     const seats = input.mandates
@@ -350,7 +351,8 @@ function buildComposition(input: {
           partyId: party?.id,
           memberAlignments: input.memberAlignments,
           groupAlignments: input.groupAlignments,
-          partyAlignments: input.partyAlignments
+          partyAlignments: input.partyAlignments,
+          hasKnownOfficialAlignment
         });
         return [
           {
@@ -481,6 +483,7 @@ function resolveAlignment(input: {
   memberAlignments: AlignmentRow[];
   groupAlignments: AlignmentRow[];
   partyAlignments: AlignmentRow[];
+  hasKnownOfficialAlignment: boolean;
 }): { alignment: GovernanceAlignment; alignmentBasis: AlignmentBasis } {
   const member = latestAlignment(input.memberAlignments.filter((row) => row.targetId === input.memberId), input.mode, input.asOf);
   if (member) return { alignment: member.alignment, alignmentBasis: member.basis };
@@ -492,7 +495,20 @@ function resolveAlignment(input: {
     ? latestAlignment(input.partyAlignments.filter((row) => row.targetId === input.partyId), input.mode, input.asOf)
     : undefined;
   if (party) return { alignment: party.alignment, alignmentBasis: party.basis };
+  if (input.mode === "official" && input.hasKnownOfficialAlignment && (input.partyId || input.groupId)) {
+    return { alignment: "opposition", alignmentBasis: "manual_curation" };
+  }
   return { alignment: "unknown", alignmentBasis: "unknown" };
+}
+
+function hasActiveOfficialAlignment(
+  input: Pick<CompositionSourceRows, "memberAlignments" | "groupAlignments" | "partyAlignments"> & { mode: CompositionMode },
+  asOf: string
+): boolean {
+  if (input.mode !== "official") return false;
+  return [...input.memberAlignments, ...input.groupAlignments, ...input.partyAlignments].some(
+    (row) => row.basis !== "computed_vote_support" && activeOn(row.startsOn, row.endsOn, asOf)
+  );
 }
 
 function latestAlignment(rows: AlignmentRow[], mode: CompositionMode, asOf: string): AlignmentRow | undefined {

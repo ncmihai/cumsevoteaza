@@ -229,8 +229,17 @@ Composition parser rules:
   support derived from voting behavior.
 - Store a dated event whenever a government, minister, party/group alignment,
   mandate, or chamber composition changes.
-- Do not infer opposition/governing status from party names alone. Unknown or
+- Coalition members are stored as dated `government` or `governing_support`
+  alignments. If at least one official/manual coalition alignment exists for a
+  government period, parties or groups outside that coalition can default to
+  `opposition` for that date. If no coalition data exists for the period,
   unsupported alignments stay `unknown`.
+- Vote-behavior support is a later computed layer and must use
+  `computed_vote_support`, not overwrite official/manual coalition rows.
+- Romanian Wikipedia can be used as a manual-curation source for historical
+  coalition context when official Parliament/Government pages are unavailable
+  or too slow, but those rows should remain visibly manual until source
+  snapshots are attached.
 - If a person appears across multiple source systems or legislatures, connect
   the records through a canonical `people` row while preserving the original
   chamber-specific `members` records and source IDs.
