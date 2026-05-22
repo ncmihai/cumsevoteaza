@@ -16,7 +16,7 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
   const labels = billPageLabels[locale];
   const data = await getBillPageData(id);
   if (!data) notFound();
-  const { bill, events, documents, votes, source, governmentContext, sourceKind } = data;
+  const { bill, events, documents, votes, source, governmentContext, sponsorContexts, sourceKind } = data;
   const hotCount = await getHotCount("bill", bill.id);
 
   return (
@@ -35,7 +35,7 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
         </div>
       </div>
 
-      <GovernmentContextPanel context={governmentContext} locale={locale} />
+      <GovernmentContextPanel context={governmentContext} billSponsors={sponsorContexts} locale={locale} />
 
       <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_380px]">
         <div className="border border-slate-300 bg-white">

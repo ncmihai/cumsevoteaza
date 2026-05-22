@@ -962,6 +962,9 @@ implementation steps.
   markdown report. Output is not imported automatically.
 - [x] Sync current curated government alignments and political formation events
   to Neon, then refresh production read models.
+- [x] Enrich vote and bill detail pages with political context:
+  active government, group/sponsor alignment at the item date, and relevant
+  prior party/alliance events.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want

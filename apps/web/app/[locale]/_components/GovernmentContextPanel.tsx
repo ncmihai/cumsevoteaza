@@ -1,17 +1,21 @@
+import Link from "next/link";
 import { formatDate, type GovernanceAlignment } from "@cumsevoteaza/parliament-model";
-import type { GovernmentContextData } from "@/lib/data";
+import type { BillSponsorContext, GovernmentContextData, VoteGroupContext } from "@/lib/data";
 import type { AppLocale } from "@/lib/i18n";
 
 interface GovernmentContextPanelProps {
   context?: GovernmentContextData;
+  voteGroups?: VoteGroupContext[];
+  billSponsors?: BillSponsorContext[];
   locale: AppLocale;
 }
 
-export function GovernmentContextPanel({ context, locale }: GovernmentContextPanelProps) {
+export function GovernmentContextPanel({ context, voteGroups = [], billSponsors = [], locale }: GovernmentContextPanelProps) {
   if (!context) return null;
 
   const labels = governmentContextLabels[locale];
   const visibleAlignments = context.alignments.filter((item) => item.alignment !== "opposition" && item.alignment !== "unknown");
+  const visibleEvents = context.formationEvents.slice(0, 4);
 
   return (
     <section className="mt-6 border border-slate-300 bg-white">
@@ -54,6 +58,84 @@ export function GovernmentContextPanel({ context, locale }: GovernmentContextPan
           )}
         </div>
       </div>
+
+      {voteGroups.length > 0 ? (
+        <div className="border-t border-slate-200 px-4 py-4">
+          <div className="text-xs font-semibold uppercase text-slate-500">{labels.voteGroupContext}</div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {voteGroups.map((item) => (
+              <div key={`${item.group.id}-${item.totals.id}`} className="border border-slate-200 px-3 py-2 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2 font-medium text-slate-950">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.group.color }} />
+                    <span className="truncate">{item.group.shortName}</span>
+                  </div>
+                  <span className="shrink-0 text-xs text-slate-500">{alignmentLabel(item.alignment, locale)}</span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+                  <span>{labels.for}: {item.totals.for}</span>
+                  <span>{labels.against}: {item.totals.against}</span>
+                  <span>{labels.abstention}: {item.totals.abstention}</span>
+                </div>
+                {item.party ? (
+                  <Link href={`/${locale}/parties/${item.party.slug}`} className="mt-1 block text-xs text-blue-800 underline">
+                    {item.party.name}
+                  </Link>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {billSponsors.length > 0 ? (
+        <div className="border-t border-slate-200 px-4 py-4">
+          <div className="text-xs font-semibold uppercase text-slate-500">{labels.sponsorContext}</div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {billSponsors.map((item) => (
+              <div key={item.sponsor.id} className="border border-slate-200 px-3 py-2 text-sm">
+                <div className="font-medium text-slate-950">
+                  {item.member ? (
+                    <Link href={`/${locale}/members/${item.member.slug}`} className="underline">
+                      {item.member.displayName}
+                    </Link>
+                  ) : (
+                    item.sponsor.name
+                  )}
+                </div>
+                <div className="mt-1 text-xs text-slate-600">
+                  {[item.group?.shortName, item.party?.shortName, alignmentLabel(item.alignment, locale)].filter(Boolean).join(" · ")}
+                </div>
+                {item.party ? (
+                  <Link href={`/${locale}/parties/${item.party.slug}`} className="mt-1 block text-xs text-blue-800 underline">
+                    {item.party.name}
+                  </Link>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {visibleEvents.length > 0 ? (
+        <div className="border-t border-slate-200 px-4 py-4">
+          <div className="text-xs font-semibold uppercase text-slate-500">{labels.formationEvents}</div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {visibleEvents.map((event) => (
+              <div key={event.id} className="border border-slate-200 px-3 py-2 text-sm">
+                <div className="text-xs font-medium text-slate-500">{formatDate(event.date, locale)}</div>
+                <div className="mt-1 font-medium text-slate-950">{locale === "ro" ? event.titleRo : event.titleEn}</div>
+                <p className="mt-1 text-xs leading-relaxed text-slate-600">{locale === "ro" ? event.descriptionRo : event.descriptionEn}</p>
+                {event.sourceUrl ? (
+                  <a href={event.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 block text-xs text-blue-800 underline">
+                    {labels.source}
+                  </a>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -84,8 +166,15 @@ const governmentContextLabels = {
   ro: {
     title: "Context guvernamental",
     alignment: "Coaliție și susținere cunoscută",
+    voteGroupContext: "Vot pe grupuri în contextul guvernării",
+    sponsorContext: "Inițiatori în contextul guvernării",
+    formationEvents: "Evenimente politice relevante înainte de dată",
     asOf: "La data:",
     present: "prezent",
+    for: "Pentru",
+    against: "Contra",
+    abstention: "Abțineri",
+    source: "Sursă",
     noAlignment: "Nu avem încă partide sau grupuri verificate pentru acest guvern.",
     oppositionNote: "Partidele neafișate aici sunt tratate ca opoziție doar în perioadele unde coaliția este curată explicit.",
     unknownNote: "Pentru această perioadă nu există încă o mapare curată a coaliției."
@@ -93,8 +182,15 @@ const governmentContextLabels = {
   en: {
     title: "Government context",
     alignment: "Known coalition and support",
+    voteGroupContext: "Group vote in government context",
+    sponsorContext: "Sponsors in government context",
+    formationEvents: "Relevant political events before this date",
     asOf: "As of:",
     present: "present",
+    for: "For",
+    against: "Against",
+    abstention: "Abstentions",
+    source: "Source",
     noAlignment: "No verified party or group alignment is available for this government yet.",
     oppositionNote: "Parties not shown here are treated as opposition only where the coalition has been explicitly curated.",
     unknownNote: "This period does not yet have a curated coalition map."

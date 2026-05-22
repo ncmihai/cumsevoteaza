@@ -2140,3 +2140,18 @@ Verification:
 - Verified production counts directly from Neon. The protected Vercel
   revalidate-only endpoint returned `401`, so the local `CRON_SECRET` available
   to the workspace does not match the deployed value or is missing locally.
+
+## 2026-05-22 — Vote/Bill Political Context Detail
+
+- Extended vote detail data with group-level political context at the vote
+  date: parliamentary group, linked party, government/support/opposition
+  alignment, and vote totals.
+- For votes that lack official `group_vote_totals`, group context now derives
+  factual totals from nominal votes so partial official pages still render a
+  useful context block.
+- Extended bill detail data with sponsor/member context at the bill’s first
+  visible event date, including active group, linked party, and government
+  alignment when available.
+- Added relevant prior party/alliance/merger events to the shared government
+  context panel so vote and bill pages can explain historical labels without
+  inventing interpretation.

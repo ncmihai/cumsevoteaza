@@ -18,7 +18,7 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
   const labels = votePageLabels[locale];
   const data = await getVotePageData(id);
   if (!data) notFound();
-  const { vote, bill, source, governmentContext, groups, members, groupTotals, individualVotes, seatVotes, sourceKind } = data;
+  const { vote, bill, source, governmentContext, groupContexts, groups, members, groupTotals, individualVotes, seatVotes, sourceKind } = data;
   const hotCount = await getHotCount("vote", vote.id);
 
   return (
@@ -49,7 +49,7 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
         <Stat label={voteChoiceLabels[locale].present_not_voting} value={vote.totals.presentNotVoting} />
       </section>
 
-      <GovernmentContextPanel context={governmentContext} locale={locale} />
+      <GovernmentContextPanel context={governmentContext} voteGroups={groupContexts} locale={locale} />
 
       <div className="mt-6">
         <VoteExplorer
