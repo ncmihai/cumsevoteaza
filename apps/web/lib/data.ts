@@ -642,9 +642,12 @@ async function tryDatabaseMemberDirectory(filters?: MemberDirectoryFilters): Pro
     const conditions = memberDirectoryConditions(filters);
     const where = conditions.length ? sql`where ${sql.join(conditions, sql` and `)}` : sql``;
     const orderBy = memberDirectoryOrderSql(filters?.sort);
+    const stats = memberDirectoryStatsSql(filters?.sort);
     const [memberRows, groupRows, partyRows, legislatureRows] = await Promise.all([
       session.db.execute<MemberDirectoryRow>(sql`
-        with scoped as (
+        with
+        ${stats.ctes}
+        scoped as (
           select
             m.id as member_id,
             m.person_id as member_person_id,
@@ -673,35 +676,7 @@ async function tryDatabaseMemberDirectory(filters?: MemberDirectoryFilters): Pro
             p.short_name as party_short_name,
             p.name as party_name,
             p.color as party_color,
-            coalesce((
-              select count(*)::int
-              from individual_votes iv
-              join members ivm on ivm.id = iv.member_id
-              where coalesce(ivm.person_id, ivm.id) = coalesce(m.person_id, m.id)
-                and iv.choice = 'absent'
-            ), 0) as stat_absent,
-            coalesce((
-              select greatest(count(distinct mgm2.group_id) - 1, 0)::int
-              from member_group_memberships mgm2
-              join members mgm2m on mgm2m.id = mgm2.member_id
-              where coalesce(mgm2m.person_id, mgm2m.id) = coalesce(m.person_id, m.id)
-            ), 0) as stat_switches,
-            coalesce((
-              select sum(
-                greatest(
-                  least(
-                    coalesce(mm2.ends_on, current_date),
-                    coalesce(l2.ends_on, current_date),
-                    current_date
-                  )::date - mm2.starts_on::date,
-                  0
-                )
-              )::int
-              from member_mandates mm2
-              join members mm2m on mm2m.id = mm2.member_id
-              left join legislatures l2 on l2.id = mm2.legislature_id
-              where coalesce(mm2m.person_id, mm2m.id) = coalesce(m.person_id, m.id)
-            ), 0) as stat_seniority_days,
+            ${stats.select}
             row_number() over (partition by coalesce(m.person_id, m.id) order by mm.starts_on desc, mm.id desc) as rn
           from member_mandates mm
           join members m on m.id = mm.member_id
@@ -718,6 +693,7 @@ async function tryDatabaseMemberDirectory(filters?: MemberDirectoryFilters): Pro
           ) mgm on true
           left join parliamentary_groups pg on pg.id = mgm.group_id
           left join parties p on p.id = pg.party_id
+          ${stats.joins}
           ${where}
         )
         select *
@@ -1803,6 +1779,89 @@ function memberDirectoryOrderSql(sort?: string) {
     return sql`stat_switches desc, member_display_name asc, member_id asc`;
   }
   return sql`member_display_name asc, member_id asc`;
+}
+
+function memberDirectoryStatsSql(sort?: string) {
+  if (sort === "absent") {
+    return {
+      ctes: sql`
+        absence_stats as (
+          select
+            coalesce(ivm.person_id, ivm.id) as person_key,
+            count(*)::int as stat_absent
+          from individual_votes iv
+          join members ivm on ivm.id = iv.member_id
+          where iv.choice = 'absent'
+          group by coalesce(ivm.person_id, ivm.id)
+        ),
+      `,
+      joins: sql`left join absence_stats ast on ast.person_key = coalesce(m.person_id, m.id)`,
+      select: sql`
+        coalesce(ast.stat_absent, 0) as stat_absent,
+        0 as stat_switches,
+        0 as stat_seniority_days,
+      `
+    };
+  }
+  if (sort === "switches") {
+    return {
+      ctes: sql`
+        switch_stats as (
+          select
+            coalesce(mgm2m.person_id, mgm2m.id) as person_key,
+            greatest(count(distinct mgm2.group_id) - 1, 0)::int as stat_switches
+          from member_group_memberships mgm2
+          join members mgm2m on mgm2m.id = mgm2.member_id
+          group by coalesce(mgm2m.person_id, mgm2m.id)
+        ),
+      `,
+      joins: sql`left join switch_stats sst on sst.person_key = coalesce(m.person_id, m.id)`,
+      select: sql`
+        0 as stat_absent,
+        coalesce(sst.stat_switches, 0) as stat_switches,
+        0 as stat_seniority_days,
+      `
+    };
+  }
+  if (sort === "seniority") {
+    return {
+      ctes: sql`
+        seniority_stats as (
+          select
+            coalesce(mm2m.person_id, mm2m.id) as person_key,
+            coalesce(sum(
+              greatest(
+                least(
+                  coalesce(mm2.ends_on, current_date),
+                  coalesce(l2.ends_on, current_date),
+                  current_date
+                )::date - mm2.starts_on::date,
+                0
+              )
+            )::int, 0) as stat_seniority_days
+          from member_mandates mm2
+          join members mm2m on mm2m.id = mm2.member_id
+          left join legislatures l2 on l2.id = mm2.legislature_id
+          group by coalesce(mm2m.person_id, mm2m.id)
+        ),
+      `,
+      joins: sql`left join seniority_stats snt on snt.person_key = coalesce(m.person_id, m.id)`,
+      select: sql`
+        0 as stat_absent,
+        0 as stat_switches,
+        coalesce(snt.stat_seniority_days, 0) as stat_seniority_days,
+      `
+    };
+  }
+  return {
+    ctes: sql``,
+    joins: sql``,
+    select: sql`
+      0 as stat_absent,
+      0 as stat_switches,
+      0 as stat_seniority_days,
+    `
+  };
 }
 
 function memberDirectoryGroupsSql(filters?: { chamber?: string; legislature?: string }) {
