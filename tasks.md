@@ -940,6 +940,8 @@ implementation steps.
   the PAC absorption into PNL.
 - [x] Add curated-event integrity tests for duplicate ids, duplicate relation
   ids, high-impact event coverage, and alliance-as-formation modeling.
+- [x] Add government/support/opposition context to member career timeline
+  segments, derived from curated government-party alignments.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want

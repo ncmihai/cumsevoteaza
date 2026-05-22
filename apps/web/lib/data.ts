@@ -161,6 +161,15 @@ export interface PartyGovernmentParticipation {
   endsOn?: string;
 }
 
+type GovernmentPartyAlignmentForCareer = {
+  governmentId: string;
+  partyId: string;
+  alignment: GovernanceAlignment;
+  basis: AlignmentBasis;
+  startsOn: string;
+  endsOn?: string;
+};
+
 export interface TribunalPoliticalEntitySource {
   id: string;
   entityType: "party" | "formation";
@@ -739,6 +748,17 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
     const formationEventRows = await session.db.select().from(schema.politicalFormationEvents);
     const formationEventEntityRows = await session.db.select().from(schema.politicalFormationEventEntities);
     const formationEvents = mapPoliticalFormationEvents(formationEventRows, formationEventEntityRows);
+    const governmentRows = await session.db.select().from(schema.governments);
+    const governmentAlignmentRows = await session.db.select().from(schema.governmentPartyAlignments);
+    const governments = governmentRows.map(mapGovernment);
+    const governmentAlignments = governmentAlignmentRows.map((row) => ({
+      governmentId: row.governmentId,
+      partyId: row.partyId,
+      alignment: row.alignment,
+      basis: row.basis,
+      startsOn: row.startsOn,
+      endsOn: row.endsOn ?? undefined
+    }));
     const legislatureRows = await session.db.select().from(schema.legislatures);
     const legislatures = legislatureRows
       .map(mapLegislature)
@@ -802,7 +822,7 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
       party,
       profilePhotoUrl,
       currentLogoUrl: logoUrl,
-      careerSegments: buildMemberCareerSegments(history, groups, parties, formationEvents),
+      careerSegments: buildMemberCareerSegments(history, groups, parties, formationEvents, governments, governmentAlignments),
       source: sourceRow ? mapSource(sourceRow) : undefined,
       legislatures,
       selectedLegislature,
@@ -1796,7 +1816,9 @@ function buildMemberCareerSegments(
   history: MemberHistoryRow[],
   groups: ParliamentaryGroup[],
   parties: Party[],
-  formationEvents: PoliticalFormationEvent[]
+  formationEvents: PoliticalFormationEvent[],
+  governments: Government[] = [],
+  governmentAlignments: GovernmentPartyAlignmentForCareer[] = []
 ): MemberCareerSegment[] {
   const groupByLabel = new Map(groups.map((group) => [group.shortName, group]));
   const partyByLabel = new Map(parties.map((party) => [party.shortName, party]));
@@ -1830,7 +1852,8 @@ function buildMemberCareerSegments(
       details: row.details,
       logoUrl: row.logoUrl,
       color: group?.color ?? party?.color,
-      events: careerEventsForRow(row, partyIdByLabel, formationEvents)
+      events: careerEventsForRow(row, partyIdByLabel, formationEvents),
+      governance: governanceForCareerRow(row, partyIdByLabel, governments, governmentAlignments)
     });
   }
   return dedupeCareerSegments(segments);
@@ -2038,6 +2061,91 @@ function careerEventsForRow(
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+function governanceForCareerRow(
+  row: MemberHistoryRow,
+  partyIdByLabel: Map<string, string>,
+  governments: Government[],
+  alignments: GovernmentPartyAlignmentForCareer[]
+): NonNullable<MemberCareerSegment["governance"]> {
+  const partyId = partyIdByLabel.get(row.label);
+  if (!partyId) return [];
+
+  const contexts: NonNullable<MemberCareerSegment["governance"]> = [];
+  for (const government of governments.filter((item) => rangesOverlap(item.startsOn, item.endsOn, row.startsOn, row.endsOn))) {
+    const governmentAlignments = alignments.filter((item) => item.governmentId === government.id);
+    if (governmentAlignments.length === 0) continue;
+
+    const windowStart = maxDate(row.startsOn, government.startsOn);
+    const windowEnd = minOptionalDate(row.endsOn, government.endsOn);
+    const partyAlignments = governmentAlignments
+      .filter((item) => item.partyId === partyId)
+      .filter((item) => rangesOverlap(item.startsOn, item.endsOn, windowStart, windowEnd));
+
+    if (partyAlignments.length === 0) {
+      contexts.push({
+        governmentId: government.id,
+        governmentName: government.name,
+        alignment: "opposition",
+        basis: "manual_curation",
+        startsOn: windowStart,
+        endsOn: windowEnd
+      });
+      continue;
+    }
+
+    contexts.push(
+      ...partyAlignments.map((alignment) => ({
+        governmentId: government.id,
+        governmentName: government.name,
+        alignment: alignment.alignment,
+        basis: alignment.basis,
+        startsOn: maxDate(windowStart, alignment.startsOn),
+        endsOn: minOptionalDate(windowEnd, alignment.endsOn)
+      }))
+    );
+
+    const firstAlignmentStart = partyAlignments
+      .map((alignment) => alignment.startsOn)
+      .sort((a, b) => a.localeCompare(b))[0];
+    const lastAlignmentEnd = partyAlignments
+      .map((alignment) => alignment.endsOn)
+      .filter((value): value is string => Boolean(value))
+      .sort((a, b) => b.localeCompare(a))[0];
+    if (firstAlignmentStart && windowStart < firstAlignmentStart) {
+      contexts.push({
+        governmentId: government.id,
+        governmentName: government.name,
+        alignment: "opposition",
+        basis: "manual_curation",
+        startsOn: windowStart,
+        endsOn: previousDay(firstAlignmentStart)
+      });
+    }
+    if (lastAlignmentEnd && (!windowEnd || nextDay(lastAlignmentEnd) <= windowEnd)) {
+      contexts.push({
+        governmentId: government.id,
+        governmentName: government.name,
+        alignment: "opposition",
+        basis: "manual_curation",
+        startsOn: nextDay(lastAlignmentEnd),
+        endsOn: windowEnd
+      });
+    }
+  }
+
+  return mergeCareerGovernanceContexts(contexts);
+}
+
+function mergeCareerGovernanceContexts(contexts: NonNullable<MemberCareerSegment["governance"]>): NonNullable<MemberCareerSegment["governance"]> {
+  const byKey = new Map<string, NonNullable<MemberCareerSegment["governance"]>[number]>();
+  for (const context of contexts) {
+    if (context.endsOn && context.startsOn > context.endsOn) continue;
+    const key = [context.governmentId, context.alignment, context.startsOn, context.endsOn ?? ""].join("|");
+    if (!byKey.has(key)) byKey.set(key, context);
+  }
+  return [...byKey.values()].sort((a, b) => a.startsOn.localeCompare(b.startsOn) || a.governmentName.localeCompare(b.governmentName, "ro"));
+}
+
 function dedupeCareerSegments(segments: MemberCareerSegment[]): MemberCareerSegment[] {
   const byKey = new Map<string, MemberCareerSegment>();
   for (const segment of segments) {
@@ -2054,13 +2162,18 @@ function dedupeCareerSegments(segments: MemberCareerSegment[]): MemberCareerSegm
       continue;
     }
     existing.events = [...(existing.events ?? []), ...(segment.events ?? [])];
+    existing.governance = [...(existing.governance ?? []), ...(segment.governance ?? [])];
     existing.logoUrl ??= segment.logoUrl;
     existing.color ??= segment.color;
   }
   return [...byKey.values()]
     .map((segment) => {
       const events = new Map((segment.events ?? []).map((event) => [event.id, event]));
-      return { ...segment, events: [...events.values()].sort((a, b) => a.date.localeCompare(b.date)) };
+      return {
+        ...segment,
+        events: [...events.values()].sort((a, b) => a.date.localeCompare(b.date)),
+        governance: mergeCareerGovernanceContexts(segment.governance ?? [])
+      };
     })
     .sort((a, b) => a.startsOn.localeCompare(b.startsOn) || a.label.localeCompare(b.label));
 }
@@ -2077,6 +2190,16 @@ function labelsForPartyId(partyIdByLabel: Map<string, string>, partyId: string):
 
 function rangesOverlap(aStart: string, aEnd: string | undefined, bStart: string, bEnd: string | undefined): boolean {
   return aStart <= (bEnd ?? "9999-12-31") && bStart <= (aEnd ?? "9999-12-31");
+}
+
+function maxDate(left: string, right: string): string {
+  return left >= right ? left : right;
+}
+
+function minOptionalDate(left: string | undefined, right: string | undefined): string | undefined {
+  if (!left) return right;
+  if (!right) return left;
+  return left <= right ? left : right;
 }
 
 function dateTouchesRange(date: string, startsOn: string, endsOn?: string): boolean {

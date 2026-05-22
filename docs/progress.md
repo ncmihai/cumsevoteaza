@@ -2048,3 +2048,16 @@ Verification:
   Wikipedia-backed rows remain `wikipedia`.
 - Extended curated-event tests so these entities stay covered in future
   refactors.
+
+## 2026-05-22 — Member Timeline Governance Context
+
+- Extended member career segments with optional governance context derived from
+  curated `government_party_alignments`.
+- Member timeline legends now show compact factual badges such as `guvern`,
+  `susținere`, or `opoziție` for overlapping cabinet periods.
+- Kept default opposition scoped: a party is shown as opposition only for
+  periods where a government has curated alignment rows; periods without
+  coalition data remain without a governance badge.
+- Verified locally on the Lucian Nicolae Bode profile that PDL/PNL segments
+  now show cabinet-context badges across Boc, Ponta, Cioloș, Cîțu, Ciucă,
+  Ciolacu, and Bolojan periods.

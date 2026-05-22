@@ -109,6 +109,20 @@ export function MemberCareerTimeline({
                   {formatDate(segment.startsOn, locale)} - {segment.endsOn ? formatDate(segment.endsOn, locale) : locale === "ro" ? "prezent" : "present"}
                 </span>
                 <span className="text-slate-500">{chamberLabels[locale][segment.chamber]}</span>
+                {segment.governance?.slice(0, 2).map((context) => (
+                  <span
+                    key={`${segment.id}-${context.governmentId}-${context.startsOn}-${context.alignment}`}
+                    className="border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-600"
+                    title={`${context.governmentName}: ${formatDate(context.startsOn, locale)} - ${
+                      context.endsOn ? formatDate(context.endsOn, locale) : locale === "ro" ? "prezent" : "present"
+                    }`}
+                  >
+                    {context.governmentName}: {alignmentLabel(context.alignment, locale)}
+                  </span>
+                ))}
+                {(segment.governance?.length ?? 0) > 2 ? (
+                  <span className="text-[10px] font-semibold text-slate-500">+{(segment.governance?.length ?? 0) - 2}</span>
+                ) : null}
               </div>
             ))}
           </div>
@@ -166,4 +180,26 @@ function uniqueLegislatureBreaks(segments: MemberCareerSegment[]): Array<{ id: s
     });
   }
   return [...breaks.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function alignmentLabel(alignment: NonNullable<MemberCareerSegment["governance"]>[number]["alignment"], locale: Locale): string {
+  const labels = {
+    ro: {
+      government: "guvern",
+      governing_support: "susținere",
+      opposition: "opoziție",
+      mixed: "mixt",
+      unaffiliated: "neafiliat",
+      unknown: "necunoscut"
+    },
+    en: {
+      government: "government",
+      governing_support: "support",
+      opposition: "opposition",
+      mixed: "mixed",
+      unaffiliated: "unaffiliated",
+      unknown: "unknown"
+    }
+  } as const;
+  return labels[locale][alignment];
 }

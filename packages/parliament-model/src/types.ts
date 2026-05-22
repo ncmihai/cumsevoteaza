@@ -384,6 +384,16 @@ export interface MemberCareerSegment {
   logoUrl?: string;
   color?: string;
   events?: MemberCareerEvent[];
+  governance?: MemberCareerGovernanceContext[];
+}
+
+export interface MemberCareerGovernanceContext {
+  governmentId: string;
+  governmentName: string;
+  alignment: GovernanceAlignment;
+  basis: AlignmentBasis;
+  startsOn: string;
+  endsOn?: string;
 }
 
 export interface MemberCareerEvent {
