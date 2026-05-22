@@ -22,6 +22,10 @@ describe("curated political formation events", () => {
     expect(ids).toContain("formation-event-pntcd-reestablished-1989-12-22");
     expect(ids).toContain("formation-event-punr-founded-1990-03-15");
     expect(ids).toContain("formation-event-psm-founded-1990-11-16");
+    expect(ids).toContain("formation-event-mer-founded-1990-01-11");
+    expect(ids).toContain("formation-event-per-founded-1990-01-16");
+    expect(ids).toContain("formation-event-pdar-founded-1990-01-29");
+    expect(ids).toContain("formation-event-pac-absorbed-into-pnl-1998-03-28");
     expect(ids).toContain("formation-event-ppdd-founded-2011-09-19");
     expect(ids).toContain("formation-event-usr-founded-2016-08-21");
     expect(ids).toContain("formation-event-plus-founded-2018-12-15");

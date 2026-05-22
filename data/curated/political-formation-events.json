@@ -170,6 +170,63 @@
     ]
   },
   {
+    "id": "formation-event-mer-founded-1990-01-11",
+    "date": "1990-01-11",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea Mișcării Ecologiste din România",
+    "titleEn": "Ecological Movement of Romania founded",
+    "descriptionRo": "Mișcarea Ecologistă din România a fost înființată la 11 ianuarie 1990 și apare în legislaturile timpurii post-1989 ca formațiune separată de PER.",
+    "descriptionEn": "The Ecological Movement of Romania was founded on 11 January 1990 and appears in the early post-1989 legislatures as a formation separate from PER.",
+    "sourceUrl": "https://agerpres.ro/documentare/2020/01/08/romania-post-revolu-ie-1990-infiintarea-partidului-miscarea-ecologista-din-romania-mer--430001",
+    "sourceKind": "curated",
+    "entities": [
+      { "entityType": "party", "entityId": "party-mer", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-per-founded-1990-01-16",
+    "date": "1990-01-16",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea Partidului Ecologist Român",
+    "titleEn": "Ecologist Party of Romania founded",
+    "descriptionRo": "Partidul Ecologist Român a fost înființat la 16 ianuarie 1990 și este tratat separat de Mișcarea Ecologistă din România.",
+    "descriptionEn": "The Ecologist Party of Romania was founded on 16 January 1990 and is treated separately from the Ecological Movement of Romania.",
+    "sourceUrl": "https://agerpres.ro/documentare/2020/01/13/romania-post-revolu-ie-1990-infiintarea-partidului-ecologist-din-romania-per--433065",
+    "sourceKind": "curated",
+    "entities": [
+      { "entityType": "party", "entityId": "party-per", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-pdar-founded-1990-01-29",
+    "date": "1990-01-29",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea PDAR",
+    "titleEn": "PDAR founded",
+    "descriptionRo": "Partidul Democrat Agrar din România a fost format la 29 ianuarie 1990 și apare în primele legislaturi postcomuniste.",
+    "descriptionEn": "The Democratic Agrarian Party of Romania was formed on 29 January 1990 and appears in the first post-communist legislatures.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Democratic_Agrarian_Party_of_Romania",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pdar", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-pac-absorbed-into-pnl-1998-03-28",
+    "date": "1998-03-28",
+    "eventType": "party_absorbed",
+    "titleRo": "PAC este absorbit de PNL",
+    "titleEn": "PAC absorbed into PNL",
+    "descriptionRo": "Partidul Alianței Civice a fost absorbit de PNL în 1998. Evenimentul explică trecerea unei părți din continuitatea civică-liberală în PNL.",
+    "descriptionEn": "The Civic Alliance Party was absorbed into PNL in 1998. This event explains part of the civic-liberal continuity into PNL.",
+    "sourceUrl": "https://it.wikipedia.org/wiki/Partito_Alleanza_Civica",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pac", "role": "absorbed" },
+      { "entityType": "party", "entityId": "party-pnl", "role": "absorber" }
+    ]
+  },
+  {
     "id": "formation-event-cdr-formed-1991-11-26",
     "date": "1991-11-26",
     "eventType": "alliance_formed",

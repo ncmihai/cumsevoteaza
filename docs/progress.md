@@ -2035,3 +2035,16 @@ Verification:
   minority-group support as explicit `governing_support` rows.
 - Added tests preventing reversed alignment periods and guarding the sensitive
   coalition-change rows.
+
+## 2026-05-22 — Early-1990s Party Event Batch
+
+- Added reviewed party/formation events for additional early post-1989
+  entities that appear in imported historical rosters:
+  - MER founded on 1990-01-11;
+  - PER founded on 1990-01-16;
+  - PDAR founded on 1990-01-29;
+  - PAC absorbed into PNL on 1998-03-28.
+- Kept source kinds explicit: AGERPRES-backed rows are marked `curated`, while
+  Wikipedia-backed rows remain `wikipedia`.
+- Extended curated-event tests so these entities stay covered in future
+  refactors.

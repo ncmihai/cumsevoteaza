@@ -936,6 +936,8 @@ implementation steps.
 - [x] Add reviewed high-impact party root events for PNȚCD, FDSN, PD, PUNR,
   PSM, PP-DD, USR, and PLUS so party/member timelines have cleaner
   post-1989 continuity markers.
+- [x] Add the next reviewed early-1990s entity batch for MER, PER, PDAR, and
+  the PAC absorption into PNL.
 - [x] Add curated-event integrity tests for duplicate ids, duplicate relation
   ids, high-impact event coverage, and alliance-as-formation modeling.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
