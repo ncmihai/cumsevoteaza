@@ -2148,10 +2148,25 @@ Verification:
   alignment, and vote totals.
 - For votes that lack official `group_vote_totals`, group context now derives
   factual totals from nominal votes so partial official pages still render a
-  useful context block.
+  usable political-context panel.
 - Extended bill detail data with sponsor/member context at the bill’s first
   visible event date, including active group, linked party, and government
   alignment when available.
 - Added relevant prior party/alliance/merger events to the shared government
   context panel so vote and bill pages can explain historical labels without
   inventing interpretation.
+
+## 2026-05-22 — Third Tribunal Source Review Batch
+
+- Verified that the deployed cron endpoint accepts the local `CRON_SECRET` by
+  running `revalidateOnly=1`; public cache tags were revalidated without
+  running import scrapers.
+- Promoted conservative Tribunal source links for PUR/PC, PUNR, and PIN:
+  - Tribunal row #14 explicitly links PUR to the later Partidul Conservator
+    identity and PC/PLR merger context;
+  - Tribunal row #16 is the exact PUNR legal-name row and includes the 2006
+    absorption context;
+  - Tribunal row #37 is the exact PIN legal-name row and supports the existing
+    PIN absorption into UNPR event.
+- Kept the Tribunal hearing/decision dates framed as legal registry metadata,
+  not automatic political founding or merger dates.

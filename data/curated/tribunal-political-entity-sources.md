@@ -31,3 +31,7 @@ These records are source links and extracted legal metadata. Hearing dates are n
 | `formation-pld` | `party` #44 | PARTIDUL LIBERAL DEMOCRAT | P.L.D. Radiat 26.03.2008 | 2007-12-21 | 4/29.01.2007 | manual_verified | https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-44.pdf |
 | `party-pp-dd` | `party` #51 | PARTIDUL POPORULUI – DAN DIACONESCU (denumire prescurtată P.P.-D.D.) | - | 2015-07-15 | 16P/06.06.2011 | manual_verified | https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-51-apr-2016_1.pdf |
 | `party-usr` | `party` #125 | PARTIDUL UNIUNEA SALVAŢI ROMÂNIA - USR | USR | 2016-04-04 | 54/DEC/P | manual_verified | https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-125-mai-2026.pdf |
+| `party-pur` | `party` #14 | PARTIDUL UMANIST DIN ROMÂNIA (SOCIAL LIBERAL) | S.L | 2015-09-03 | 37 P | manual_verified | https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-14-apr-2016.pdf |
+| `party-pc` | `party` #14 | PARTIDUL UMANIST DIN ROMÂNIA (SOCIAL LIBERAL) | S.L | 2015-09-03 | 37 P | manual_verified | https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-14-apr-2016.pdf |
+| `party-punr` | `party` #16 | PARTIDUL UNITĂŢII NAŢIUNII ROMÂNE | P.U.N.R. RADIAT | 2006-08-09 | 9 din 28.04.2006 | manual_verified | https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-16.pdf |
+| `formation-pin` | `party` #37 | PARTIDUL INIŢIATIVA NAŢIONALĂ | - | 2012-02-02 | 10 P | manual_verified | https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-37-oct-2015.pdf |

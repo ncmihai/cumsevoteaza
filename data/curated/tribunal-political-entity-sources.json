@@ -703,5 +703,113 @@
       ]
     },
     "note": "Manual match after exact short-name review."
+  },
+  {
+    "id": "tribunal-source-party-party-pur-party-14",
+    "entityType": "party",
+    "entityId": "party-pur",
+    "approvalStatus": "manual_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-14",
+    "position": 14,
+    "legalName": "PARTIDUL UMANIST DIN ROMÂNIA (SOCIAL LIBERAL)",
+    "shortName": "S.L",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-14-apr-2016.pdf",
+    "sourceKind": "official",
+    "caseNumber": "24066/3/2015",
+    "decisionNumber": "37 P",
+    "hearingDate": "2015-09-03",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "manual_match",
+      "score": 40,
+      "reason": "manual_exact_historical_legal_name",
+      "matchedLabel": "PUR",
+      "matchedIds": [
+        "party-pur"
+      ]
+    },
+    "note": "Manual match: Tribunal row #14 identifies PUR and states that the party later became Partidul Conservator on 14.09.2005. The hearing date belongs to the later ALDE merger record and is kept as registry metadata only."
+  },
+  {
+    "id": "tribunal-source-party-party-pc-party-14",
+    "entityType": "party",
+    "entityId": "party-pc",
+    "approvalStatus": "manual_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-14",
+    "position": 14,
+    "legalName": "PARTIDUL UMANIST DIN ROMÂNIA (SOCIAL LIBERAL)",
+    "shortName": "S.L",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-14-apr-2016.pdf",
+    "sourceKind": "official",
+    "caseNumber": "24066/3/2015",
+    "decisionNumber": "37 P",
+    "hearingDate": "2015-09-03",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "manual_match",
+      "score": 40,
+      "reason": "manual_rename_statement",
+      "matchedLabel": "PC",
+      "matchedIds": [
+        "party-pc"
+      ]
+    },
+    "note": "Manual match: same Tribunal row explicitly states that the current name became Partidul Conservator on 14.09.2005, then records the later PC/PLR merger into ALDE."
+  },
+  {
+    "id": "tribunal-source-party-party-punr-party-16",
+    "entityType": "party",
+    "entityId": "party-punr",
+    "approvalStatus": "manual_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-16",
+    "position": 16,
+    "legalName": "PARTIDUL UNITĂŢII NAŢIUNII ROMÂNE",
+    "shortName": "P.U.N.R. RADIAT",
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-16.pdf",
+    "sourceKind": "official",
+    "caseNumber": "6579/3/2006",
+    "decisionNumber": "9 din 28.04.2006",
+    "hearingDate": "2006-08-09",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "manual_match",
+      "score": 53,
+      "reason": "manual_exact_historical_legal_name",
+      "matchedLabel": "PUNR",
+      "matchedIds": [
+        "party-punr"
+      ]
+    },
+    "note": "Manual match: exact legal name for PUNR. The PDF describes PUNR as radiated and includes the 2006 absorption context with Partidul Conservator; dates remain registry metadata unless separately curated."
+  },
+  {
+    "id": "tribunal-source-formation-formation-pin-party-37",
+    "entityType": "formation",
+    "entityId": "formation-pin",
+    "approvalStatus": "manual_verified",
+    "registryKind": "party",
+    "tribunalEntityId": "tribunal-party-37",
+    "position": 37,
+    "legalName": "PARTIDUL INIŢIATIVA NAŢIONALĂ",
+    "shortName": null,
+    "sourceUrl": "https://tribunalulbucuresti.ro/images/articole/politice-partide/poz-37-oct-2015.pdf",
+    "sourceKind": "official",
+    "caseNumber": "35930/3/2006",
+    "decisionNumber": "10 P",
+    "hearingDate": "2012-02-02",
+    "definitiveDate": null,
+    "matcher": {
+      "status": "manual_match",
+      "score": 100,
+      "reason": "manual_exact_historical_legal_name",
+      "matchedLabel": "PIN",
+      "matchedIds": [
+        "formation-pin"
+      ]
+    },
+    "note": "Manual match: PIN is stored as a historical formation in the app. The Tribunal row says PIN was radiated after absorption into UNPR, which supports the existing curated PIN -> UNPR event."
   }
 ]

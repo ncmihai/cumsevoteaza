@@ -965,6 +965,8 @@ implementation steps.
 - [x] Enrich vote and bill detail pages with political context:
   active government, group/sponsor alignment at the item date, and relevant
   prior party/alliance events.
+- [x] Promote a third conservative Tribunal source batch for PUR/PC, PUNR,
+  and PIN, keeping Tribunal dates as legal registry metadata.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want
