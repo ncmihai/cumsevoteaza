@@ -230,7 +230,7 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
       <section className="mt-6 grid gap-5 md:grid-cols-2">
         <div className="border border-slate-300 bg-white">
           <div className="border-b border-slate-300 px-4 py-3 font-semibold">{messages.nav.members}</div>
-          <div className="divide-y divide-slate-200">
+          <div className="max-h-[520px] divide-y divide-slate-200 overflow-auto">
             {members.map((member) => (
               <Link key={member.id} href={`/${locale}/members/${member.slug}`} className="block px-4 py-3 hover:bg-slate-50">
                 {member.displayName}
@@ -241,7 +241,7 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
 
         <div className="border border-slate-300 bg-white">
           <div className="border-b border-slate-300 px-4 py-3 font-semibold">{messages.nav.votes}</div>
-          <div className="divide-y divide-slate-200">
+          <div className="max-h-[520px] divide-y divide-slate-200 overflow-auto">
             {groupTotals.map((total) => {
               const vote = votes.find((item) => item.id === total.voteId);
               return (
