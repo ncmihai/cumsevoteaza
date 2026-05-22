@@ -94,6 +94,9 @@ export function CompositionTimeline({ locale, mode, stops }: CompositionTimeline
 function GovernmentStage({ locale, mode, stop }: { locale: Locale; mode: CompositionMode; stop: CompositionTimelineStop }) {
   const labels = timelineLabels[locale];
   const pmSummary = primeMinisterSummary(stop);
+  const sortedGovernments = [...stop.governments].sort(
+    (a, b) => b.startsOn.localeCompare(a.startsOn) || a.name.localeCompare(b.name, locale)
+  );
   return (
     <div className="grid gap-4">
       <section className="border border-slate-300 bg-white p-5">
@@ -118,7 +121,7 @@ function GovernmentStage({ locale, mode, stop }: { locale: Locale; mode: Composi
           <h3 className="text-sm font-semibold text-slate-950">{labels.governments}</h3>
           <div className="mt-2 grid gap-2">
             {stop.governments.length === 0 ? <p className="text-sm text-slate-600">{labels.noGovernment}</p> : null}
-            {stop.governments.map((government) => (
+            {sortedGovernments.map((government) => (
               <div key={government.id} className="border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
                 <div className="font-medium text-slate-950">{government.name}</div>
                 <div className="mt-1 text-slate-600">{periodLabel(government.startsOn, government.endsOn, labels.present)}</div>
@@ -185,6 +188,9 @@ function MobileChamberSummary({ locale, chamber }: { locale: Locale; chamber: Ch
 
 function TimelineCard({ locale, stop, active, compact }: { locale: Locale; stop: CompositionTimelineStop; active: boolean; compact: boolean }) {
   const labels = timelineLabels[locale];
+  const sortedEvents = [...stop.events].sort(
+    (a, b) => b.occurredOn.localeCompare(a.occurredOn) || a.title.localeCompare(b.title, locale)
+  );
   return (
     <article className={["border bg-white p-4 transition", active ? "border-slate-950 shadow-sm" : "border-slate-300", compact ? "" : "sticky top-6"].join(" ")}>
       <div className="flex items-start justify-between gap-3">
@@ -200,7 +206,7 @@ function TimelineCard({ locale, stop, active, compact }: { locale: Locale; stop:
       <p className="mt-1 text-sm text-slate-600">{periodLabel(stop.legislature.startsOn, stop.legislature.endsOn, labels.present)}</p>
       <div className="mt-3 grid gap-2">
         {stop.events.length === 0 ? <p className="text-sm text-slate-600">{labels.noEvents}</p> : null}
-        {stop.events.map((event) => (
+        {sortedEvents.map((event) => (
           <div key={event.id} className="border-l-2 border-slate-300 pl-3">
             <div className="text-xs font-semibold uppercase text-slate-500">{event.occurredOn} · {eventTypeLabel(locale, event.eventType)}</div>
             <div className="mt-1 text-sm font-medium text-slate-950">{event.title}</div>

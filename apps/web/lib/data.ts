@@ -147,6 +147,7 @@ type MemberDirectoryFilters = {
   group?: string;
   q?: string;
   legislature?: string;
+  sort?: string;
 };
 
 export interface VoteCoverageData {
@@ -640,6 +641,7 @@ async function tryDatabaseMemberDirectory(filters?: MemberDirectoryFilters): Pro
   try {
     const conditions = memberDirectoryConditions(filters);
     const where = conditions.length ? sql`where ${sql.join(conditions, sql` and `)}` : sql``;
+    const orderBy = memberDirectoryOrderSql(filters?.sort);
     const [memberRows, groupRows, partyRows, legislatureRows] = await Promise.all([
       session.db.execute<MemberDirectoryRow>(sql`
         with scoped as (
@@ -671,6 +673,35 @@ async function tryDatabaseMemberDirectory(filters?: MemberDirectoryFilters): Pro
             p.short_name as party_short_name,
             p.name as party_name,
             p.color as party_color,
+            coalesce((
+              select count(*)::int
+              from individual_votes iv
+              join members ivm on ivm.id = iv.member_id
+              where coalesce(ivm.person_id, ivm.id) = coalesce(m.person_id, m.id)
+                and iv.choice = 'absent'
+            ), 0) as stat_absent,
+            coalesce((
+              select greatest(count(distinct mgm2.group_id) - 1, 0)::int
+              from member_group_memberships mgm2
+              join members mgm2m on mgm2m.id = mgm2.member_id
+              where coalesce(mgm2m.person_id, mgm2m.id) = coalesce(m.person_id, m.id)
+            ), 0) as stat_switches,
+            coalesce((
+              select sum(
+                greatest(
+                  least(
+                    coalesce(mm2.ends_on, current_date),
+                    coalesce(l2.ends_on, current_date),
+                    current_date
+                  )::date - mm2.starts_on::date,
+                  0
+                )
+              )::int
+              from member_mandates mm2
+              join members mm2m on mm2m.id = mm2.member_id
+              left join legislatures l2 on l2.id = mm2.legislature_id
+              where coalesce(mm2m.person_id, mm2m.id) = coalesce(m.person_id, m.id)
+            ), 0) as stat_seniority_days,
             row_number() over (partition by coalesce(m.person_id, m.id) order by mm.starts_on desc, mm.id desc) as rn
           from member_mandates mm
           join members m on m.id = mm.member_id
@@ -692,7 +723,7 @@ async function tryDatabaseMemberDirectory(filters?: MemberDirectoryFilters): Pro
         select *
         from scoped
         where rn = 1
-        order by member_display_name asc, member_id asc
+        order by ${orderBy}
         limit 500
       `),
       session.db.execute<typeof schema.parliamentaryGroups.$inferSelect>(memberDirectoryGroupsSql(filters)),
@@ -1761,6 +1792,19 @@ function memberDirectoryConditions(filters?: MemberDirectoryFilters) {
   return conditions;
 }
 
+function memberDirectoryOrderSql(sort?: string) {
+  if (sort === "absent") {
+    return sql`stat_absent desc, member_display_name asc, member_id asc`;
+  }
+  if (sort === "seniority") {
+    return sql`stat_seniority_days desc, member_display_name asc, member_id asc`;
+  }
+  if (sort === "switches") {
+    return sql`stat_switches desc, member_display_name asc, member_id asc`;
+  }
+  return sql`member_display_name asc, member_id asc`;
+}
+
 function memberDirectoryGroupsSql(filters?: { chamber?: string; legislature?: string }) {
   const conditions = [];
   if (filters?.chamber === "senate" || filters?.chamber === "deputies") {
@@ -2379,6 +2423,9 @@ type MemberDirectoryRow = {
   party_short_name: string | null;
   party_name: string | null;
   party_color: string | null;
+  stat_absent: number;
+  stat_switches: number;
+  stat_seniority_days: number;
 };
 
 type VoteRosterRow = {

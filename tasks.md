@@ -947,6 +947,10 @@ implementation steps.
   data for that date.
 - [x] Add a protected `revalidateOnly=1` cron mode so production public-read
   caches can be flushed after data/code deploys without running scrapers.
+- [x] Fix annotated composition/member UX issues: newest-first legislature
+  event cards, explicit government/support/opposition borders on composition
+  seat maps, and SQL-backed member ranking filters for absences, seniority,
+  and party/group switches.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want

@@ -2081,3 +2081,13 @@ Verification:
   imports after `.vercelignore` removed the entire `data` folder.
 - Added a protected `revalidateOnly=1` mode to `/api/cron/daily-import` so
   public read caches can be flushed without invoking discovery/import scraping.
+
+## 2026-05-22 — Composition and Member Ranking Fixes
+
+- Changed `Compoziții` event cards and government lists to render newest-first
+  inside each legislature, matching the current reading flow.
+- Made composition seat-map alignment borders explicit for government,
+  support, opposition, mixed, unaffiliated, and unknown seats in both chambers.
+- Added member directory ranking filters for imported absences, total time in
+  Parliament, and group/party switches, backed by SQL ordering instead of
+  app-side sorting.

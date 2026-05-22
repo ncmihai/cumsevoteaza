@@ -9,7 +9,7 @@ export default async function MembersPage({
   searchParams
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ chamber?: string; group?: string | string[]; q?: string; legislature?: string }>;
+  searchParams: Promise<{ chamber?: string; group?: string | string[]; q?: string; legislature?: string; sort?: string }>;
 }) {
   const { locale: rawLocale } = await params;
   const rawFilters = await searchParams;
@@ -20,7 +20,8 @@ export default async function MembersPage({
     chamber: rawFilters.chamber,
     group: normalizeGroupParam(rawFilters.group),
     q: rawFilters.q,
-    legislature: rawFilters.legislature === undefined ? (rawFilters.group ? "" : currentLegislatureId) : rawFilters.legislature
+    legislature: rawFilters.legislature === undefined ? (rawFilters.group ? "" : currentLegislatureId) : rawFilters.legislature,
+    sort: normalizeMemberSort(rawFilters.sort)
   };
   const data = await getMemberDirectoryData(filters);
   const groupChips = memberGroupChips(data.groups, data.parties, locale, filters.chamber);
@@ -42,6 +43,7 @@ export default async function MembersPage({
         {filters.chamber ? <input type="hidden" name="chamber" value={filters.chamber} /> : null}
         {activeGroupFilters.length > 0 ? <input type="hidden" name="group" value={activeGroupFilters.join(",")} /> : null}
         {filters.legislature ? <input type="hidden" name="legislature" value={filters.legislature} /> : null}
+        {filters.sort ? <input type="hidden" name="sort" value={filters.sort} /> : null}
         <label className="flex items-center gap-2 border border-slate-300 px-3 py-2">
           <input
             className="min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 outline-none"
@@ -62,32 +64,32 @@ export default async function MembersPage({
         {data.legislatures.map((legislature) => (
           <FilterLink
             key={legislature.id}
-            href={memberDirectoryHref(locale, { chamber: filters.chamber, group: activeGroupFilters, q: filters.q, legislature: legislature.id })}
+            href={memberDirectoryHref(locale, { chamber: filters.chamber, group: activeGroupFilters, q: filters.q, legislature: legislature.id, sort: filters.sort })}
             active={filters.legislature === legislature.id}
           >
             {legislature.label}
           </FilterLink>
         ))}
-        <FilterLink href={memberDirectoryHref(locale, { chamber: filters.chamber, group: activeGroupFilters, q: filters.q, legislature: "" })} active={!filters.legislature}>
+        <FilterLink href={memberDirectoryHref(locale, { chamber: filters.chamber, group: activeGroupFilters, q: filters.q, legislature: "", sort: filters.sort })} active={!filters.legislature}>
           {locale === "ro" ? "Toate legislaturile" : "All legislatures"}
         </FilterLink>
       </section>
 
       <section className="mt-4 flex flex-wrap gap-2">
-        <FilterLink href={memberDirectoryHref(locale, { group: activeGroupFilters, q: filters.q, legislature: filters.legislature })} active={!filters.chamber}>
+        <FilterLink href={memberDirectoryHref(locale, { group: activeGroupFilters, q: filters.q, legislature: filters.legislature, sort: filters.sort })} active={!filters.chamber}>
           {locale === "ro" ? "Toți" : "All"}
         </FilterLink>
-        <FilterLink href={memberDirectoryHref(locale, { chamber: "senate", group: activeGroupFilters, q: filters.q, legislature: filters.legislature })} active={filters.chamber === "senate"}>
+        <FilterLink href={memberDirectoryHref(locale, { chamber: "senate", group: activeGroupFilters, q: filters.q, legislature: filters.legislature, sort: filters.sort })} active={filters.chamber === "senate"}>
           {chamberLabels[locale].senate}
         </FilterLink>
-        <FilterLink href={memberDirectoryHref(locale, { chamber: "deputies", group: activeGroupFilters, q: filters.q, legislature: filters.legislature })} active={filters.chamber === "deputies"}>
+        <FilterLink href={memberDirectoryHref(locale, { chamber: "deputies", group: activeGroupFilters, q: filters.q, legislature: filters.legislature, sort: filters.sort })} active={filters.chamber === "deputies"}>
           {chamberLabels[locale].deputies}
         </FilterLink>
       </section>
 
       <section className="mt-3 flex flex-wrap gap-2">
         {activeGroupFilters.length > 0 ? (
-          <FilterLink href={memberDirectoryHref(locale, { chamber: filters.chamber, q: filters.q, legislature: filters.legislature })} active={false}>
+          <FilterLink href={memberDirectoryHref(locale, { chamber: filters.chamber, q: filters.q, legislature: filters.legislature, sort: filters.sort })} active={false}>
             {locale === "ro" ? "Curăță grupuri" : "Clear groups"}
           </FilterLink>
         ) : null}
@@ -98,11 +100,31 @@ export default async function MembersPage({
               chamber: filters.chamber,
               group: toggleGroupFilter(activeGroupFilters, group.value),
               q: filters.q,
-              legislature: filters.legislature
+              legislature: filters.legislature,
+              sort: filters.sort
             })}
             active={activeGroupFilters.includes(group.value)}
           >
             {group.label}
+          </FilterLink>
+        ))}
+      </section>
+
+      <section className="mt-4 flex flex-wrap gap-2">
+        <span className="w-full text-xs font-semibold uppercase text-slate-500">{locale === "ro" ? "Clasamente" : "Rankings"}</span>
+        {memberSortOptions(locale).map((option) => (
+          <FilterLink
+            key={option.value || "default"}
+            href={memberDirectoryHref(locale, {
+              chamber: filters.chamber,
+              group: activeGroupFilters,
+              q: filters.q,
+              legislature: filters.legislature,
+              sort: option.value
+            })}
+            active={(filters.sort ?? "") === option.value}
+          >
+            {option.label}
           </FilterLink>
         ))}
       </section>
@@ -206,13 +228,34 @@ function toggleGroupFilter(current: string[], value: string): string[] {
   return current.includes(value) ? current.filter((item) => item !== value) : [...current, value];
 }
 
-function memberDirectoryHref(locale: AppLocale, filters: { chamber?: string; group?: string | string[]; q?: string; legislature?: string }): string {
+function normalizeMemberSort(value?: string): string | undefined {
+  return value === "absent" || value === "seniority" || value === "switches" ? value : undefined;
+}
+
+function memberSortOptions(locale: AppLocale): Array<{ value: string; label: string }> {
+  return locale === "ro"
+    ? [
+        { value: "", label: "Nume" },
+        { value: "absent", label: "Cele mai multe absențe" },
+        { value: "seniority", label: "Cel mai mult timp în Parlament" },
+        { value: "switches", label: "Cele mai multe schimbări" }
+      ]
+    : [
+        { value: "", label: "Name" },
+        { value: "absent", label: "Most absences" },
+        { value: "seniority", label: "Longest service" },
+        { value: "switches", label: "Most switches" }
+      ];
+}
+
+function memberDirectoryHref(locale: AppLocale, filters: { chamber?: string; group?: string | string[]; q?: string; legislature?: string; sort?: string }): string {
   const params = new URLSearchParams();
   if (filters.chamber) params.set("chamber", filters.chamber);
   const groups = Array.isArray(filters.group) ? filters.group : parseGroupParam(filters.group);
   if (groups.length > 0) params.set("group", groups.join(","));
   if (filters.q) params.set("q", filters.q);
   if (filters.legislature !== undefined) params.set("legislature", filters.legislature);
+  if (filters.sort) params.set("sort", filters.sort);
   const query = params.toString();
   return `/${locale}/members${query ? `?${query}` : ""}`;
 }

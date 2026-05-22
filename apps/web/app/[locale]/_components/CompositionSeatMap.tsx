@@ -24,13 +24,13 @@ interface SeatSlot {
   rowIndex: number;
 }
 
-const alignmentRing: Record<GovernanceAlignment, string> = {
-  government: "ring-2 ring-emerald-500",
-  governing_support: "ring-2 ring-lime-500",
-  opposition: "ring-2 ring-sky-500",
-  mixed: "ring-2 ring-amber-500",
-  unaffiliated: "ring-2 ring-slate-400",
-  unknown: "ring-1 ring-slate-300"
+const alignmentBorderColor: Record<GovernanceAlignment, string> = {
+  government: "#10b981",
+  governing_support: "#84cc16",
+  opposition: "#0ea5e9",
+  mixed: "#f59e0b",
+  unaffiliated: "#94a3b8",
+  unknown: "#cbd5e1"
 };
 
 export function CompositionSeatMap({ locale, chamber, seats }: CompositionSeatMapProps) {
@@ -50,7 +50,10 @@ export function CompositionSeatMap({ locale, chamber, seats }: CompositionSeatMa
         <div className="flex flex-wrap gap-2 text-xs text-slate-600">
           {Object.entries(labels.alignments).map(([alignment, label]) => (
             <span key={alignment} className="inline-flex items-center gap-1.5">
-              <span className={["h-2.5 w-2.5 rounded-full bg-white", alignmentRing[alignment as GovernanceAlignment]].join(" ")} />
+              <span
+                className="h-2.5 w-2.5 rounded-full border-2 bg-white"
+                style={{ borderColor: alignmentBorderColor[alignment as GovernanceAlignment] }}
+              />
               {label}
             </span>
           ))}
@@ -81,14 +84,12 @@ export function CompositionSeatMap({ locale, chamber, seats }: CompositionSeatMa
                 type="button"
                 title={`${seat.member.displayName} · ${groupLabel} · ${alignmentLabel}`}
                 onClick={() => setPinnedSeatId(pinned ? undefined : seat.member.id)}
-                className={[
-                  "block rounded-full border border-white shadow-sm outline-offset-2 transition hover:scale-125 focus-visible:scale-125",
-                  alignmentRing[seat.alignment]
-                ].join(" ")}
+                className="block rounded-full border-2 shadow-sm outline-offset-2 transition hover:scale-125 focus-visible:scale-125"
                 style={{
                   width: seatSize(seats.length),
                   height: seatSize(seats.length),
-                  backgroundColor: seat.group?.color ?? "#94a3b8"
+                  backgroundColor: seat.group?.color ?? "#94a3b8",
+                  borderColor: alignmentBorderColor[seat.alignment]
                 }}
               >
                 <span className="sr-only">
