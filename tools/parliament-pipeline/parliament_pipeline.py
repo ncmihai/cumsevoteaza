@@ -12,7 +12,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import unquote, urljoin, urlparse
 from urllib.request import Request, urlopen
 
 
@@ -39,6 +39,42 @@ TRIBUNAL_INDEXES = [
         "pdfPathMarker": "/politice-alte/",
     },
 ]
+
+WIKIPEDIA_HISTORY_KEYWORDS = [
+    "fondat",
+    "fondată",
+    "înființat",
+    "înființată",
+    "reînființat",
+    "reînființată",
+    "fuzionat",
+    "fuzionat cu",
+    "absorbit",
+    "absorbită",
+    "alianță",
+    "alianţa",
+    "dizolvat",
+    "dizolvată",
+    "scindat",
+    "desprins",
+    "redenumit",
+    "redenumită",
+]
+
+ROMANIAN_MONTHS = {
+    "ianuarie": "01",
+    "februarie": "02",
+    "martie": "03",
+    "aprilie": "04",
+    "mai": "05",
+    "iunie": "06",
+    "iulie": "07",
+    "august": "08",
+    "septembrie": "09",
+    "octombrie": "10",
+    "noiembrie": "11",
+    "decembrie": "12",
+}
 
 
 DOMAINS = [
@@ -130,6 +166,11 @@ def main() -> None:
     add_tribunal_parse_pdfs(tribunal_sub)
     add_tribunal_match_app_entities(tribunal_sub)
 
+    party_history = sub.add_parser("party-history", help="Run file-first party/alliance history candidate extraction.")
+    party_history_sub = party_history.add_subparsers(dest="party_history_command", required=True)
+    add_party_history_fetch_wikipedia(party_history_sub)
+    add_party_history_parse_wikipedia(party_history_sub)
+
     args = parser.parse_args()
     if args.command == "domains":
         print_json({"domains": DOMAINS})
@@ -142,6 +183,9 @@ def main() -> None:
         return
     if args.command == "tribunal-registry":
         run_tribunal_command(args)
+        return
+    if args.command == "party-history":
+        run_party_history_command(args)
         return
 
 
@@ -228,6 +272,21 @@ def add_tribunal_match_app_entities(sub: argparse._SubParsersAction[argparse.Arg
     parser.add_argument("--report", type=Path, default=Path("data/parliament-pipeline/tribunal-registry/reports/match-review.md"))
 
 
+def add_party_history_fetch_wikipedia(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = sub.add_parser("fetch-wikipedia", help="Fetch curated Romanian Wikipedia party/alliance source pages.")
+    parser.add_argument("--sources", type=Path, default=Path("data/curated/wikipedia-party-history-sources.json"))
+    parser.add_argument("--out", type=Path, default=Path("data/parliament-pipeline/party-history/raw/wikipedia"))
+    parser.add_argument("--refresh", action="store_true", help="Refetch even when the raw HTML file exists.")
+
+
+def add_party_history_parse_wikipedia(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    parser = sub.add_parser("parse-wikipedia", help="Parse Wikipedia HTML snapshots into review-only candidate rows.")
+    parser.add_argument("--sources", type=Path, default=Path("data/curated/wikipedia-party-history-sources.json"))
+    parser.add_argument("--raw", type=Path, default=Path("data/parliament-pipeline/party-history/raw/wikipedia"))
+    parser.add_argument("--out", type=Path, default=Path("data/parliament-pipeline/party-history/parsed/wikipedia_party_history_candidates.jsonl"))
+    parser.add_argument("--report", type=Path, default=Path("data/parliament-pipeline/party-history/reports/wikipedia-party-history-review.md"))
+
+
 def run_cdep_command(args: argparse.Namespace) -> None:
     cdep = load_cdep_probe()
     if args.cdep_command == "roster-urls":
@@ -279,6 +338,165 @@ def run_tribunal_command(args: argparse.Namespace) -> None:
         print_json({"records": len(rows), "out": str(args.out), "report": str(args.report), "byStatus": count_by(rows, "matchStatus")})
         return
     raise SystemExit(f"Unsupported Tribunal command: {args.tribunal_command}")
+
+
+def run_party_history_command(args: argparse.Namespace) -> None:
+    if args.party_history_command == "fetch-wikipedia":
+        sources = read_json(args.sources)
+        summary = fetch_wikipedia_party_history_sources(sources, args.out, refresh=args.refresh)
+        print_json(summary)
+        return
+    if args.party_history_command == "parse-wikipedia":
+        sources = read_json(args.sources)
+        rows = parse_wikipedia_party_history_sources(sources, args.raw)
+        write_jsonl(rows, args.out)
+        write_wikipedia_party_history_report(rows, args.report)
+        print_json({"records": len(rows), "out": str(args.out), "report": str(args.report), "byEntity": count_by(rows, "entityId")})
+        return
+    raise SystemExit(f"Unsupported party-history command: {args.party_history_command}")
+
+
+def fetch_wikipedia_party_history_sources(sources: list[dict[str, Any]], out: Path, refresh: bool = False) -> dict[str, Any]:
+    out.mkdir(parents=True, exist_ok=True)
+    fetched_at = datetime.now(timezone.utc).isoformat()
+    results = []
+    for source in sources:
+        path = wikipedia_source_path(out, source)
+        if path.exists() and not refresh:
+            status = "cached"
+        else:
+            html = fetch_text(source["url"])
+            path.write_text(html, encoding="utf-8")
+            status = "fetched"
+        results.append({"entityId": source["entityId"], "label": source["label"], "url": source["url"], "path": str(path), "status": status})
+    return {"fetchedAt": fetched_at, "records": len(sources), "byStatus": count_by(results, "status"), "results": results}
+
+
+def parse_wikipedia_party_history_sources(sources: list[dict[str, Any]], raw: Path) -> list[dict[str, Any]]:
+    parsed_at = datetime.now(timezone.utc).isoformat()
+    rows: list[dict[str, Any]] = []
+    for source in sources:
+        path = wikipedia_source_path(raw, source)
+        if not path.exists():
+            rows.append(wikipedia_missing_row(source, path, parsed_at))
+            continue
+        html = path.read_text(encoding="utf-8")
+        rows.extend(parse_wikipedia_party_history_html(html, source, parsed_at))
+    return sorted(rows, key=lambda row: (row["entityId"], row.get("candidateDate") or "9999-99-99", row["candidateType"], row["id"]))
+
+
+def parse_wikipedia_party_history_html(html: str, source: dict[str, Any], parsed_at: str | None = None) -> list[dict[str, Any]]:
+    parser = WikipediaArticleParser()
+    parser.feed(html)
+    parsed_at = parsed_at or datetime.now(timezone.utc).isoformat()
+    text_blocks = [
+        ("infobox", text)
+        for text in parser.infobox_lines
+        if text
+    ] + [
+        ("paragraph", text)
+        for paragraph in parser.paragraphs
+        for text in split_sentences(paragraph)
+        if text
+    ]
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for index, (block_kind, text) in enumerate(text_blocks):
+        if not is_history_candidate_text(text):
+            continue
+        dates = extract_romanian_date_candidates(text)
+        event_hint = event_hint_from_text(text)
+        key = f"{block_kind}|{event_hint}|{text}"
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append(
+            {
+                "id": f"wiki-history-{stable_slug(source['entityId'])}-{stable_slug(event_hint)}-{index}",
+                "entityId": source["entityId"],
+                "entityType": source.get("entityType", "party"),
+                "label": source["label"],
+                "sourceKind": "wikipedia",
+                "sourceUrl": source["url"],
+                "sourceLanguage": "ro",
+                "candidateType": block_kind,
+                "eventHint": event_hint,
+                "candidateDate": dates[0] if dates else None,
+                "dateCandidates": dates,
+                "text": text,
+                "confidence": "medium" if dates and block_kind == "infobox" else "low" if not dates else "medium",
+                "reviewStatus": "needs_review",
+                "parsedAt": parsed_at,
+            }
+        )
+    if not rows:
+        return [wikipedia_no_candidates_row(source, parsed_at)]
+    return rows
+
+
+def write_wikipedia_party_history_report(rows: list[dict[str, Any]], out: Path) -> None:
+    out.parent.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "# Romanian Wikipedia Party History Candidate Review",
+        "",
+        "This is a candidate report only. Do not import rows directly into the database.",
+        "Review dates, wording, and source context before promoting anything to `data/curated/political-formation-events.json`.",
+        "",
+        "## Counts",
+        "",
+    ]
+    for status, count in sorted(count_by(rows, "reviewStatus").items()):
+        lines.append(f"- `{status}`: {count}")
+    lines.extend(["", "## Candidates", ""])
+    for row in rows:
+        date = row.get("candidateDate") or "-"
+        lines.append(f"- `{row['entityId']}` · `{row.get('eventHint')}` · `{date}` · {row.get('text')}")
+        lines.append(f"  Source: {row.get('sourceUrl')}")
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def wikipedia_source_path(out: Path, source: dict[str, Any]) -> Path:
+    parsed = urlparse(source["url"])
+    page_slug = stable_slug(unquote(Path(parsed.path).name) or source["label"])
+    return out / f"{stable_slug(source['entityId'])}-{page_slug}.html"
+
+
+def wikipedia_missing_row(source: dict[str, Any], path: Path, parsed_at: str) -> dict[str, Any]:
+    return {
+        "id": f"wiki-history-{stable_slug(source['entityId'])}-missing",
+        "entityId": source["entityId"],
+        "entityType": source.get("entityType", "party"),
+        "label": source["label"],
+        "sourceKind": "wikipedia",
+        "sourceUrl": source["url"],
+        "candidateType": "missing_snapshot",
+        "eventHint": "missing_snapshot",
+        "candidateDate": None,
+        "dateCandidates": [],
+        "text": f"Missing raw HTML snapshot: {path}",
+        "confidence": "none",
+        "reviewStatus": "missing_snapshot",
+        "parsedAt": parsed_at,
+    }
+
+
+def wikipedia_no_candidates_row(source: dict[str, Any], parsed_at: str) -> dict[str, Any]:
+    return {
+        "id": f"wiki-history-{stable_slug(source['entityId'])}-no-candidates",
+        "entityId": source["entityId"],
+        "entityType": source.get("entityType", "party"),
+        "label": source["label"],
+        "sourceKind": "wikipedia",
+        "sourceUrl": source["url"],
+        "candidateType": "no_candidate",
+        "eventHint": "no_candidate",
+        "candidateDate": None,
+        "dateCandidates": [],
+        "text": "No history candidate sentence matched the current parser keywords.",
+        "confidence": "none",
+        "reviewStatus": "needs_review",
+        "parsedAt": parsed_at,
+    }
 
 
 def fetch_tribunal_indexes(out: Path, refresh: bool = False) -> dict[str, Any]:
@@ -817,6 +1035,118 @@ class TribunalParagraphParser(HTMLParser):
         self._p_parts.append(data)
         if self._current_href is not None:
             self._current_link_parts.append(data)
+
+
+class WikipediaArticleParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.paragraphs: list[str] = []
+        self.infobox_lines: list[str] = []
+        self._in_p = False
+        self._p_parts: list[str] = []
+        self._infobox_depth = 0
+        self._infobox_parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attrs_dict = dict(attrs)
+        classes = attrs_dict.get("class") or ""
+        if tag == "p":
+            self._in_p = True
+            self._p_parts = []
+        if tag == "table" and "infobox" in classes:
+            self._infobox_depth = 1
+            self._infobox_parts = []
+            return
+        if self._infobox_depth > 0:
+            self._infobox_depth += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "p" and self._in_p:
+            text = clean_text("".join(self._p_parts))
+            if text:
+                self.paragraphs.append(text)
+            self._in_p = False
+            self._p_parts = []
+        if self._infobox_depth > 0:
+            self._infobox_depth -= 1
+            if self._infobox_depth == 0:
+                text = clean_text(" ".join(self._infobox_parts))
+                self.infobox_lines = split_infobox_text(text)
+                self._infobox_parts = []
+
+    def handle_data(self, data: str) -> None:
+        if self._in_p:
+            self._p_parts.append(data)
+        if self._infobox_depth > 0:
+            self._infobox_parts.append(data)
+
+
+def split_infobox_text(text: str) -> list[str]:
+    markers = [
+        "Fondat",
+        "Fondată",
+        "Înființat",
+        "Înființată",
+        "Reînființat",
+        "Reînființată",
+        "Dizolvat",
+        "Dizolvată",
+        "Precedat",
+        "Succedat",
+        "Fuziune",
+    ]
+    parts = [text]
+    for marker in markers:
+        parts = [
+            item
+            for part in parts
+            for item in re.split(rf"(?=\b{re.escape(marker)}\b)", part)
+        ]
+    return [clean_text(part) for part in parts if clean_text(part)]
+
+
+def split_sentences(text: str) -> list[str]:
+    return [clean_text(part) for part in re.split(r"(?<=[.!?])\s+", text) if clean_text(part)]
+
+
+def is_history_candidate_text(text: str) -> bool:
+    normalized = normalize_match_text(text)
+    return any(normalize_match_text(keyword) in normalized for keyword in WIKIPEDIA_HISTORY_KEYWORDS)
+
+
+def event_hint_from_text(text: str) -> str:
+    normalized = normalize_match_text(text)
+    if "reinf" in normalized:
+        return "party_reestablished"
+    if "fondat" in normalized or "infiint" in normalized:
+        return "party_founded"
+    if "absorbit" in normalized:
+        return "party_absorbed"
+    if "fuzionat" in normalized or "fuziune" in normalized:
+        return "party_merged"
+    if "aliant" in normalized:
+        return "alliance_context"
+    if "dizolvat" in normalized:
+        return "party_or_alliance_dissolved"
+    if "redenumit" in normalized:
+        return "party_renamed"
+    if "scindat" in normalized or "desprins" in normalized:
+        return "party_split"
+    return "history_context"
+
+
+def extract_romanian_date_candidates(text: str) -> list[str]:
+    dates: list[str] = []
+    for day, month, year in re.findall(r"\b(\d{1,2})\s+([A-Za-zĂÂÎȘŞȚŢăâîșşțţ]+)\s+(\d{4})\b", text):
+        month_number = ROMANIAN_MONTHS.get(month.lower())
+        if month_number:
+            dates.append(f"{year}-{month_number}-{int(day):02d}")
+    for day, month, year in re.findall(r"\b(\d{1,2})[./](\d{1,2})[./](\d{4})\b", text):
+        dates.append(f"{year}-{int(month):02d}-{int(day):02d}")
+    for year in re.findall(r"\b(19[89]\d|20\d{2})\b", text):
+        if not any(date.startswith(year) for date in dates):
+            dates.append(year)
+    return unique_strings(dates)
 
 
 def clean_text(value: str) -> str:

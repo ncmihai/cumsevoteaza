@@ -234,6 +234,54 @@ class ParliamentPipelineCliTest(unittest.TestCase):
             self.assertEqual(rows[0]["caseNumber"], "24194/3/2019")
             self.assertIn("Tribunalul București App Entity Match Review", report.read_text(encoding="utf-8"))
 
+    def test_wikipedia_party_history_parse_writes_review_only_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = Path(tmp)
+            sources = tmp_dir / "sources.json"
+            raw = tmp_dir / "raw"
+            out = tmp_dir / "parsed" / "wikipedia_party_history_candidates.jsonl"
+            report = tmp_dir / "reports" / "wikipedia-party-history-review.md"
+            source = {
+                "entityId": "party-unpr",
+                "entityType": "party",
+                "label": "UNPR",
+                "url": "https://ro.wikipedia.org/wiki/Uniunea_Na%C8%9Bional%C4%83_pentru_Progresul_Rom%C3%A2niei",
+            }
+            sources.write_text(json.dumps([source], ensure_ascii=False), encoding="utf-8")
+            raw.mkdir()
+            (raw / "party-unpr-uniunea-nationala-pentru-progresul-romaniei.html").write_text(
+                """
+                <html><body>
+                <table class="infobox"><tr><th>Fondat</th><td>1 mai 2010</td></tr></table>
+                <p>În 2010, majoritatea grupului a format UNPR.</p>
+                <p>Pe 1 mai 2010, noul partid și-a ales liderii, prin intermediul congresului.</p>
+                <p>În 2011, Partidul Inițiativa Națională (PIN) a fuzionat cu Uniunea.</p>
+                </body></html>
+                """,
+                encoding="utf-8",
+            )
+
+            completed = self.run_pipeline(
+                "party-history",
+                "parse-wikipedia",
+                "--sources",
+                str(sources),
+                "--raw",
+                str(raw),
+                "--out",
+                str(out),
+                "--report",
+                str(report),
+            )
+            summary = json.loads(completed.stdout)
+            rows = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+            self.assertGreaterEqual(summary["records"], 2)
+            self.assertTrue(any(row["candidateDate"] == "2010-05-01" for row in rows))
+            self.assertTrue(any(row["eventHint"] == "party_merged" for row in rows))
+            self.assertEqual({row["reviewStatus"] for row in rows}, {"needs_review"})
+            self.assertIn("candidate report only", report.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

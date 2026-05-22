@@ -672,7 +672,7 @@ implementation steps.
   - [x] Seed first manual party-government alignments for recent governments and the Văcăroiu / Patrulaterul roșu support case.
   - [x] Make composition resolver default non-coalition parties/groups to `opposition` only when coalition data exists for that date.
   - [ ] Curate more government-party alignment periods from official sources and Romanian Wikipedia.
-  - [ ] Add a Python audit pipeline that extracts party/government/alliance history from Romanian Wikipedia into reviewable JSONL before DB import.
+  - [x] Add a Python audit pipeline that extracts party/government/alliance history from Romanian Wikipedia into reviewable JSONL before DB import.
 - Expand member profile importers for earlier legislatures.
 - Replace member and party pages with DB read models after roster import exists.
 - Add source snapshot inspection pages or admin-only views.
@@ -957,6 +957,9 @@ implementation steps.
 - [x] Add party-page next layer: identity facts separated from broader
   political timeline, per-legislature chamber summaries with starting-seat
   estimates, imported-member counts, period logos, and sample members.
+- [x] Add Romanian Wikipedia party-history candidate generator:
+  file-first fetch/parse commands, review-only JSONL rows, and a manual review
+  markdown report. Output is not imported automatically.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want

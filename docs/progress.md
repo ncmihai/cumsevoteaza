@@ -2112,3 +2112,17 @@ Verification:
 - Added a scrollable “mandate și membri în timp” panel to party pages, with a
   fallback guard for older cached party payloads that do not yet contain the new
   summary field.
+
+## 2026-05-22 — Wikipedia Party History Candidate Pipeline
+
+- Added file-first Romanian Wikipedia candidate commands under
+  `tools/parliament-pipeline`:
+  `party-history fetch-wikipedia` and `party-history parse-wikipedia`.
+- Added the first reviewed source list for major post-1989 parties and
+  formations, including PSD/FDSN/PDSR, PNL, PD/PDL, PRM, PUNR, UDMR, PUR/PC,
+  UNPR, ALDE, PMP, USR/PLUS, AUR, SOS RO, POT, USL, and ARD.
+- Parser output is intentionally review-only: JSONL rows are marked
+  `needs_review`, and a markdown report is generated before any row can be
+  promoted into curated political formation data.
+- Added a pipeline test for UNPR-style Romanian Wikipedia history extraction,
+  including exact Romanian date parsing and merger-event detection.

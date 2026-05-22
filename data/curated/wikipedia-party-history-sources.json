@@ -1,0 +1,104 @@
+[
+  {
+    "entityId": "party-psd",
+    "entityType": "party",
+    "label": "PSD / FDSN / PDSR",
+    "url": "https://ro.wikipedia.org/wiki/Partidul_Social_Democrat_(Rom%C3%A2nia)"
+  },
+  {
+    "entityId": "party-pnl",
+    "entityType": "party",
+    "label": "PNL",
+    "url": "https://ro.wikipedia.org/wiki/Partidul_Na%C8%9Bional_Liberal_(Rom%C3%A2nia)"
+  },
+  {
+    "entityId": "party-pdl",
+    "entityType": "party",
+    "label": "PD / PDL",
+    "url": "https://ro.wikipedia.org/wiki/Partidul_Democrat_Liberal"
+  },
+  {
+    "entityId": "party-prm",
+    "entityType": "party",
+    "label": "PRM",
+    "url": "https://ro.wikipedia.org/wiki/Partidul_Rom%C3%A2nia_Mare"
+  },
+  {
+    "entityId": "party-punr",
+    "entityType": "party",
+    "label": "PUNR",
+    "url": "https://ro.wikipedia.org/wiki/Partidul_Unit%C4%83%C8%9Bii_Na%C8%9Bionale_Rom%C3%A2ne"
+  },
+  {
+    "entityId": "party-udmr",
+    "entityType": "party",
+    "label": "UDMR",
+    "url": "https://ro.wikipedia.org/wiki/Uniunea_Democrat%C4%83_Maghiar%C4%83_din_Rom%C3%A2nia"
+  },
+  {
+    "entityId": "party-pc",
+    "entityType": "party",
+    "label": "PUR / PC",
+    "url": "https://ro.wikipedia.org/wiki/Partidul_Conservator_(Rom%C3%A2nia)"
+  },
+  {
+    "entityId": "party-unpr",
+    "entityType": "party",
+    "label": "UNPR",
+    "url": "https://ro.wikipedia.org/wiki/Uniunea_Na%C8%9Bional%C4%83_pentru_Progresul_Rom%C3%A2niei"
+  },
+  {
+    "entityId": "party-alde",
+    "entityType": "party",
+    "label": "ALDE",
+    "url": "https://ro.wikipedia.org/wiki/Alian%C8%9Ba_Liberalilor_%C8%99i_Democra%C8%9Bilor"
+  },
+  {
+    "entityId": "party-pmp",
+    "entityType": "party",
+    "label": "PMP",
+    "url": "https://ro.wikipedia.org/wiki/Partidul_Mi%C8%99carea_Popular%C4%83"
+  },
+  {
+    "entityId": "party-usr",
+    "entityType": "party",
+    "label": "USR",
+    "url": "https://ro.wikipedia.org/wiki/Uniunea_Salva%C8%9Bi_Rom%C3%A2nia"
+  },
+  {
+    "entityId": "party-plus",
+    "entityType": "party",
+    "label": "PLUS",
+    "url": "https://ro.wikipedia.org/wiki/Partidul_Libertate,_Unitate_%C8%99i_Solidaritate"
+  },
+  {
+    "entityId": "party-aur",
+    "entityType": "party",
+    "label": "AUR",
+    "url": "https://ro.wikipedia.org/wiki/Alian%C8%9Ba_pentru_Unirea_Rom%C3%A2nilor"
+  },
+  {
+    "entityId": "party-sos-ro",
+    "entityType": "party",
+    "label": "SOS RO",
+    "url": "https://ro.wikipedia.org/wiki/S.O.S._Rom%C3%A2nia"
+  },
+  {
+    "entityId": "party-pot",
+    "entityType": "party",
+    "label": "POT",
+    "url": "https://ro.wikipedia.org/wiki/Partidul_Oamenilor_Tineri"
+  },
+  {
+    "entityId": "formation-usl",
+    "entityType": "formation",
+    "label": "USL",
+    "url": "https://ro.wikipedia.org/wiki/Uniunea_Social_Liberal%C4%83"
+  },
+  {
+    "entityId": "formation-ard",
+    "entityType": "formation",
+    "label": "ARD",
+    "url": "https://ro.wikipedia.org/wiki/Alian%C8%9Ba_Rom%C3%A2nia_Dreapt%C4%83"
+  }
+]

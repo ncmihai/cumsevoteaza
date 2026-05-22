@@ -64,6 +64,16 @@ npm run pipeline:parliament -- tribunal-registry fetch-index
 npm run pipeline:parliament -- tribunal-registry parse-index
 ```
 
+Run the Romanian Wikipedia party-history candidate pipeline:
+
+```bash
+npm run pipeline:parliament -- party-history fetch-wikipedia
+npm run pipeline:parliament -- party-history parse-wikipedia
+```
+
+This generates candidate rows only. Review the report before promoting any
+date or relationship into `data/curated/political-formation-events.json`.
+
 The existing direct command stays supported:
 
 ```bash
@@ -109,6 +119,18 @@ from the registry page text. Matching to app party/formation IDs remains a
 file-only review step through `match-app-entities`. The matcher ranks Tribunal
 records against `data/curated/political-entity-candidates.json` and writes both
 machine-readable matches and a manual-review markdown report.
+
+Wikipedia party-history output is also file-only:
+
+```text
+data/parliament-pipeline/party-history/raw/wikipedia/*.html
+data/parliament-pipeline/party-history/parsed/wikipedia_party_history_candidates.jsonl
+data/parliament-pipeline/party-history/reports/wikipedia-party-history-review.md
+```
+
+The source list lives in `data/curated/wikipedia-party-history-sources.json`.
+Parser output is intentionally marked `needs_review`; it is a candidate
+generator for Romanian Wikipedia infobox/history sentences, not a DB importer.
 
 The TypeScript importer consumes these files and performs DB writes:
 
