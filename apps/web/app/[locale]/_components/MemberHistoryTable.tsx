@@ -1,5 +1,7 @@
 import type { Legislature, Locale, MemberHistoryRow } from "@cumsevoteaza/parliament-model";
 import { chamberLabels, formatDate } from "@cumsevoteaza/parliament-model";
+import Link from "next/link";
+import type { ReactNode } from "react";
 
 export function MemberHistoryTable({
   rows,
@@ -27,7 +29,12 @@ export function MemberHistoryTable({
     <div className="space-y-4">
       {sections.map((section) => {
         const chambers = unique(section.rows.map((row) => chamberLabels[locale][row.chamber]));
-        const logos = unique(section.rows.map((row) => row.logoUrl).filter((logoUrl): logoUrl is string => Boolean(logoUrl))).slice(0, 6);
+        const logos = uniqueBy(
+          section.rows
+            .filter((row) => row.logoUrl)
+            .map((row) => ({ logoUrl: row.logoUrl!, partySlug: rowPartySlug(row) })),
+          (item) => `${item.partySlug ?? "no-party"}:${item.logoUrl}`
+        ).slice(0, 6);
         const firstDate = section.rows.map((row) => row.startsOn).sort()[0];
         const lastDate = section.rows
           .map((row) => row.endsOn ?? "")
@@ -50,11 +57,16 @@ export function MemberHistoryTable({
                 </div>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2">
-                {logos.map((logoUrl) => (
-                  <span key={logoUrl} className="flex h-9 w-9 items-center justify-center border border-slate-200 bg-white p-1">
+                {logos.map(({ logoUrl, partySlug }) => (
+                  <PartyMaybeLink
+                    key={`${partySlug ?? "no-party"}:${logoUrl}`}
+                    partySlug={partySlug}
+                    locale={locale}
+                    className="flex h-9 w-9 items-center justify-center border border-slate-200 bg-white p-1 hover:border-[#309898]"
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoUrl} alt="" className="max-h-full max-w-full object-contain" />
-                  </span>
+                  </PartyMaybeLink>
                 ))}
                 <span className="border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700">
                   {section.rows.length} {locale === "ro" ? "rânduri" : "rows"}
@@ -93,11 +105,23 @@ export function MemberHistoryTable({
                       <td className="px-3 py-3">
                         <div className="flex items-start gap-2">
                           {row.logoUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={row.logoUrl} alt="" className="mt-0.5 h-7 w-7 shrink-0 border border-slate-200 bg-white object-contain" />
+                            <PartyMaybeLink
+                              partySlug={rowPartySlug(row)}
+                              locale={locale}
+                              className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center border border-slate-200 bg-white hover:border-[#309898]"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={row.logoUrl} alt="" className="max-h-full max-w-full object-contain" />
+                            </PartyMaybeLink>
                           ) : null}
                           <div>
-                            <div className="font-medium text-slate-950">{row.label}</div>
+                            <PartyMaybeLink
+                              partySlug={rowPartySlug(row)}
+                              locale={locale}
+                              className="font-medium text-slate-950 hover:text-[#309898] hover:underline"
+                            >
+                              {row.label}
+                            </PartyMaybeLink>
                             <div className="text-slate-600">
                               {row.sourceUrl ? (
                                 <a className="underline underline-offset-2" href={row.sourceUrl} target="_blank" rel="noreferrer">
@@ -168,4 +192,68 @@ function groupRowsByLegislature(rows: MemberHistoryRow[], legislatures: Legislat
 
 function unique<T>(items: T[]): T[] {
   return Array.from(new Set(items));
+}
+
+function uniqueBy<T>(items: T[], keyForItem: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  const result: T[] = [];
+  for (const item of items) {
+    const key = keyForItem(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
+}
+
+function rowPartySlug(row: MemberHistoryRow): string | undefined {
+  return row.partySlug ?? knownPartySlugByLabel[row.label.trim().toUpperCase()];
+}
+
+const knownPartySlugByLabel: Record<string, string> = {
+  ALDE: "alde",
+  AUR: "aur",
+  PC: "pc",
+  PD: "pd",
+  PDL: "pdl",
+  PDSR: "pdsr",
+  PER: "per",
+  PMP: "pmp",
+  PNL: "pnl",
+  "PNȚCD": "pntcd",
+  "PNTCD": "pntcd",
+  POT: "pot",
+  "PRO ROMÂNIA": "pro-romania",
+  "PRO ROMANIA": "pro-romania",
+  PRM: "prm",
+  PSD: "psd",
+  PSDR: "psdr",
+  PUNR: "punr",
+  PUR: "pur",
+  PACE: "pace",
+  "SOS RO": "sos-ro",
+  "S.O.S. RO": "sos-ro",
+  UDMR: "udmr",
+  UNPR: "unpr",
+  UPR: "upr",
+  USR: "usr"
+};
+
+function PartyMaybeLink({
+  partySlug,
+  locale,
+  className,
+  children
+}: {
+  partySlug?: string;
+  locale: Locale;
+  className: string;
+  children: ReactNode;
+}) {
+  if (!partySlug) return <span className={className}>{children}</span>;
+  return (
+    <Link href={`/${locale}/parties/${partySlug}`} className={className}>
+      {children}
+    </Link>
+  );
 }

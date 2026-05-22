@@ -2170,3 +2170,14 @@ Verification:
     PIN absorption into UNPR event.
 - Kept the Tribunal hearing/decision dates framed as legal registry metadata,
   not automatic political founding or merger dates.
+
+## 2026-05-22 — Member Party Link UX
+
+- Added party slugs to member history rows and career timeline segments so
+  party/group labels can route to the corresponding party profile.
+- Linked member-page current party/group text, current logo, career timeline
+  labels, legislature logos, and parliamentary-history party rows to party
+  pages when the party is known.
+- Added conservative short-label fallbacks for common parties so older cached
+  member payloads still make labels such as PNL, PSD, USR, PDL, PUNR, and PUR
+  clickable after deployment and revalidation.

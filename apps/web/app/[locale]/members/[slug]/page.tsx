@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import { chamberLabels, formatDate } from "@cumsevoteaza/parliament-model";
 import { getMemberPageData } from "@/lib/data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
@@ -52,22 +53,28 @@ export default async function MemberPage({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={profilePhotoUrl} alt="" className="h-full w-full object-cover" />
             ) : currentLogoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={currentLogoUrl} alt="" className="max-h-16 max-w-16 object-contain" />
+              <PartyLogoMaybeLink partySlug={party?.slug} locale={locale}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={currentLogoUrl} alt="" className="max-h-16 max-w-16 object-contain" />
+              </PartyLogoMaybeLink>
             ) : (
               <span className="text-3xl font-semibold text-slate-400">{member.displayName.slice(0, 1)}</span>
             )}
             {currentLogoUrl && profilePhotoUrl ? (
-              <span className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center border border-slate-300 bg-white p-1">
+              <PartyLogoMaybeLink
+                partySlug={party?.slug}
+                locale={locale}
+                className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center border border-slate-300 bg-white p-1 hover:border-[#309898]"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={currentLogoUrl} alt="" className="max-h-full max-w-full object-contain" />
-              </span>
+              </PartyLogoMaybeLink>
             ) : null}
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-semibold uppercase text-blue-800">
+            <PartyTextMaybeLink partySlug={party?.slug} locale={locale} className="text-sm font-semibold uppercase text-blue-800 hover:text-[#309898] hover:underline">
               {group?.shortName ?? party?.shortName ?? "unknown"}
-            </div>
+            </PartyTextMaybeLink>
             <h1 className="mt-2 text-4xl font-semibold text-slate-950">{member.displayName}</h1>
             <p className="mt-3 text-slate-600">
               {mandate ? chamberLabels[locale][mandate.chamber] : "unknown"} · {mandate?.status ?? "unknown"}
@@ -83,7 +90,9 @@ export default async function MemberPage({
       <section className="mt-6 grid grid-cols-2 gap-y-4 border border-slate-300 bg-white py-4 md:grid-cols-4">
         <div className="border-l border-slate-300 px-4 first:border-l-0">
           <div className="text-xs uppercase text-slate-500">{labels.currentGroup}</div>
-          <div className="mt-1 text-2xl font-semibold text-slate-950">{group?.shortName ?? "-"}</div>
+          <PartyTextMaybeLink partySlug={party?.slug} locale={locale} className="mt-1 block text-2xl font-semibold text-slate-950 hover:text-[#309898] hover:underline">
+            {group?.shortName ?? "-"}
+          </PartyTextMaybeLink>
         </div>
         <div className="border-l border-slate-300 px-4">
           <div className="text-xs uppercase text-slate-500">{messages.nav.votes}</div>
@@ -201,6 +210,44 @@ function MiniStat({ label, value }: { label: string; value: number | string }) {
       <div className="text-xs uppercase text-slate-500">{label}</div>
       <div className="mt-1 text-lg font-semibold text-slate-950">{value}</div>
     </div>
+  );
+}
+
+function PartyLogoMaybeLink({
+  partySlug,
+  locale,
+  className = "flex h-full w-full items-center justify-center hover:bg-slate-50",
+  children
+}: {
+  partySlug?: string;
+  locale: AppLocale;
+  className?: string;
+  children: ReactNode;
+}) {
+  if (!partySlug) return <span className={className}>{children}</span>;
+  return (
+    <Link href={`/${locale}/parties/${partySlug}`} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+function PartyTextMaybeLink({
+  partySlug,
+  locale,
+  className,
+  children
+}: {
+  partySlug?: string;
+  locale: AppLocale;
+  className: string;
+  children: ReactNode;
+}) {
+  if (!partySlug) return <span className={className}>{children}</span>;
+  return (
+    <Link href={`/${locale}/parties/${partySlug}`} className={className}>
+      {children}
+    </Link>
   );
 }
 

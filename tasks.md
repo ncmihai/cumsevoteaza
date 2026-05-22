@@ -967,6 +967,8 @@ implementation steps.
   prior party/alliance events.
 - [x] Promote a third conservative Tribunal source batch for PUR/PC, PUNR,
   and PIN, keeping Tribunal dates as legal registry metadata.
+- [x] Link party labels/logos on member pages to party profile pages where the
+  party identity is known.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want

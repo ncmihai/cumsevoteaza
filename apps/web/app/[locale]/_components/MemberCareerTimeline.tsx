@@ -1,5 +1,7 @@
 import type { Locale, MemberCareerSegment } from "@cumsevoteaza/parliament-model";
 import { chamberLabels, formatDate } from "@cumsevoteaza/parliament-model";
+import Link from "next/link";
+import type { ReactNode } from "react";
 
 export function MemberCareerTimeline({
   segments,
@@ -92,13 +94,17 @@ export function MemberCareerTimeline({
                       />
                     );
                   })}
-                  <div className="relative flex h-full items-center justify-center overflow-hidden px-2 pb-1.5 text-xs font-semibold text-slate-950">
+                  <PartyMaybeLink
+                    partySlug={segmentPartySlug(segment)}
+                    locale={locale}
+                    className="relative flex h-full items-center justify-center overflow-hidden px-2 pb-1.5 text-xs font-semibold text-slate-950 hover:underline"
+                  >
                     {segment.logoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={segment.logoUrl} alt="" className="mr-1 h-5 w-5 shrink-0 border border-white bg-white object-contain" />
                     ) : null}
                     <span className="truncate">{segmentLabel(segment, displaySegments[index - 1])}</span>
-                  </div>
+                  </PartyMaybeLink>
                 </div>
               );
             })}
@@ -134,14 +140,19 @@ export function MemberCareerTimeline({
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {displaySegments.map((segment) => (
-              <div key={`${segment.id}-legend`} className="flex items-center gap-2 border border-slate-200 bg-slate-50 px-2 py-1 text-xs">
+              <PartyMaybeLink
+                key={`${segment.id}-legend`}
+                partySlug={segmentPartySlug(segment)}
+                locale={locale}
+                className="flex items-center gap-2 border border-slate-200 bg-slate-50 px-2 py-1 text-xs hover:border-[#309898]"
+              >
                 <span className="h-2.5 w-2.5" style={{ backgroundColor: segment.color ?? "#FF9F00" }} />
                 <span className="font-medium">{segment.label}</span>
                 <span className="text-slate-500">
                   {formatDate(segment.startsOn, locale)} - {segment.endsOn ? formatDate(segment.endsOn, locale) : labels.present}
                 </span>
                 <span className="text-slate-500">{chamberLabels[locale][segment.chamber]}</span>
-              </div>
+              </PartyMaybeLink>
             ))}
           </div>
           {events.length > 0 ? (
@@ -275,6 +286,10 @@ function alignmentLabel(alignment: NonNullable<MemberCareerSegment["governance"]
   return timelineLabels[locale].alignments[alignment];
 }
 
+function segmentPartySlug(segment: MemberCareerSegment): string | undefined {
+  return segment.partySlug ?? knownPartySlugByLabel[segment.label.trim().toUpperCase()];
+}
+
 const timelineLabels = {
   ro: {
     present: "prezent",
@@ -301,3 +316,51 @@ const timelineLabels = {
     }
   }
 } as const;
+
+function PartyMaybeLink({
+  partySlug,
+  locale,
+  className,
+  children
+}: {
+  partySlug?: string;
+  locale: Locale;
+  className: string;
+  children: ReactNode;
+}) {
+  if (!partySlug) return <span className={className}>{children}</span>;
+  return (
+    <Link href={`/${locale}/parties/${partySlug}`} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+const knownPartySlugByLabel: Record<string, string> = {
+  ALDE: "alde",
+  AUR: "aur",
+  PC: "pc",
+  PD: "pd",
+  PDL: "pdl",
+  PDSR: "pdsr",
+  PER: "per",
+  PMP: "pmp",
+  PNL: "pnl",
+  "PNȚCD": "pntcd",
+  PNTCD: "pntcd",
+  POT: "pot",
+  "PRO ROMÂNIA": "pro-romania",
+  "PRO ROMANIA": "pro-romania",
+  PRM: "prm",
+  PSD: "psd",
+  PSDR: "psdr",
+  PUNR: "punr",
+  PUR: "pur",
+  PACE: "pace",
+  "SOS RO": "sos-ro",
+  "S.O.S. RO": "sos-ro",
+  UDMR: "udmr",
+  UNPR: "unpr",
+  UPR: "upr",
+  USR: "usr"
+};

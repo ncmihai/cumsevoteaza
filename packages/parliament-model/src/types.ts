@@ -366,6 +366,7 @@ export interface MemberHistoryRow {
   label: string;
   details: string;
   logoUrl?: string;
+  partySlug?: string;
   sourceUrl?: string;
   votesFor: number;
   votesAgainst: number;
@@ -382,6 +383,7 @@ export interface MemberCareerSegment {
   label: string;
   details?: string;
   logoUrl?: string;
+  partySlug?: string;
   color?: string;
   events?: MemberCareerEvent[];
   governance?: MemberCareerGovernanceContext[];

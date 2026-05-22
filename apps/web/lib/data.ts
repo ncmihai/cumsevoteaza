@@ -2311,6 +2311,7 @@ function buildMemberCareerSegments(
 ): MemberCareerSegment[] {
   const groupByLabel = new Map(groups.map((group) => [group.shortName, group]));
   const partyByLabel = new Map(parties.map((party) => [party.shortName, party]));
+  const partyById = new Map(parties.map((party) => [party.id, party]));
   const partyIdByLabel = new Map(parties.map((party) => [party.shortName, party.id]));
   const rows = history
     .filter((row) => row.type === "party")
@@ -2331,6 +2332,7 @@ function buildMemberCareerSegments(
     }
     const group = groupByLabel.get(row.label);
     const party = partyByLabel.get(row.label);
+    const groupParty = group?.partyId ? partyById.get(group.partyId) : undefined;
     segments.push({
       id: `career-${row.id}`,
       startsOn: row.startsOn,
@@ -2340,6 +2342,7 @@ function buildMemberCareerSegments(
       label: row.label,
       details: row.details,
       logoUrl: row.logoUrl,
+      partySlug: row.partySlug ?? party?.slug ?? groupParty?.slug,
       color: group?.color ?? party?.color,
       events: careerEventsForRow(row, partyIdByLabel, formationEvents),
       governance: governanceForCareerRow(row, partyIdByLabel, governments, governmentAlignments)
@@ -2401,6 +2404,7 @@ function buildMemberHistory(input: {
     }),
     ...input.groupMemberships.map((membership) => {
       const group = input.groups.find((item) => item.id === membership.groupId);
+      const party = group?.partyId ? input.parties.find((item) => item.id === group.partyId) : undefined;
       const mandate = mandateForMemberPeriod(input.mandates, membership.memberId, membership.startsOn);
       const legislature = input.legislatures.find((item) => item.id === mandate?.legislatureId);
       return {
@@ -2413,6 +2417,7 @@ function buildMemberHistory(input: {
         label: group?.shortName ?? membership.groupId,
         details: group?.name ?? "Grup parlamentar",
         logoUrl: membership.logoUrl,
+        partySlug: party?.slug,
         ...counts
       };
     }),
@@ -2430,6 +2435,7 @@ function buildMemberHistory(input: {
         label: party?.shortName ?? affiliation.partyId,
         details: party?.name ?? "Formațiune politică",
         logoUrl: affiliation.logoUrl,
+        partySlug: party?.slug,
         ...counts
       };
     }),
