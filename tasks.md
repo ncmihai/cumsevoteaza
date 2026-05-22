@@ -951,6 +951,9 @@ implementation steps.
   event cards, explicit government/support/opposition borders on composition
   seat maps, and SQL-backed member ranking filters for absences, seniority,
   and party/group switches.
+- [x] Improve member timeline semantics with merged same-party career periods,
+  visible legislature boundary markers, government/support/opposition context
+  bands, and clearer merger/alliance explanation notes.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want

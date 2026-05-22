@@ -2091,3 +2091,14 @@ Verification:
 - Added member directory ranking filters for imported absences, total time in
   Parliament, and group/party switches, backed by SQL ordering instead of
   app-side sorting.
+
+## 2026-05-22 — Member Timeline Semantics
+
+- Added a display-layer merge for member career timelines so repeated same-party
+  rows across legislatures render as continuous parliamentary periods.
+- Kept legislature boundaries visible while reducing raw repeated labels in the
+  main member timeline and period legend.
+- Rendered government/support/opposition context as colored bands on party
+  periods, with a compact alignment legend.
+- Promoted formation-event notes into a clearer “why the path changed” section
+  below the visual timeline.
