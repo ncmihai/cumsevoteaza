@@ -36,7 +36,6 @@ export default async function MembersPage({
           <div className="text-sm font-semibold uppercase text-blue-800">{messages.home.eyebrow}</div>
           <h1 className="mt-2 text-4xl font-semibold text-slate-950">{messages.nav.members}</h1>
         </div>
-        <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{data.sourceKind}</span>
       </div>
 
       <form action={`/${locale}/members`} className="mt-6 grid gap-3 border border-slate-300 bg-white p-4 shadow-sm md:grid-cols-[minmax(220px,1fr)_auto]">

@@ -37,7 +37,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <aside className="border border-slate-300 bg-white p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="text-sm font-semibold text-slate-950">{labels.thisMonth}</div>
-            <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{dashboard.sourceKind}</span>
           </div>
           <MetricList items={dashboard.mostViewed} empty={labels.noActivity} />
         </aside>

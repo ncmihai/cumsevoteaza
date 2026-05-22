@@ -30,7 +30,6 @@ export default async function BillsPage({
           <h1 className="mt-2 text-3xl font-semibold tracking-normal text-slate-950">{labels.title}</h1>
           <p className="mt-2 max-w-3xl text-slate-600">{labels.subtitle}</p>
         </div>
-        <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{data.sourceKind}</span>
       </div>
 
       <BillDirectoryExplorer locale={locale} initialData={data} filterOptions={filterOptions} initialFilters={filters} labels={labels} />

@@ -39,18 +39,18 @@ export function MemberCareerTimeline({
 
       <div className="mt-5 overflow-x-auto pb-2">
         <div className="min-w-[680px]">
-          <div className="relative h-28 border border-slate-200 bg-slate-50">
-            <div className="absolute left-0 right-0 top-[62px] h-px bg-slate-300" />
+          <div className="relative h-36 border border-slate-200 bg-slate-50">
+            <div className="absolute left-0 right-0 top-[74px] h-px bg-slate-300" />
             {legislatureBreaks.map((breakpoint) => {
               const left = ((dateMs(breakpoint.date) - start) / span) * 100;
               return (
                 <div
                   key={breakpoint.id}
-                  className="absolute bottom-3 top-3 z-[1] w-px bg-slate-400"
+                  className="absolute bottom-6 top-3 z-[1] w-px bg-slate-500"
                   style={{ left: `${left}%` }}
                   title={breakpoint.label}
                 >
-                  <span className="absolute -left-4 top-full mt-1 whitespace-nowrap text-[10px] font-semibold text-slate-500">
+                  <span className="absolute -left-8 top-full mt-1 whitespace-nowrap border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 shadow-sm">
                     {breakpoint.label}
                   </span>
                 </div>
@@ -62,7 +62,7 @@ export function MemberCareerTimeline({
               return (
                 <div
                   key={segment.id}
-                  className="absolute top-12 z-[2] h-9 overflow-hidden border-x border-white shadow-sm"
+                  className="absolute top-16 z-[2] h-10 overflow-hidden border-x border-white shadow-sm"
                   style={{
                     left: `${left}%`,
                     width: `${Math.min(width, 100 - left)}%`,
@@ -99,9 +99,9 @@ export function MemberCareerTimeline({
                     locale={locale}
                     className="relative flex h-full items-center justify-center overflow-hidden px-2 pb-1.5 text-xs font-semibold text-slate-950 hover:underline"
                   >
-                    {segment.logoUrl ? (
+                    {segmentLogoUrl(segment, sorted) ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={segment.logoUrl} alt="" className="mr-1 h-5 w-5 shrink-0 border border-white bg-white object-contain" />
+                      <img src={segmentLogoUrl(segment, sorted)} alt="" className="mr-1 h-5 w-5 shrink-0 border border-white bg-white object-contain" />
                     ) : null}
                     <span className="truncate">{segmentLabel(segment, displaySegments[index - 1])}</span>
                   </PartyMaybeLink>
@@ -118,13 +118,18 @@ export function MemberCareerTimeline({
                   href={event.sourceUrl}
                   target={event.sourceUrl ? "_blank" : undefined}
                   rel={event.sourceUrl ? "noreferrer" : undefined}
-                  className="absolute top-2 z-10 -translate-x-1/2 text-center"
+                  className="group absolute top-2 z-10 -translate-x-1/2 text-center"
                   style={{ left: `${left}%` }}
                   title={`${formatDate(event.date, locale)} · ${description}`}
                 >
-                  <span className="mx-auto block h-4 w-4 border-2 border-white bg-[#309898] shadow-sm" />
-                  <span className="mt-1 block max-w-28 truncate bg-white px-1 text-[10px] font-semibold text-slate-700 shadow-sm">
+                  <span className="mx-auto block h-4 w-4 border-2 border-white bg-[#309898] shadow-sm transition group-hover:scale-110 group-focus-visible:scale-110" />
+                  <span className="mt-1 block max-w-28 truncate bg-white px-1 text-[10px] font-semibold text-slate-700 shadow-sm group-hover:text-[#0c6464] group-focus-visible:text-[#0c6464]">
                     {label}
+                  </span>
+                  <span className="pointer-events-none absolute left-1/2 top-8 z-30 hidden w-72 -translate-x-1/2 border border-slate-300 bg-white p-3 text-left text-xs text-slate-600 shadow-xl group-hover:block group-focus-visible:block">
+                    <span className="block font-semibold text-slate-950">{formatDate(event.date, locale)} · {label}</span>
+                    <span className="mt-1 block leading-5">{description}</span>
+                    {event.sourceUrl ? <span className="mt-2 block font-medium text-[#309898]">{labels.openSource}</span> : null}
                   </span>
                 </a>
               );
@@ -147,6 +152,10 @@ export function MemberCareerTimeline({
                 className="flex items-center gap-2 border border-slate-200 bg-slate-50 px-2 py-1 text-xs hover:border-[#309898]"
               >
                 <span className="h-2.5 w-2.5" style={{ backgroundColor: segment.color ?? "#FF9F00" }} />
+                {segmentLogoUrl(segment, sorted) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={segmentLogoUrl(segment, sorted)} alt="" className="h-5 w-5 border border-slate-200 bg-white object-contain" />
+                ) : null}
                 <span className="font-medium">{segment.label}</span>
                 <span className="text-slate-500">
                   {formatDate(segment.startsOn, locale)} - {segment.endsOn ? formatDate(segment.endsOn, locale) : labels.present}
@@ -290,10 +299,28 @@ function segmentPartySlug(segment: MemberCareerSegment): string | undefined {
   return segment.partySlug ?? knownPartySlugByLabel[segment.label.trim().toUpperCase()];
 }
 
+function segmentLogoUrl(segment: MemberCareerSegment, allSegments: MemberCareerSegment[]): string | undefined {
+  const slug = segmentPartySlug(segment);
+  if (!segment.logoUrl || !slug) return segment.logoUrl;
+  if (logoLooksCompatible(segment.logoUrl, slug)) return segment.logoUrl;
+  const compatible = allSegments
+    .filter((candidate) => candidate.id !== segment.id && segmentPartySlug(candidate) === slug && candidate.logoUrl)
+    .filter((candidate) => logoLooksCompatible(candidate.logoUrl!, slug))
+    .sort((a, b) => Math.abs(dateMs(a.startsOn) - dateMs(segment.startsOn)) - Math.abs(dateMs(b.startsOn) - dateMs(segment.startsOn)));
+  return compatible[0]?.logoUrl ?? segment.logoUrl;
+}
+
+function logoLooksCompatible(logoUrl: string, slug: string): boolean {
+  const normalized = logoUrl.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const tokens = logoTokensBySlug[slug] ?? [slug.replace(/-/g, "")];
+  return tokens.some((token) => normalized.includes(token));
+}
+
 const timelineLabels = {
   ro: {
     present: "prezent",
     whyChanged: "De ce s-a schimbat traseul",
+    openSource: "Deschide sursa",
     alignments: {
       government: "guvern",
       governing_support: "susținere",
@@ -306,6 +333,7 @@ const timelineLabels = {
   en: {
     present: "present",
     whyChanged: "Why the path changed",
+    openSource: "Open source",
     alignments: {
       government: "government",
       governing_support: "support",
@@ -363,4 +391,27 @@ const knownPartySlugByLabel: Record<string, string> = {
   UNPR: "unpr",
   UPR: "upr",
   USR: "usr"
+};
+
+const logoTokensBySlug: Record<string, string[]> = {
+  "pro-romania": ["proromania", "pro"],
+  "sos-ro": ["sosro", "sos"],
+  pntcd: ["pntcd"],
+  pnl: ["pnl"],
+  pdl: ["pdl"],
+  pd: ["pd"],
+  psd: ["psd"],
+  pdsr: ["pdsr"],
+  psdr: ["psdr"],
+  pur: ["pur"],
+  pc: ["pc"],
+  prm: ["prm"],
+  punr: ["punr"],
+  udmr: ["udmr"],
+  unpr: ["unpr"],
+  usr: ["usr"],
+  aur: ["aur"],
+  pot: ["pot"],
+  pmp: ["pmp"],
+  alde: ["alde"]
 };

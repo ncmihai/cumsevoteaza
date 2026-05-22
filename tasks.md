@@ -969,6 +969,13 @@ implementation steps.
   and PIN, keeping Tribunal dates as legal registry metadata.
 - [x] Link party labels/logos on member pages to party profile pages where the
   party identity is known.
+- [x] Apply immediate member-profile UI fixes: remove public `database` badges,
+  restyle selected legislature buttons with the site palette, make vote/proposal
+  lists internally scrollable, and resolve mismatched party logos after
+  formation-event normalization.
+- [x] Upgrade the member career timeline with clearer legislature boundary
+  labels, hover/focus event detail cards, and party-aware logo fallback for
+  normalized historical segments.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want

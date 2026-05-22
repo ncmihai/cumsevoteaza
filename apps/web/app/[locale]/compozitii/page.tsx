@@ -41,9 +41,6 @@ export default async function CompositionsPage({
             {labels.asOf}: {data.asOf}
           </span>
           <span className="border border-slate-300 bg-white px-3 py-1.5">
-            {labels.source}: {data.sourceKind === "database" ? labels.database : labels.demo}
-          </span>
-          <span className="border border-slate-300 bg-white px-3 py-1.5">
             {labels.legislatures}: {data.stops.length} · {labels.events}: {data.stops.reduce((sum, stop) => sum + stop.events.length, 0)}
           </span>
         </div>
@@ -70,7 +67,7 @@ function ModeLink({
   return (
     <Link
       href={`/${locale}/compozitii?mode=${mode}`}
-      className={["rounded px-3 py-1.5", active ? "bg-slate-950 text-white" : "text-slate-700 hover:bg-slate-100"].join(" ")}
+      className={["rounded px-3 py-1.5", active ? "bg-[#309898] text-white" : "text-slate-700 hover:bg-slate-100"].join(" ")}
     >
       {children}
     </Link>
@@ -85,9 +82,6 @@ const compositionPageLabels = {
     officialMode: "Investitură oficială",
     computedMode: "Susținere la vot",
     asOf: "La data",
-    source: "Sursă date",
-    database: "bază de date",
-    demo: "demo",
     events: "Evenimente",
     legislatures: "Legislaturi",
     groupBreakdown: "Distribuție pe grupuri",
@@ -107,9 +101,6 @@ const compositionPageLabels = {
     officialMode: "Official investiture",
     computedMode: "Voting support",
     asOf: "As of",
-    source: "Data source",
-    database: "database",
-    demo: "demo",
     events: "Events",
     legislatures: "Legislatures",
     groupBreakdown: "Breakdown by group",
@@ -130,9 +121,6 @@ const compositionPageLabels = {
     officialMode: string;
     computedMode: string;
     asOf: string;
-    source: string;
-    database: string;
-    demo: string;
     events: string;
     legislatures: string;
     groupBreakdown: string;

@@ -18,7 +18,7 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
   const labels = votePageLabels[locale];
   const data = await getVotePageData(id);
   if (!data) notFound();
-  const { vote, bill, source, governmentContext, groupContexts, groups, members, groupTotals, individualVotes, seatVotes, sourceKind } = data;
+  const { vote, bill, source, governmentContext, groupContexts, groups, members, groupTotals, individualVotes, seatVotes } = data;
   const hotCount = await getHotCount("vote", vote.id);
 
   return (
@@ -37,7 +37,6 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
         <div className="flex flex-col items-start gap-2">
           <HotButton entityType="vote" entityId={vote.id} initialCount={hotCount} label={labels.publicInterest} />
           {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
-          <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
         </div>
       </div>
 

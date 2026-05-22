@@ -39,7 +39,6 @@ export default async function MemberPage({
     votes,
     voteRecords,
     sponsoredBills,
-    sourceKind
   } = data;
   const labels = memberPageLabels[locale];
 
@@ -83,7 +82,6 @@ export default async function MemberPage({
         </div>
         <div className="flex flex-col items-start gap-2">
           {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
-          <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
         </div>
       </div>
 
@@ -145,8 +143,8 @@ export default async function MemberPage({
                 className={[
                   "rounded-md border px-3 py-2 text-sm font-medium",
                   item.id === selectedLegislature?.id
-                    ? "border-slate-950 bg-slate-950 text-white"
-                    : "border-slate-300 bg-white text-slate-700 hover:border-slate-950"
+                    ? "border-[#309898] bg-[#309898] text-white shadow-sm"
+                    : "border-slate-300 bg-white text-slate-700 hover:border-[#309898] hover:text-[#0c6464]"
                 ].join(" ")}
               >
                 {item.label}
@@ -168,7 +166,7 @@ export default async function MemberPage({
         <div className="border-b border-slate-300 px-4 py-3 font-semibold">
           {messages.nav.votes} · {selectedLegislature?.label ?? labels.allLegislatures}
         </div>
-        <div className="divide-y divide-slate-200">
+        <div className="max-h-[520px] divide-y divide-slate-200 overflow-auto">
           {votes.length === 0 ? <div className="px-4 py-4 text-sm text-slate-600">{labels.noVotes}</div> : null}
           {votes.map((individualVote) => {
             const vote = voteRecords.find((item) => item.id === individualVote.voteId);
@@ -190,7 +188,7 @@ export default async function MemberPage({
         <div className="border-b border-slate-300 px-4 py-3 font-semibold">
           {messages.common.proposals} · {selectedLegislature?.label ?? labels.allLegislatures}
         </div>
-        <div className="divide-y divide-slate-200">
+        <div className="max-h-[420px] divide-y divide-slate-200 overflow-auto">
           {sponsoredBills.length === 0 ? <div className="px-4 py-4 text-sm text-slate-600">{labels.noProposals}</div> : null}
           {sponsoredBills.map((bill) => (
             <Link key={bill.id} className="block px-4 py-3 hover:bg-slate-50" href={`/${locale}/bills/${bill.slug}`}>

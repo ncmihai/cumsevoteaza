@@ -16,7 +16,7 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
   const labels = billPageLabels[locale];
   const data = await getBillPageData(id);
   if (!data) notFound();
-  const { bill, events, documents, votes, source, governmentContext, sponsorContexts, sourceKind } = data;
+  const { bill, events, documents, votes, source, governmentContext, sponsorContexts } = data;
   const hotCount = await getHotCount("bill", bill.id);
 
   return (
@@ -31,7 +31,6 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
         <div className="flex flex-col items-start gap-2">
           <HotButton entityType="bill" entityId={bill.id} initialCount={hotCount} label={labels.publicInterest} />
           {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
-          <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
         </div>
       </div>
 

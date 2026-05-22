@@ -31,8 +31,8 @@ export function MemberHistoryTable({
         const chambers = unique(section.rows.map((row) => chamberLabels[locale][row.chamber]));
         const logos = uniqueBy(
           section.rows
-            .filter((row) => row.logoUrl)
-            .map((row) => ({ logoUrl: row.logoUrl!, partySlug: rowPartySlug(row) })),
+            .map((row) => ({ logoUrl: rowLogoUrl(row, rows), partySlug: rowPartySlug(row) }))
+            .filter((item): item is { logoUrl: string; partySlug: string | undefined } => Boolean(item.logoUrl)),
           (item) => `${item.partySlug ?? "no-party"}:${item.logoUrl}`
         ).slice(0, 6);
         const firstDate = section.rows.map((row) => row.startsOn).sort()[0];
@@ -104,14 +104,14 @@ export function MemberHistoryTable({
                       <td className="px-3 py-3">{historyTypeLabels[locale][row.type]}</td>
                       <td className="px-3 py-3">
                         <div className="flex items-start gap-2">
-                          {row.logoUrl ? (
+                          {rowLogoUrl(row, rows) ? (
                             <PartyMaybeLink
                               partySlug={rowPartySlug(row)}
                               locale={locale}
                               className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center border border-slate-200 bg-white hover:border-[#309898]"
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={row.logoUrl} alt="" className="max-h-full max-w-full object-contain" />
+                              <img src={rowLogoUrl(row, rows)} alt="" className="max-h-full max-w-full object-contain" />
                             </PartyMaybeLink>
                           ) : null}
                           <div>
@@ -210,6 +210,28 @@ function rowPartySlug(row: MemberHistoryRow): string | undefined {
   return row.partySlug ?? knownPartySlugByLabel[row.label.trim().toUpperCase()];
 }
 
+function rowLogoUrl(row: MemberHistoryRow, allRows: MemberHistoryRow[]): string | undefined {
+  const slug = rowPartySlug(row);
+  if (!row.logoUrl || !slug) return row.logoUrl;
+  if (logoLooksCompatible(row.logoUrl, slug)) return row.logoUrl;
+
+  const compatible = allRows
+    .filter((candidate) => candidate.id !== row.id && rowPartySlug(candidate) === slug && candidate.logoUrl)
+    .filter((candidate) => logoLooksCompatible(candidate.logoUrl!, slug))
+    .sort((a, b) => Math.abs(dateMs(a.startsOn) - dateMs(row.startsOn)) - Math.abs(dateMs(b.startsOn) - dateMs(row.startsOn)));
+  return compatible[0]?.logoUrl ?? row.logoUrl;
+}
+
+function logoLooksCompatible(logoUrl: string, slug: string): boolean {
+  const normalized = logoUrl.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const tokens = logoTokensBySlug[slug] ?? [slug.replace(/-/g, "")];
+  return tokens.some((token) => normalized.includes(token));
+}
+
+function dateMs(value: string): number {
+  return new Date(`${value}T00:00:00Z`).getTime();
+}
+
 const knownPartySlugByLabel: Record<string, string> = {
   ALDE: "alde",
   AUR: "aur",
@@ -237,6 +259,29 @@ const knownPartySlugByLabel: Record<string, string> = {
   UNPR: "unpr",
   UPR: "upr",
   USR: "usr"
+};
+
+const logoTokensBySlug: Record<string, string[]> = {
+  "pro-romania": ["proromania", "pro"],
+  "sos-ro": ["sosro", "sos"],
+  pntcd: ["pntcd", "pntcd"],
+  pnl: ["pnl"],
+  pdl: ["pdl"],
+  pd: ["pd"],
+  psd: ["psd"],
+  pdsr: ["pdsr"],
+  psdr: ["psdr"],
+  pur: ["pur"],
+  pc: ["pc"],
+  prm: ["prm"],
+  punr: ["punr"],
+  udmr: ["udmr"],
+  unpr: ["unpr"],
+  usr: ["usr"],
+  aur: ["aur"],
+  pot: ["pot"],
+  pmp: ["pmp"],
+  alde: ["alde"]
 };
 
 function PartyMaybeLink({

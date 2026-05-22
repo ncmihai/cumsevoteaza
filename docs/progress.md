@@ -2181,3 +2181,17 @@ Verification:
 - Added conservative short-label fallbacks for common parties so older cached
   member payloads still make labels such as PNL, PSD, USR, PDL, PUNR, and PUR
   clickable after deployment and revalidation.
+
+## 2026-05-22 — Member Profile UI Polish
+
+- Removed visible `database` source badges from public pages while keeping
+  official source buttons and source data internally available.
+- Restyled member legislature selection with the site palette and made member
+  vote/proposal panels scroll inside their borders.
+- Added party-aware logo fallback on member history tables and career timelines
+  so a row normalized to a surviving party, such as PNL after the PDL merger,
+  does not keep an older party logo when a matching logo exists elsewhere in
+  that member history.
+- Improved the member career timeline with clearer legislature boundary labels
+  and hover/focus detail cards for alliance, merger, and party-history event
+  markers.

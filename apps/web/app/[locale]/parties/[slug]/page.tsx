@@ -11,7 +11,7 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
   const messages = messagesFor(locale);
   const data = await getPartyPageData(slug);
   if (!data) notFound();
-  const { party, members, groupTotals, votes, tribunalSources, formationEvents, governmentParticipations, sourceKind } = data;
+  const { party, members, groupTotals, votes, tribunalSources, formationEvents, governmentParticipations } = data;
   const legislatureSummaries = data.legislatureSummaries ?? [];
   const labels = partyPageLabels[locale];
   const latestGovernment = governmentParticipations[0];
@@ -29,7 +29,6 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
             <div className="text-sm font-semibold uppercase text-[#309898]">{party.shortName}</div>
           </div>
           <h1 className="mt-2 text-4xl font-semibold text-slate-950">{party.name}</h1>
-          <span className="mt-3 inline-block rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
         </div>
         <div className="grid min-w-56 gap-2 text-sm text-slate-700">
           <div className="border border-slate-200 px-3 py-2">
