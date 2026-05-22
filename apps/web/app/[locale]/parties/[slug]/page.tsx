@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { chamberLabels } from "@cumsevoteaza/parliament-model";
 import { getPartyPageData } from "@/lib/data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
 import { EngagementTracker } from "../../_components/EngagementTracker";
@@ -11,8 +12,12 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
   const data = await getPartyPageData(slug);
   if (!data) notFound();
   const { party, members, groupTotals, votes, tribunalSources, formationEvents, governmentParticipations, sourceKind } = data;
+  const legislatureSummaries = data.legislatureSummaries ?? [];
   const labels = partyPageLabels[locale];
   const latestGovernment = governmentParticipations[0];
+  const identityEvents = formationEvents.filter((event) =>
+    event.eventType === "party_founded" || event.eventType === "party_reestablished" || event.eventType === "party_renamed"
+  );
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -52,6 +57,87 @@ export default async function PartyPage({ params }: { params: Promise<{ locale: 
           </p>
         </section>
       ) : null}
+
+      <section className="mt-6 grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="border border-slate-300 bg-white">
+          <div className="border-b border-slate-300 px-4 py-3">
+            <div className="text-xs font-semibold uppercase text-[#309898]">{labels.identityEyebrow}</div>
+            <h2 className="mt-1 text-xl font-semibold text-slate-950">{labels.identityTitle}</h2>
+          </div>
+          <div className="divide-y divide-slate-200">
+            {identityEvents.length > 0 ? (
+              identityEvents.map((event) => (
+                <a
+                  key={`identity-${event.id}`}
+                  href={event.sourceUrl}
+                  target={event.sourceUrl ? "_blank" : undefined}
+                  rel={event.sourceUrl ? "noreferrer" : undefined}
+                  className="block px-4 py-3 hover:bg-slate-50"
+                >
+                  <div className="text-sm font-semibold text-slate-500">{formatDate(event.date, locale)}</div>
+                  <div className="mt-1 font-semibold text-slate-950">{locale === "ro" ? event.titleRo : event.titleEn}</div>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{locale === "ro" ? event.descriptionRo : event.descriptionEn}</p>
+                </a>
+              ))
+            ) : (
+              <p className="px-4 py-3 text-sm text-slate-600">{labels.emptyIdentity}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="border border-slate-300 bg-white">
+          <div className="border-b border-slate-300 px-4 py-3">
+            <div className="text-xs font-semibold uppercase text-[#309898]">{labels.legislatureEyebrow}</div>
+            <h2 className="mt-1 text-xl font-semibold text-slate-950">{labels.legislatureTitle}</h2>
+            <p className="mt-1 text-sm text-slate-600">{labels.legislatureDescription}</p>
+          </div>
+          <div className="max-h-[520px] overflow-auto divide-y divide-slate-200">
+            {legislatureSummaries.length > 0 ? (
+              legislatureSummaries.map((summary) => (
+                <article key={`${summary.legislature.id}-${summary.chamber}`} className="px-4 py-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold uppercase text-slate-500">{chamberLabels[locale][summary.chamber]}</div>
+                      <h3 className="mt-1 text-lg font-semibold text-slate-950">{summary.legislature.label}</h3>
+                      <div className="mt-1 text-sm text-slate-600">
+                        {labels.startSeats}: {summary.seatCount || "-"} · {labels.membersSeen}: {summary.memberCount}
+                      </div>
+                    </div>
+                    {summary.logoUrls.length > 0 ? (
+                      <div className="flex flex-wrap justify-end gap-1">
+                        {summary.logoUrls.map((logoUrl) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img key={logoUrl} src={logoUrl} alt="" className="h-9 w-9 border border-slate-200 bg-white object-contain p-1" />
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  {summary.sampleMembers.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {summary.sampleMembers.map((member) => (
+                        <Link
+                          key={`${summary.legislature.id}-${summary.chamber}-${member.id}`}
+                          href={`/${locale}/members/${member.slug}`}
+                          className="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs hover:border-[#309898]"
+                        >
+                          {member.displayName}
+                        </Link>
+                      ))}
+                      {summary.memberCount > summary.sampleMembers.length ? (
+                        <span className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-500">
+                          +{summary.memberCount - summary.sampleMembers.length}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </article>
+              ))
+            ) : (
+              <p className="px-4 py-3 text-sm text-slate-600">{labels.emptyLegislatures}</p>
+            )}
+          </div>
+        </div>
+      </section>
 
       {tribunalSources.length > 0 ? (
         <section className="mt-6 border border-slate-300 bg-white">
@@ -190,7 +276,17 @@ const partyPageLabels = {
     governmentEyebrow: "Guvernare",
     governmentTitle: "Guverne și susținere",
     latestGovernmentEyebrow: "Cea mai recentă aliniere guvernamentală",
+    identityEyebrow: "Identitate",
+    identityTitle: "Fondare, reactivare și nume",
+    legislatureEyebrow: "Legislaturi",
+    legislatureTitle: "Mandate și membri în timp",
+    legislatureDescription:
+      "Mandatele de la începutul legislaturii sunt estimate din perioada oficială disponibilă; membrii incluși arată istoricul importat pe întreaga legislatură.",
+    startSeats: "mandate la început",
+    membersSeen: "membri în perioadă",
     sourceLink: "Sursă",
+    emptyIdentity: "Nu există încă evenimente de identitate curate pentru această entitate.",
+    emptyLegislatures: "Nu există încă rezumat pe legislaturi pentru această entitate.",
     emptyTimeline: "Nu există încă evenimente istorice curate pentru această entitate.",
     emptyGovernments: "Nu există încă aliniere guvernamentală curată pentru această entitate."
   },
@@ -208,7 +304,17 @@ const partyPageLabels = {
     governmentEyebrow: "Government",
     governmentTitle: "Governments and support",
     latestGovernmentEyebrow: "Latest government alignment",
+    identityEyebrow: "Identity",
+    identityTitle: "Founding, reactivation, and names",
+    legislatureEyebrow: "Legislatures",
+    legislatureTitle: "Seats and members over time",
+    legislatureDescription:
+      "Starting seats are estimated from the available official period; listed members show imported history across the full legislature.",
+    startSeats: "starting seats",
+    membersSeen: "members in period",
     sourceLink: "Source",
+    emptyIdentity: "No curated identity events exist yet for this entity.",
+    emptyLegislatures: "No legislature summary exists yet for this entity.",
     emptyTimeline: "No curated historical events exist yet for this entity.",
     emptyGovernments: "No curated government alignment exists yet for this entity."
   }

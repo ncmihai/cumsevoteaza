@@ -161,12 +161,22 @@ export interface PartyPageData {
   party: Party;
   groups: ParliamentaryGroup[];
   members: Member[];
+  legislatureSummaries: PartyLegislatureSummary[];
   groupTotals: GroupVoteTotal[];
   votes: Vote[];
   formationEvents: PoliticalFormationEvent[];
   governmentParticipations: PartyGovernmentParticipation[];
   tribunalSources: TribunalPoliticalEntitySource[];
   sourceKind: "database" | "demo";
+}
+
+export interface PartyLegislatureSummary {
+  legislature: Legislature;
+  chamber: MemberMandate["chamber"];
+  seatCount: number;
+  memberCount: number;
+  logoUrls: string[];
+  sampleMembers: Member[];
 }
 
 export interface PartyGovernmentParticipation {
@@ -440,6 +450,7 @@ async function getPartyPageDataUncached(slug: string): Promise<PartyPageData | u
     party,
     groups,
     members,
+    legislatureSummaries: [],
     groupTotals,
     votes,
     formationEvents: [],
@@ -882,7 +893,7 @@ async function tryDatabaseParty(slug: string): Promise<PartyPageData | undefined
     const party = mapParty(partyRow);
     const groups = (await session.db.select().from(schema.parliamentaryGroups).where(eq(schema.parliamentaryGroups.partyId, party.id))).map(mapGroup);
     const groupIds = groups.map((group) => group.id);
-    const [memberRows, totalRows, voteRows] = groupIds.length > 0
+    const [memberRows, totalRows, voteRows, legislatureSummaryRows, legislatureMemberRows] = groupIds.length > 0
       ? await Promise.all([
           session.db.execute<typeof schema.members.$inferSelect>(sql`
             select distinct
@@ -920,12 +931,107 @@ async function tryDatabaseParty(slug: string): Promise<PartyPageData | undefined
             where gvt.group_id in (${sql.join(groupIds.map((groupId) => sql`${groupId}`), sql`, `)})
             order by v.held_on desc, v.id desc
             limit 200
+          `),
+          session.db.execute<PartyLegislatureSummaryRow>(sql`
+            select
+              l.id as legislature_id,
+              l.label as legislature_label,
+              l.starts_on as legislature_starts_on,
+              l.ends_on as legislature_ends_on,
+              mm.chamber as chamber,
+              count(distinct coalesce(m.person_id, m.id)) filter (
+                where mm.starts_on <= l.starts_on
+                  and coalesce(mm.ends_on, l.ends_on) >= l.starts_on
+                  and (
+                    (
+                      mpa.id is not null
+                      and mpa.starts_on <= l.starts_on
+                      and coalesce(mpa.ends_on, l.ends_on) >= l.starts_on
+                    )
+                    or (
+                      pg.id is not null
+                      and mgm.starts_on <= l.starts_on
+                      and coalesce(mgm.ends_on, l.ends_on) >= l.starts_on
+                    )
+                  )
+              )::int as seat_count,
+              count(distinct coalesce(m.person_id, m.id))::int as member_count,
+              array_remove(array_agg(distinct coalesce(mpa.logo_url, mgm.logo_url)), null) as logo_urls
+            from member_mandates mm
+            join legislatures l on l.id = mm.legislature_id
+            join members m on m.id = mm.member_id
+            left join member_party_affiliations mpa
+              on mpa.member_id = mm.member_id
+              and mpa.party_id = ${party.id}
+              and mpa.starts_on <= coalesce(mm.ends_on, l.ends_on)
+              and coalesce(mpa.ends_on, l.ends_on) >= mm.starts_on
+            left join member_group_memberships mgm
+              on mgm.member_id = mm.member_id
+              and mgm.starts_on <= coalesce(mm.ends_on, l.ends_on)
+              and coalesce(mgm.ends_on, l.ends_on) >= mm.starts_on
+            left join parliamentary_groups pg
+              on pg.id = mgm.group_id
+              and pg.party_id = ${party.id}
+              and pg.chamber = mm.chamber
+            where mpa.id is not null or pg.id is not null
+            group by l.id, l.label, l.starts_on, l.ends_on, mm.chamber
+            order by l.starts_on desc, mm.chamber asc
+          `),
+          session.db.execute<PartyLegislatureMemberRow>(sql`
+            select distinct on (l.id, mm.chamber, coalesce(m.person_id, m.id))
+              l.id as legislature_id,
+              mm.chamber as chamber,
+              m.id as member_id,
+              m.person_id as member_person_id,
+              m.slug as member_slug,
+              m.first_name as member_first_name,
+              m.last_name as member_last_name,
+              m.display_name as member_display_name,
+              m.source_ids as member_source_ids
+            from member_mandates mm
+            join legislatures l on l.id = mm.legislature_id
+            join members m on m.id = mm.member_id
+            left join member_party_affiliations mpa
+              on mpa.member_id = mm.member_id
+              and mpa.party_id = ${party.id}
+              and mpa.starts_on <= coalesce(mm.ends_on, l.ends_on)
+              and coalesce(mpa.ends_on, l.ends_on) >= mm.starts_on
+            left join member_group_memberships mgm
+              on mgm.member_id = mm.member_id
+              and mgm.starts_on <= coalesce(mm.ends_on, l.ends_on)
+              and coalesce(mgm.ends_on, l.ends_on) >= mm.starts_on
+            left join parliamentary_groups pg
+              on pg.id = mgm.group_id
+              and pg.party_id = ${party.id}
+              and pg.chamber = mm.chamber
+            where mpa.id is not null or pg.id is not null
+            order by l.id, mm.chamber, coalesce(m.person_id, m.id), m.display_name asc
           `)
         ])
-      : [[], [], []];
+      : [[], [], [], [], []];
     const members = memberRows.map(mapMember);
     const groupTotals = totalRows.map(mapGroupVoteTotal);
     const votes = voteRows.map(mapVote);
+    const sampleMembersByLegislature = new Map<string, Member[]>();
+    for (const row of legislatureMemberRows) {
+      const key = `${row.legislature_id}|${row.chamber}`;
+      const current = sampleMembersByLegislature.get(key) ?? [];
+      if (current.length < 12) current.push(mapPartyLegislatureMember(row));
+      sampleMembersByLegislature.set(key, current);
+    }
+    const legislatureSummaries = legislatureSummaryRows.map((row) => ({
+      legislature: {
+        id: row.legislature_id,
+        label: row.legislature_label,
+        startsOn: dateString(row.legislature_starts_on),
+        endsOn: dateString(row.legislature_ends_on)
+      },
+      chamber: row.chamber,
+      seatCount: Number(row.seat_count ?? 0),
+      memberCount: Number(row.member_count ?? 0),
+      logoUrls: jsonStringArray(row.logo_urls).slice(0, 4),
+      sampleMembers: sampleMembersByLegislature.get(`${row.legislature_id}|${row.chamber}`) ?? []
+    }));
     const [formationEventRows, formationEventEntityRows, governmentAlignmentRows, governmentRows] = await Promise.all([
       session.db.select().from(schema.politicalFormationEvents),
       session.db.select().from(schema.politicalFormationEventEntities),
@@ -956,6 +1062,7 @@ async function tryDatabaseParty(slug: string): Promise<PartyPageData | undefined
       party,
       groups,
       members,
+      legislatureSummaries,
       groupTotals,
       votes,
       formationEvents,
@@ -1112,6 +1219,18 @@ function mapMember(row: typeof schema.members.$inferSelect): Member {
     lastName: row.lastName,
     displayName: row.displayName,
     sourceIds: row.sourceIds
+  };
+}
+
+function mapPartyLegislatureMember(row: PartyLegislatureMemberRow): Member {
+  return {
+    id: row.member_id,
+    personId: row.member_person_id ?? undefined,
+    slug: row.member_slug,
+    firstName: row.member_first_name,
+    lastName: row.member_last_name,
+    displayName: row.member_display_name,
+    sourceIds: jsonRecord(row.member_source_ids)
   };
 }
 
@@ -2485,6 +2604,29 @@ type MemberDirectoryRow = {
   stat_absent: number;
   stat_switches: number;
   stat_seniority_days: number;
+};
+
+type PartyLegislatureSummaryRow = {
+  legislature_id: string;
+  legislature_label: string;
+  legislature_starts_on: DateValue;
+  legislature_ends_on: DateValue;
+  chamber: MemberMandate["chamber"];
+  seat_count: number;
+  member_count: number;
+  logo_urls: unknown;
+};
+
+type PartyLegislatureMemberRow = {
+  legislature_id: string;
+  chamber: MemberMandate["chamber"];
+  member_id: string;
+  member_person_id: string | null;
+  member_slug: string;
+  member_first_name: string;
+  member_last_name: string;
+  member_display_name: string;
+  member_source_ids: unknown;
 };
 
 type VoteRosterRow = {

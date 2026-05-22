@@ -2102,3 +2102,13 @@ Verification:
   periods, with a compact alignment legend.
 - Promoted formation-event notes into a clearer “why the path changed” section
   below the visual timeline.
+
+## 2026-05-22 — Party Page Legislature Layer
+
+- Added DB-backed party legislature summaries by chamber, including starting
+  seat estimates, imported-member counts, period logo URLs, and sample members.
+- Split party identity facts such as founding, re-establishment, and rename
+  events away from the broader political formation timeline.
+- Added a scrollable “mandate și membri în timp” panel to party pages, with a
+  fallback guard for older cached party payloads that do not yet contain the new
+  summary field.

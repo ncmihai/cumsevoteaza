@@ -954,6 +954,9 @@ implementation steps.
 - [x] Improve member timeline semantics with merged same-party career periods,
   visible legislature boundary markers, government/support/opposition context
   bands, and clearer merger/alliance explanation notes.
+- [x] Add party-page next layer: identity facts separated from broader
+  political timeline, per-legislature chamber summaries with starting-seat
+  estimates, imported-member counts, period logos, and sample members.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want
