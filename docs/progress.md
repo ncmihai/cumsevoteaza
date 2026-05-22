@@ -2061,3 +2061,14 @@ Verification:
 - Verified locally on the Lucian Nicolae Bode profile that PDL/PNL segments
   now show cabinet-context badges across Boc, Ponta, Cioloș, Cîțu, Ciucă,
   Ciolacu, and Bolojan periods.
+
+## 2026-05-22 — Vote/Bill Government Context
+
+- Added a reusable government-context panel for vote and bill detail pages.
+- Vote pages now resolve the active cabinet on the vote date and show the
+  curated coalition/support parties attached to that government.
+- Bill pages use the earliest known bill event date as the first contextual
+  anchor, so a project can be read against the cabinet period when it entered
+  the visible legislative timeline.
+- Kept the copy neutral: the panel says what is curated and explicitly notes
+  that opposition is only inferred where coalition data exists.

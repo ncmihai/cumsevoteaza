@@ -5,6 +5,7 @@ import { getVotePageData } from "@/lib/data";
 import { getHotCount } from "@/lib/explorer-data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
 import { EngagementTracker } from "../../_components/EngagementTracker";
+import { GovernmentContextPanel } from "../../_components/GovernmentContextPanel";
 import { HotButton } from "../../_components/HotButton";
 import { SourceBadge } from "../../_components/SourceBadge";
 import { Stat } from "../../_components/Stat";
@@ -17,7 +18,7 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
   const labels = votePageLabels[locale];
   const data = await getVotePageData(id);
   if (!data) notFound();
-  const { vote, bill, source, groups, members, groupTotals, individualVotes, seatVotes, sourceKind } = data;
+  const { vote, bill, source, governmentContext, groups, members, groupTotals, individualVotes, seatVotes, sourceKind } = data;
   const hotCount = await getHotCount("vote", vote.id);
 
   return (
@@ -47,6 +48,8 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
         <Stat label={voteChoiceLabels[locale].abstention} value={vote.totals.abstention} />
         <Stat label={voteChoiceLabels[locale].present_not_voting} value={vote.totals.presentNotVoting} />
       </section>
+
+      <GovernmentContextPanel context={governmentContext} locale={locale} />
 
       <div className="mt-6">
         <VoteExplorer

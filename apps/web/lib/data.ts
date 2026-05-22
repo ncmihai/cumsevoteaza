@@ -37,6 +37,7 @@ export interface VotePageData {
   vote: Vote;
   bill?: Bill;
   source?: SourceSnapshot;
+  governmentContext?: GovernmentContextData;
   groups: ParliamentaryGroup[];
   members: Member[];
   groupTotals: GroupVoteTotal[];
@@ -75,7 +76,21 @@ export interface BillPageData {
   documents: DocumentSource[];
   votes: Vote[];
   source?: SourceSnapshot;
+  governmentContext?: GovernmentContextData;
   sourceKind: "database" | "demo";
+}
+
+export interface GovernmentContextData {
+  government: Government;
+  asOf: string;
+  alignments: Array<{
+    party: Party;
+    alignment: GovernanceAlignment;
+    basis: AlignmentBasis;
+    startsOn: string;
+    endsOn?: string;
+  }>;
+  hasCuratedCoalitionData: boolean;
 }
 
 export interface MemberDirectoryItem {
@@ -517,11 +532,13 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
     const mandates = rosterRows.map(mapVoteRosterMandate);
     const memberships = rosterRows.flatMap((row) => row.membership_id ? [mapVoteRosterMembership(row)] : []);
     const legislatures = uniqueBy(rosterRows.map(mapVoteRosterLegislature), (legislature) => legislature.id);
+    const governmentContext = await loadGovernmentContextForDate(session.db, voteRow.heldOn);
 
     return {
       vote: mapVote(voteRow),
       bill: billRow ? mapBill(billRow) : undefined,
       source: sourceRow ? mapSource(sourceRow) : undefined,
+      governmentContext,
       groups: groupRows.map(mapGroup),
       members: memberRows.map(mapMember),
       groupTotals: groupTotalRows.map(mapGroupVoteTotal),
@@ -597,13 +614,16 @@ async function tryDatabaseBill(id: string): Promise<BillPageData | undefined> {
     const [sourceRow] = sourceId
       ? await session.db.select().from(schema.sourceSnapshots).where(eq(schema.sourceSnapshots.id, sourceId)).limit(1)
       : [];
+    const events = eventRows.map(mapBillEvent).sort((a, b) => a.occurredOn.localeCompare(b.occurredOn));
+    const governmentContext = events[0] ? await loadGovernmentContextForDate(session.db, events[0].occurredOn) : undefined;
 
     return {
       bill: mapBill(billRow),
-      events: eventRows.map(mapBillEvent),
+      events,
       documents: documentRows.map(mapDocument),
       votes: voteRows.map(mapVote),
       source: sourceRow ? mapSource(sourceRow) : undefined,
+      governmentContext,
       sourceKind: "database"
     };
   } catch {
@@ -1022,6 +1042,58 @@ function mapGovernment(row: typeof schema.governments.$inferSelect): Government 
     investitureVoteId: row.investitureVoteId ?? undefined,
     sourceSnapshotId: row.sourceSnapshotId ?? undefined
   };
+}
+
+async function loadGovernmentContextForDate(db: DbClient, date: string): Promise<GovernmentContextData | undefined> {
+  const governmentRows = await db.select().from(schema.governments).where(sql`
+    ${schema.governments.startsOn} <= ${date}::date
+    and coalesce(${schema.governments.endsOn}, date '9999-12-31') >= ${date}::date
+  `);
+  const government = governmentRows
+    .map(mapGovernment)
+    .sort((a, b) => b.startsOn.localeCompare(a.startsOn) || a.name.localeCompare(b.name, "ro"))
+    .at(0);
+  if (!government) return undefined;
+
+  const alignmentRows = await db.select().from(schema.governmentPartyAlignments).where(sql`
+    ${schema.governmentPartyAlignments.governmentId} = ${government.id}
+    and ${schema.governmentPartyAlignments.startsOn} <= ${date}::date
+    and coalesce(${schema.governmentPartyAlignments.endsOn}, date '9999-12-31') >= ${date}::date
+  `);
+  const partyIds = uniqueStrings(alignmentRows.map((row) => row.partyId));
+  const partyRows = partyIds.length > 0
+    ? await db.select().from(schema.parties).where(inArray(schema.parties.id, partyIds))
+    : [];
+  const partiesById = new Map(partyRows.map((row) => [row.id, mapParty(row)]));
+
+  return {
+    government,
+    asOf: date,
+    alignments: alignmentRows
+      .flatMap((row) => {
+        const party = partiesById.get(row.partyId);
+        return party
+          ? [{
+              party,
+              alignment: row.alignment,
+              basis: row.basis,
+              startsOn: row.startsOn,
+              endsOn: row.endsOn ?? undefined
+            }]
+          : [];
+      })
+      .sort((a, b) => alignmentSortWeight(a.alignment) - alignmentSortWeight(b.alignment) || a.party.shortName.localeCompare(b.party.shortName, "ro")),
+    hasCuratedCoalitionData: alignmentRows.length > 0
+  };
+}
+
+function alignmentSortWeight(alignment: GovernanceAlignment): number {
+  if (alignment === "government") return 0;
+  if (alignment === "governing_support") return 1;
+  if (alignment === "mixed") return 2;
+  if (alignment === "opposition") return 3;
+  if (alignment === "unaffiliated") return 4;
+  return 5;
 }
 
 function mapMember(row: typeof schema.members.$inferSelect): Member {

@@ -5,6 +5,7 @@ import { getBillPageData } from "@/lib/data";
 import { getHotCount } from "@/lib/explorer-data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
 import { EngagementTracker } from "../../_components/EngagementTracker";
+import { GovernmentContextPanel } from "../../_components/GovernmentContextPanel";
 import { HotButton } from "../../_components/HotButton";
 import { SourceBadge } from "../../_components/SourceBadge";
 
@@ -15,7 +16,7 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
   const labels = billPageLabels[locale];
   const data = await getBillPageData(id);
   if (!data) notFound();
-  const { bill, events, documents, votes, source, sourceKind } = data;
+  const { bill, events, documents, votes, source, governmentContext, sourceKind } = data;
   const hotCount = await getHotCount("bill", bill.id);
 
   return (
@@ -33,6 +34,8 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
           <span className="rounded bg-slate-200 px-2 py-1 text-xs uppercase text-slate-700">{sourceKind}</span>
         </div>
       </div>
+
+      <GovernmentContextPanel context={governmentContext} locale={locale} />
 
       <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_380px]">
         <div className="border border-slate-300 bg-white">

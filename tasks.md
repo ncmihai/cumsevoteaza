@@ -942,6 +942,9 @@ implementation steps.
   ids, high-impact event coverage, and alliance-as-formation modeling.
 - [x] Add government/support/opposition context to member career timeline
   segments, derived from curated government-party alignments.
+- [x] Add government-context panels to vote and bill detail pages so imported
+  items can be read against the active cabinet and curated coalition/support
+  data for that date.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want
