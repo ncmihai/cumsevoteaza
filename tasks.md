@@ -945,6 +945,8 @@ implementation steps.
 - [x] Add government-context panels to vote and bill detail pages so imported
   items can be read against the active cabinet and curated coalition/support
   data for that date.
+- [x] Add a protected `revalidateOnly=1` cron mode so production public-read
+  caches can be flushed after data/code deploys without running scrapers.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want

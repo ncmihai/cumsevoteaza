@@ -15,6 +15,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (requestParam(request, "revalidateOnly") === "1") {
+    revalidatePublicReadTags();
+    return NextResponse.json({
+      ok: true,
+      mode: "revalidate-only",
+      tags: Object.values(CACHE_TAGS)
+    });
+  }
+
   const maxImports = numberParam(request, "maxImports") ?? 5;
   const summary = await runDailySync({ maxImports });
   const status = summary.failed > 0 || summary.errors.length > 0 ? 207 : 200;
@@ -36,8 +45,12 @@ function revalidatePublicReadTags() {
 }
 
 function numberParam(request: Request, name: string): number | undefined {
-  const value = new URL(request.url).searchParams.get(name);
+  const value = requestParam(request, name);
   if (!value) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function requestParam(request: Request, name: string): string | null {
+  return new URL(request.url).searchParams.get(name);
 }

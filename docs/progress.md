@@ -2072,3 +2072,12 @@ Verification:
   the visible legislative timeline.
 - Kept the copy neutral: the panel says what is curated and explicitly notes
   that opposition is only inferred where coalition data exists.
+
+## 2026-05-22 — Vercel Build and Cache Fix
+
+- Fixed `.vercelignore` so Vercel keeps build-time curated JSON data under
+  `data/curated/*.json` while still excluding bulky local pipeline artifacts.
+- Confirmed the failed production deploys were caused by missing curated JSON
+  imports after `.vercelignore` removed the entire `data` folder.
+- Added a protected `revalidateOnly=1` mode to `/api/cron/daily-import` so
+  public read caches can be flushed without invoking discovery/import scraping.
