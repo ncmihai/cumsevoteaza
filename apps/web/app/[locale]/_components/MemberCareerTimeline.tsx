@@ -245,6 +245,8 @@ function uniqueLegislatureBreaks(segments: MemberCareerSegment[]): Array<{ id: s
   for (const segment of segments) {
     if (!segment.legislatureId) continue;
     const label = segment.legislatureId.replace(/^leg-/, "");
+    const existing = breaks.get(segment.legislatureId);
+    if (existing && existing.date <= segment.startsOn) continue;
     breaks.set(segment.legislatureId, {
       id: segment.legislatureId,
       date: segment.startsOn,
