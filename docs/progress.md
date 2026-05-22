@@ -2126,3 +2126,17 @@ Verification:
   promoted into curated political formation data.
 - Added a pipeline test for UNPR-style Romanian Wikipedia history extraction,
   including exact Romanian date parsing and merger-event detection.
+
+## 2026-05-22 — Production Political Data Sync
+
+- Ran the idempotent government skeleton/coalition seed against Neon:
+  36 governments, 36 roles, 73 composition events, and 87 seeded party
+  alignments, with no skipped party IDs.
+- Ran the curated political formation seed against Neon:
+  54 formation events and 125 event-entity links.
+- Refreshed Neon read models after the seed pass:
+  2,196 bill/vote summaries, 553 vote coverage summaries, 5,289 member
+  legislature activity rows, and 8,259 search index rows.
+- Verified production counts directly from Neon. The protected Vercel
+  revalidate-only endpoint returned `401`, so the local `CRON_SECRET` available
+  to the workspace does not match the deployed value or is missing locally.

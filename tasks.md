@@ -960,6 +960,8 @@ implementation steps.
 - [x] Add Romanian Wikipedia party-history candidate generator:
   file-first fetch/parse commands, review-only JSONL rows, and a manual review
   markdown report. Output is not imported automatically.
+- [x] Sync current curated government alignments and political formation events
+  to Neon, then refresh production read models.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want
