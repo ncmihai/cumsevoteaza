@@ -2020,3 +2020,18 @@ Verification:
 - Added curated-event tests that guard against duplicate event ids, duplicate
   event/entity relation ids, missing high-impact roots, and alliances being
   modeled as formations instead of parties.
+
+## 2026-05-22 — Government Alignment Period Refinement
+
+- Refined curated party-government alignment rows where coalition membership
+  changed inside the same cabinet period.
+- Split Cîțu government participation so PLUS ends at the USR/PLUS merger and
+  USR ends at the September 2021 withdrawal from government.
+- Split Dăncilă government participation so ALDE ends at the August 2019
+  coalition withdrawal while PSD remains through the cabinet end.
+- Corrected Ponta II/III alignment by ending PNL support before the Ponta III
+  cabinet and removing the overextended PNL row from Ponta III.
+- Added Cioloș technocratic government support rows and current Bolojan
+  minority-group support as explicit `governing_support` rows.
+- Added tests preventing reversed alignment periods and guarding the sensitive
+  coalition-change rows.

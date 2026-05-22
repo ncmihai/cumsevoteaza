@@ -6,11 +6,12 @@ type AlignmentSeed = Omit<GovernmentPartyAlignment, "id" | "governmentId"> & {
 
 const reviewedAlignments: AlignmentSeed[] = [
   ...government("orban-2019-2020", "government", ["party-pnl"]),
+  ...government("ciolos-2015-2017", "governing_support", ["party-psd", "party-pnl", "party-unpr", "party-udmr", "party-minoritati"]),
   ...government("ponta-iv-2014-2015", "government", ["party-psd", "party-unpr"]),
   ...government("ponta-iv-2014-2015", "government", ["party-alde"], { startsOn: "2015-06-19" }),
   ...government("ponta-iii-2014", "government", ["party-psd", "party-unpr", "party-pc", "party-udmr"]),
-  ...government("ponta-iii-2014", "government", ["party-pnl"], { endsOn: "2014-02-25" }),
-  ...government("ponta-ii-2012-2014", "government", ["party-psd", "party-pnl", "party-pc", "party-unpr"]),
+  ...government("ponta-ii-2012-2014", "government", ["party-psd", "party-pc", "party-unpr"]),
+  ...government("ponta-ii-2012-2014", "government", ["party-pnl"], { endsOn: "2014-02-25" }),
   ...government("ponta-i-2012", "government", ["party-psd", "party-pnl", "party-pc"]),
   ...government("ungureanu-2012", "government", ["party-pdl", "party-udmr", "party-unpr"]),
   ...government("boc-2008-2012", "government", ["party-pdl", "party-psd"], { startsOn: "2008-12-22", endsOn: "2009-10-01" }),

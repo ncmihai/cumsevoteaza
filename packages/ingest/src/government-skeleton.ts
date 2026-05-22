@@ -58,7 +58,8 @@ const governments: GovernmentSeed[] = [
       { partyId: "party-psd", alignment: "government", basis: "manual_curation", startsOn: "2025-06-23", endsOn: "2026-04-24" },
       { partyId: "party-pnl", alignment: "government", basis: "manual_curation", startsOn: "2025-06-23", endsOn: "2026-05-05" },
       { partyId: "party-usr", alignment: "government", basis: "manual_curation", startsOn: "2025-06-23", endsOn: "2026-05-05" },
-      { partyId: "party-udmr", alignment: "government", basis: "manual_curation", startsOn: "2025-06-23", endsOn: "2026-05-05" }
+      { partyId: "party-udmr", alignment: "government", basis: "manual_curation", startsOn: "2025-06-23", endsOn: "2026-05-05" },
+      { partyId: "party-minoritati", alignment: "governing_support", basis: "manual_curation", startsOn: "2025-06-23", endsOn: "2026-05-05" }
     ]
   },
   { slug: "predoiu-acting-2025", cabinet: "Predoiu interimar", primeMinister: "Cătălin Predoiu", startsOn: "2025-05-06", endsOn: "2025-06-23", acting: true },
@@ -110,7 +111,8 @@ const governments: GovernmentSeed[] = [
     composition: "PNL-USR PLUS-UDMR",
     partyAlignments: [
       { partyId: "party-pnl", alignment: "government", basis: "manual_curation" },
-      { partyId: "party-usr", alignment: "government", basis: "manual_curation" },
+      { partyId: "party-plus", alignment: "government", basis: "manual_curation", startsOn: "2020-12-23", endsOn: "2021-04-16" },
+      { partyId: "party-usr", alignment: "government", basis: "manual_curation", startsOn: "2020-12-23", endsOn: "2021-09-08" },
       { partyId: "party-udmr", alignment: "government", basis: "manual_curation" }
     ]
   },
@@ -125,7 +127,7 @@ const governments: GovernmentSeed[] = [
     composition: "PSD-ALDE",
     partyAlignments: [
       { partyId: "party-psd", alignment: "government", basis: "manual_curation" },
-      { partyId: "party-alde", alignment: "government", basis: "manual_curation" }
+      { partyId: "party-alde", alignment: "government", basis: "manual_curation", startsOn: "2018-01-29", endsOn: "2019-08-26" }
     ]
   },
   { slug: "fifor-acting-2018", cabinet: "Fifor interimar", primeMinister: "Mihai Fifor", startsOn: "2018-01-16", endsOn: "2018-01-29", acting: true },
@@ -159,7 +161,7 @@ const governments: GovernmentSeed[] = [
   { slug: "ponta-iii-2014", cabinet: "Ponta III", primeMinister: "Victor Ponta", startsOn: "2014-03-05", endsOn: "2014-12-17", composition: "PSD-UNPR-PC-PLR-UDMR" },
   { slug: "ponta-ii-2012-2014", cabinet: "Ponta II", primeMinister: "Victor Ponta", startsOn: "2012-12-21", endsOn: "2014-03-05", composition: "USL" },
   { slug: "ponta-i-2012", cabinet: "Ponta I", primeMinister: "Victor Ponta", startsOn: "2012-05-07", endsOn: "2012-12-21", composition: "USL" },
-  { slug: "ungureanu-2012", cabinet: "Ungureanu", primeMinister: "Mihai Răzvan Ungureanu", startsOn: "2012-02-09", endsOn: "2012-05-07", composition: "PDL-PSD" },
+  { slug: "ungureanu-2012", cabinet: "Ungureanu", primeMinister: "Mihai Răzvan Ungureanu", startsOn: "2012-02-09", endsOn: "2012-05-07", composition: "PDL-UDMR-UNPR" },
   { slug: "predoiu-acting-2012", cabinet: "Predoiu interimar", primeMinister: "Cătălin Predoiu", startsOn: "2012-02-06", endsOn: "2012-02-09", acting: true },
   { slug: "boc-2008-2012", cabinet: "Boc I-II", primeMinister: "Emil Boc", startsOn: "2008-12-22", endsOn: "2012-02-06", composition: "PDL-PSD / PDL-UDMR-UNPR" },
   { slug: "tariceanu-2004-2008", cabinet: "Tăriceanu I-II", primeMinister: "Călin Popescu-Tăriceanu", startsOn: "2004-12-29", endsOn: "2008-12-22", composition: "PNL-PD-PUR/PC-UDMR / PNL-UDMR" },

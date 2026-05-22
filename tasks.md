@@ -930,6 +930,9 @@ implementation steps.
   not become parties/formations automatically.
 - [x] Start revamping party pages around historical timeline events and
   government participation panels.
+- [x] Refine dated government alignment periods for coalition changes:
+  Cîțu/USR PLUS, Dăncilă/ALDE, Ponta II/III, Cioloș support, and
+  minorities support in the current Bolojan skeleton.
 - [x] Add reviewed high-impact party root events for PNȚCD, FDSN, PD, PUNR,
   PSM, PP-DD, USR, and PLUS so party/member timelines have cleaner
   post-1989 continuity markers.
