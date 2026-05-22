@@ -28,6 +28,20 @@
     ]
   },
   {
+    "id": "formation-event-pntcd-reestablished-1989-12-22",
+    "date": "1989-12-22",
+    "eventType": "party_reestablished",
+    "titleRo": "PNȚCD este reînființat după 1989",
+    "titleEn": "PNȚCD re-established after 1989",
+    "descriptionRo": "PNȚCD revendică continuitatea Partidului Național Țărănesc istoric și reapare în viața politică postcomunistă după decembrie 1989. Evenimentul este folosit ca reper modern, separat de istoria interbelică.",
+    "descriptionEn": "PNȚCD claims continuity from the historical National Peasants' Party and re-enters post-communist political life after December 1989. This event is used as a modern milestone, separate from interwar history.",
+    "sourceUrl": "https://ro.wikipedia.org/wiki/Partidul_Na%C8%9Bional_%C8%9A%C4%83r%C4%83nesc_Cre%C8%99tin_Democrat",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pntcd", "role": "subject" }
+    ]
+  },
+  {
     "id": "formation-event-fsn-founded-1989-12-22",
     "date": "1989-12-22",
     "eventType": "party_founded",
@@ -39,6 +53,36 @@
     "sourceKind": "wikipedia",
     "entities": [
       { "entityType": "party", "entityId": "party-fsn", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-fdsn-splits-from-fsn-1992-04-07",
+    "date": "1992-04-07",
+    "eventType": "party_split",
+    "titleRo": "FDSN se desprinde din FSN",
+    "titleEn": "FDSN splits from FSN",
+    "descriptionRo": "Frontul Democrat al Salvării Naționale s-a desprins din FSN în 1992, înaintea alegerilor parlamentare din acel an. FDSN este tratat ca predecesorul PDSR.",
+    "descriptionEn": "The Democratic National Salvation Front split from FSN in 1992, before that year's parliamentary election. FDSN is treated as the predecessor of PDSR.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Democratic_National_Salvation_Front",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-fsn", "role": "split_from" },
+      { "entityType": "party", "entityId": "party-fdsn", "role": "split_to" }
+    ]
+  },
+  {
+    "id": "formation-event-fsn-renamed-pd-1993-05-28",
+    "date": "1993-05-28",
+    "eventType": "party_renamed",
+    "titleRo": "FSN devine Partidul Democrat",
+    "titleEn": "FSN becomes the Democratic Party",
+    "descriptionRo": "Ramura FSN rămasă după desprinderea FDSN a adoptat numele Partidul Democrat. Evenimentul explică continuitatea PD către PDL.",
+    "descriptionEn": "The FSN branch remaining after the FDSN split adopted the Democratic Party name. This event explains the PD continuity toward PDL.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Democratic_Party_(Romania)",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-fsn", "role": "renamed_from" },
+      { "entityType": "party", "entityId": "party-pd", "role": "renamed_to" }
     ]
   },
   {
@@ -70,6 +114,20 @@
     ]
   },
   {
+    "id": "formation-event-punr-founded-1990-03-15",
+    "date": "1990-03-15",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea PUNR",
+    "titleEn": "PUNR founded",
+    "descriptionRo": "Partidul Unității Naționale Române a apărut în 1990 și este tratat separat de alianțele sau susținerile parlamentare ulterioare, inclusiv Patrulaterul roșu.",
+    "descriptionEn": "The Romanian National Unity Party appeared in 1990 and is treated separately from later alliances or parliamentary support arrangements, including the Red Quadrilateral.",
+    "sourceUrl": "https://ro.wikipedia.org/wiki/Partidul_Unit%C4%83%C8%9Bii_Na%C8%9Bionale_Rom%C3%A2ne",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-punr", "role": "subject" }
+    ]
+  },
+  {
     "id": "formation-event-prm-founded-1991-06-20",
     "date": "1991-06-20",
     "eventType": "party_founded",
@@ -81,6 +139,20 @@
     "sourceKind": "wikipedia",
     "entities": [
       { "entityType": "party", "entityId": "party-prm", "role": "subject" }
+    ]
+  },
+  {
+    "id": "formation-event-psm-founded-1990-11-16",
+    "date": "1990-11-16",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea Partidului Socialist al Muncii",
+    "titleEn": "Socialist Party of Labour founded",
+    "descriptionRo": "Partidul Socialist al Muncii este tratat ca formațiune distinctă în legislaturile anilor 1990 și ca parte a susținerii parlamentare cunoscute drept Patrulaterul roșu.",
+    "descriptionEn": "The Socialist Party of Labour is treated as a distinct formation in the 1990s legislatures and as part of the parliamentary support known as the Red Quadrilateral.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Socialist_Party_of_Labour",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-psm", "role": "subject" }
     ]
   },
   {
@@ -515,6 +587,20 @@
     ]
   },
   {
+    "id": "formation-event-ppdd-founded-2011-09-19",
+    "date": "2011-09-19",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea PP-DD",
+    "titleEn": "PP-DD founded",
+    "descriptionRo": "Partidul Poporului - Dan Diaconescu a fost înființat înaintea intrării sale în Parlament în legislatura 2012-2016.",
+    "descriptionEn": "The People's Party - Dan Diaconescu was founded before entering Parliament in the 2012-2016 legislature.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/People%27s_Party_%E2%80%93_Dan_Diaconescu",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-pp-dd", "role": "subject" }
+    ]
+  },
+  {
     "id": "formation-event-unpr-pmp-merger-announced-2016-07-12",
     "date": "2016-07-12",
     "eventType": "other",
@@ -543,6 +629,35 @@
       { "entityType": "party", "entityId": "party-pro-romania", "role": "subject" },
       { "entityType": "party", "entityId": "party-psd", "role": "split_from" },
       { "entityType": "party", "entityId": "party-alde", "role": "split_from" }
+    ]
+  },
+  {
+    "id": "formation-event-usr-founded-2016-08-21",
+    "date": "2016-08-21",
+    "eventType": "party_founded",
+    "titleRo": "USB devine Uniunea Salvați România",
+    "titleEn": "USB becomes Save Romania Union",
+    "descriptionRo": "Uniunea Salvați România a fost formată prin extinderea Uniunii Salvați București la nivel național, înaintea alegerilor parlamentare din 2016.",
+    "descriptionEn": "Save Romania Union was formed by expanding Save Bucharest Union nationally before the 2016 parliamentary election.",
+    "sourceUrl": "https://ro.wikipedia.org/wiki/Uniunea_Salva%C8%9Bi_Rom%C3%A2nia",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-usr", "role": "subject" },
+      { "entityType": "formation", "entityId": "formation-usb", "role": "renamed_from" }
+    ]
+  },
+  {
+    "id": "formation-event-plus-founded-2018-12-15",
+    "date": "2018-12-15",
+    "eventType": "party_founded",
+    "titleRo": "Fondarea PLUS",
+    "titleEn": "PLUS founded",
+    "descriptionRo": "Partidul Libertate, Unitate și Solidaritate a fost lansat de Dacian Cioloș și a devenit ulterior partenerul USR în alianța USR PLUS.",
+    "descriptionEn": "The Freedom, Unity and Solidarity Party was launched by Dacian Cioloș and later became USR's partner in the USR PLUS alliance.",
+    "sourceUrl": "https://en.wikipedia.org/wiki/Freedom,_Unity_and_Solidarity_Party",
+    "sourceKind": "wikipedia",
+    "entities": [
+      { "entityType": "party", "entityId": "party-plus", "role": "subject" }
     ]
   },
   {

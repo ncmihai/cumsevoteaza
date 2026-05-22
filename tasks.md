@@ -930,6 +930,11 @@ implementation steps.
   not become parties/formations automatically.
 - [x] Start revamping party pages around historical timeline events and
   government participation panels.
+- [x] Add reviewed high-impact party root events for PNȚCD, FDSN, PD, PUNR,
+  PSM, PP-DD, USR, and PLUS so party/member timelines have cleaner
+  post-1989 continuity markers.
+- [x] Add curated-event integrity tests for duplicate ids, duplicate relation
+  ids, high-impact event coverage, and alliance-as-formation modeling.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want

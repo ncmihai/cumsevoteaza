@@ -2009,3 +2009,14 @@ Verification:
 - Added a curated unresolved-entity review shortlist so ambiguous historical labels are not promoted automatically.
 - Extended party page data with formation events and government participation rows.
 - Reworked party pages to show a historical timeline and government/support participation panel before member/vote lists.
+
+## 2026-05-22 — Reviewed Party Roots Batch
+
+- Added reviewed source-backed continuity events for PNȚCD, FDSN, PD, PUNR,
+  PSM, PP-DD, USR, and PLUS in
+  `data/curated/political-formation-events.json`.
+- Kept Romanian Wikipedia/news-backed rows under the existing `wikipedia` or
+  `curated` source kinds; no automatic Google-derived data is imported.
+- Added curated-event tests that guard against duplicate event ids, duplicate
+  event/entity relation ids, missing high-impact roots, and alliances being
+  modeled as formations instead of parties.
