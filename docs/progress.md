@@ -2233,3 +2233,20 @@ Verification:
   imported all pending rows in controlled batches. Final verified status:
   14 imported votes for 13 May, 18 imported votes for 18 May, and 13 imported
   votes for 20 May, with no failed rows in that date range.
+
+## 2026-05-25 — Historical Member Photo Backup: 2020 Slice
+
+- Retried the one missing current-legislature photo,
+  `https://cdep.ro/parlamentari/l2024/AfloareiSorinAlexandru.JPG`; the
+  official CDEP profile still points to that URL, and the URL still returns
+  `404`.
+- Started the second photo phase from
+  `data/cdep-history/parsed/latest-historical-photos.jsonl`, which excludes
+  people already present in the current legislature and keeps one latest known
+  CDEP photo per historical-only person.
+- Completed the `2020-2024` historical-only latest-photo slice in six chunks of
+  50 unique official URLs. Final verified metadata: `295` stored and `5`
+  official `404` rows.
+- Remaining 2020 official missing URLs:
+  `PopescuVirgilDaniel.jpg`, `SarmasIoanSabin.jpg`, `MariusVulcan.jpg`,
+  `Adriana-Larisa_Antipa.jpg`, and `Alina_Dumitru.jpg`.

@@ -983,9 +983,13 @@ implementation steps.
   rows in the completed batch runs.
 - [x] Complete current-legislature photo backup: all `472` current member photo
   references processed, with `471` stored and `1` official 404 recorded for
-  manual review.
+  manual review. Retried the missing official CDEP image on 2026-05-25; it
+  still returned `404`.
 - [x] Add a file-first `latest-historical-photos` selector for the second photo
   phase: one latest known CDEP photo per historical-only person.
+- [x] Import the `2020-2024` historical-only latest-photo batch from
+  `data/cdep-history/parsed/latest-historical-photos.jsonl`: `300` selected,
+  `295` stored, `5` official 404 rows preserved for review.
 - [x] Add the current composition preview to the landing page under search,
   with compact Chamber/Senate maps, current PM, and active-government summary.
 - [x] Replace text-only locale switch labels with Romania/UK flag buttons while
@@ -995,9 +999,9 @@ implementation steps.
 - [x] Fix Deputies vote discovery so CDEP nominal rows inherit the calendar date
   from `evot2015.data?dat=YYYYMMDD`, then import all discovered Deputies votes
   from 13 May 2026 through 25 May 2026.
-- [ ] Import `data/cdep-history/parsed/latest-historical-photos.jsonl` in small
-  batches for historical-only members. The first live attempt was paused after
-  command-approval timeouts; resume with the documented command when available.
+- [ ] Continue `data/cdep-history/parsed/latest-historical-photos.jsonl` in
+  small batches for older historical-only members, next with the `2016-2020`
+  latest-photo slice.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want
