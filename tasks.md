@@ -1002,6 +1002,9 @@ implementation steps.
 - [ ] Continue `data/cdep-history/parsed/latest-historical-photos.jsonl` in
   small batches for older historical-only members, next with the `2016-2020`
   latest-photo slice.
+- [ ] Consolidate Git/deploy workflow around the `ncmihai/cumvoteaza` repo so
+  Vercel deployment no longer depends on remembering to push both `cumsevoteaza`
+  and `cumvoteaza` remotes.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want
