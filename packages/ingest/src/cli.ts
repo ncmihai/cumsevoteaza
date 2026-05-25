@@ -158,10 +158,15 @@ async function main() {
 
   if (command === "assets:import") {
     const result = await importStoredAssetsFromInventory({
-      assetsPath: flag("assets") ?? path.join(repoRoot, "data/cdep-history/parsed/assets.jsonl"),
+      assetsPath: resolveRepoPath(flag("assets") ?? "data/cdep-history/parsed/assets.jsonl"),
       assetType: assetTypeFlag(),
       legislature: flag("legislature"),
       limit: numberFlag("limit"),
+      maxUniqueOfficialUrls: numberFlag("max-unique-official-urls"),
+      uniqueOfficialUrlOffset: numberFlag("unique-official-url-offset"),
+      delayMs: numberFlag("delay-ms"),
+      timeoutMs: numberFlag("timeout-ms"),
+      insecure: hasFlag("insecure"),
       persist: hasFlag("persist")
     });
     await writeImport("assets-import", result, JSON.stringify(result, null, 2));
@@ -1008,6 +1013,10 @@ function chamberFlag(): "senate" | "deputies" | undefined {
 function assetTypeFlag(): AssetType | undefined {
   const value = flag("asset-type");
   return value === "photo" || value === "party_logo" || value === "cv" ? value : undefined;
+}
+
+function resolveRepoPath(value: string): string {
+  return path.isAbsolute(value) ? value : path.join(repoRoot, value);
 }
 
 function loadLocalEnv() {

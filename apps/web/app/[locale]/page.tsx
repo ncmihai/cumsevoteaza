@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { BarChart3, FileText, Search, TrendingUp, UserRound } from "lucide-react";
 import { formatDate, voteChoiceLabels } from "@cumsevoteaza/parliament-model";
+import { getCompositionTimelineData } from "@/lib/composition-data";
 import { getHomeDashboardData, type DashboardItem } from "@/lib/explorer-data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
+import { CompositionSeatMapPreview } from "./_components/CompositionSeatMap";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +13,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const locale: AppLocale = isLocale(rawLocale) ? rawLocale : "ro";
   const messages = messagesFor(locale);
   const labels = pageLabels[locale];
-  const dashboard = await getHomeDashboardData(locale);
+  const [dashboard, composition] = await Promise.all([getHomeDashboardData(locale), getCompositionTimelineData("official")]);
+  const currentStop = composition.stops[0];
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -32,6 +35,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               aria-label={messages.home.searchPlaceholder}
             />
           </form>
+          {currentStop ? <CurrentComposition locale={locale} labels={labels} stop={currentStop} /> : null}
         </div>
 
         <aside className="border border-slate-300 bg-white p-4">
@@ -86,6 +90,47 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <Explainer title={labels.groups} body={labels.groupCopy} href={`/${locale}/members`} cta={labels.groupCta} />
       </section>
     </main>
+  );
+}
+
+function CurrentComposition({
+  locale,
+  labels,
+  stop
+}: {
+  locale: AppLocale;
+  labels: Record<string, string>;
+  stop: Awaited<ReturnType<typeof getCompositionTimelineData>>["stops"][number];
+}) {
+  const pm = stop.primeMinister?.displayName ?? labels.unknown;
+  const government = stop.activeGovernment?.name ?? labels.unknown;
+  return (
+    <section className="mt-6 border border-slate-300 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold uppercase text-[#0c6464]">{labels.currentComposition}</div>
+          <h2 className="mt-1 text-xl font-semibold text-slate-950">{stop.legislature.label}</h2>
+        </div>
+        <Link href={`/${locale}/compozitii`} className="rounded-md border border-[#309898] px-3 py-2 text-sm font-medium text-[#0c6464] hover:bg-[#309898]/10">
+          {labels.openCompositions}
+        </Link>
+      </div>
+      <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="text-xs font-semibold uppercase text-slate-500">{labels.currentPm}</div>
+          <div className="mt-1 font-medium text-slate-950">{pm}</div>
+        </div>
+        <div className="border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="text-xs font-semibold uppercase text-slate-500">{labels.currentGovernment}</div>
+          <div className="mt-1 font-medium text-slate-950">{government}</div>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {stop.chambers.map((chamber) => (
+          <CompositionSeatMapPreview key={chamber.chamber} locale={locale} chamber={chamber.chamber} seats={chamber.seats} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -155,7 +200,12 @@ const pageLabels = {
     committeeCopy: "Comisiile analizează proiectele înainte de plen, pregătesc rapoarte și pot influența forma finală a textului.",
     groups: "Grupuri parlamentare",
     groupCopy: "Grupurile organizează activitatea politică din fiecare cameră și agregă voturile membrilor afiliați.",
-    groupCta: "Vezi grupurile pe legislaturi"
+    groupCta: "Vezi grupurile pe legislaturi",
+    currentComposition: "Compoziția actuală",
+    currentPm: "Prim-ministru",
+    currentGovernment: "Guvern activ",
+    openCompositions: "Vezi compozițiile",
+    unknown: "Necunoscut"
   },
   en: {
     thisMonth: "Most viewed this month",
@@ -170,6 +220,11 @@ const pageLabels = {
     committeeCopy: "Committees analyze bills before plenary debate, prepare reports, and can influence the final text.",
     groups: "Parliamentary groups",
     groupCopy: "Groups organize political activity in each chamber and aggregate voting behavior for affiliated members.",
-    groupCta: "View groups by legislature"
+    groupCta: "View groups by legislature",
+    currentComposition: "Current composition",
+    currentPm: "Prime Minister",
+    currentGovernment: "Active government",
+    openCompositions: "View compositions",
+    unknown: "Unknown"
   }
 } satisfies Record<AppLocale, Record<string, string>>;

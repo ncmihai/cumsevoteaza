@@ -2195,3 +2195,41 @@ Verification:
 - Improved the member career timeline with clearer legislature boundary labels
   and hover/focus detail cards for alliance, merger, and party-history event
   markers.
+
+## 2026-05-22 — CDEP Asset Backup Batching
+
+- Hardened `ingest:assets:import` for fragile CDEP access:
+  unique-official-URL caps, unique URL offsets for resumable batches, per-row
+  progress logging, request delay, timeout, URL normalization to `www.cdep.ro`,
+  and explicit `--insecure` mode for CDEP certificate-chain failures.
+- Verified the asset importer with focused tests and workspace typecheck.
+- Imported historical party-logo assets through offsets `0..70`, covering all
+  `4,306` party-logo references from `79` unique official CDEP URLs. Completed
+  batch runs reported no failed rows.
+- Completed current `2024-2028` member-photo backup. Processed all `472`
+  current photo references: `471` stored, `1` official `404` preserved as an
+  inspectable missing asset.
+- Added a file-only Python pipeline command,
+  `cdep-members latest-historical-photos`, which generated
+  `2,544` latest-known photo candidates for historical-only people without
+  calling CDEP or writing the database.
+- Paused the first historical-only live import after the command approval
+  reviewer timed out twice for the required `tsx`/network escalation. The
+  generated JSONL remains ready for a later resumable import.
+
+## 2026-05-25 — Mobile Composition + May Vote Catch-Up
+
+- Added a current-composition block to the landing page under search, including
+  compact Chamber/Senate maps, current PM, active government, and a link to the
+  full `Compoziții` page.
+- Replaced text-only locale switch labels with Romania/UK flag buttons while
+  keeping the existing route/query-preserving behavior.
+- Made mobile `Compoziții` maps visible through compact previews; tapping a
+  preview opens a zoomable modal with the full interactive seat map.
+- Fixed Deputies vote discovery so nominal vote links found on
+  `evot2015.data?dat=YYYYMMDD` inherit the list-page date when table rows do
+  not repeat it.
+- Rediscovered CDEP vote dates 2026-05-13, 2026-05-18, and 2026-05-20, then
+  imported all pending rows in controlled batches. Final verified status:
+  14 imported votes for 13 May, 18 imported votes for 18 May, and 13 imported
+  votes for 20 May, with no failed rows in that date range.

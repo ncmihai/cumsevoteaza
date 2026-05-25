@@ -158,9 +158,14 @@ export async function importPendingDiscoveries(options: SyncOptions = {}): Promi
       .orderBy(asc(schema.sourceDiscoveries.failureCount), desc(schema.sourceDiscoveries.lastSeenAt))
       .limit(maxImports);
 
-    for (const row of rows.filter((item) => item.failureCount < maxRetries)) {
+    const importableRows = rows.filter((item) => item.failureCount < maxRetries);
+    for (const [index, row] of importableRows.entries()) {
       const result = await importDiscovery(row);
       summary[result] += 1;
+      console.log(
+        `import:pending progress ${index + 1}/${importableRows.length} ${row.chamber}/${row.kind} ` +
+          `${row.officialId ?? row.sourceUrl}: ${result}`
+      );
     }
     summary.skipped += rows.filter((item) => item.failureCount >= maxRetries).length;
     if (summary.imported > 0 || summary.partial > 0) {
@@ -334,7 +339,7 @@ export function discoverOfficialLinks(
       sourceUrl: absoluteUrl,
       officialId: officialIdFromText(rowText, absoluteUrl, kind),
       title: titleFromRow(rowText, text),
-      discoveredOn: dateFromText(rowText),
+      discoveredOn: dateFromText(rowText) ?? dateFromSourceUrl(sourceUrl),
       sourceSnapshotId
     });
   });
@@ -495,6 +500,13 @@ function titleFromRow(rowText: string, linkText: string): string | undefined {
 function dateFromText(text: string): string | undefined {
   const match = text.match(/(\d{2})[./-](\d{2})[./-](\d{4})/);
   return match ? `${match[3]}-${match[2]}-${match[1]}` : undefined;
+}
+
+function dateFromSourceUrl(sourceUrl: string): string | undefined {
+  const url = new URL(sourceUrl);
+  const value = url.searchParams.get("dat");
+  if (!value || !/^\d{8}$/.test(value)) return undefined;
+  return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
 }
 
 function yearFromUrlParam(sourceUrl: string): number | undefined {

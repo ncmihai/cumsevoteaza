@@ -976,6 +976,28 @@ implementation steps.
 - [x] Upgrade the member career timeline with clearer legislature boundary
   labels, hover/focus event detail cards, and party-aware logo fallback for
   normalized historical segments.
+- [x] Make CDEP asset import resumable by unique official URL offset, with
+  progress logging and optional insecure TLS mode for CDEP certificate issues.
+- [x] Back up historical party-logo assets to Blob/`stored_assets` in cautious
+  unique-URL batches; all `4,306` logo references were covered with no failed
+  rows in the completed batch runs.
+- [x] Complete current-legislature photo backup: all `472` current member photo
+  references processed, with `471` stored and `1` official 404 recorded for
+  manual review.
+- [x] Add a file-first `latest-historical-photos` selector for the second photo
+  phase: one latest known CDEP photo per historical-only person.
+- [x] Add the current composition preview to the landing page under search,
+  with compact Chamber/Senate maps, current PM, and active-government summary.
+- [x] Replace text-only locale switch labels with Romania/UK flag buttons while
+  preserving the current route and query params.
+- [x] Make mobile `Compoziții` chamber maps visible through compact previews and
+  a tap-to-open zoom modal that reuses the interactive seat map.
+- [x] Fix Deputies vote discovery so CDEP nominal rows inherit the calendar date
+  from `evot2015.data?dat=YYYYMMDD`, then import all discovered Deputies votes
+  from 13 May 2026 through 25 May 2026.
+- [ ] Import `data/cdep-history/parsed/latest-historical-photos.jsonl` in small
+  batches for historical-only members. The first live attempt was paused after
+  command-approval timeouts; resume with the documented command when available.
 - [ ] Review remaining Tribunal `needs_review` matches manually before
   promoting them.
 - [ ] Add importer persistence for curated Tribunal source links if/when we want

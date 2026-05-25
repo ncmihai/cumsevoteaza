@@ -10,10 +10,17 @@ export function LocaleSwitcher({ locale }: { locale: AppLocale }) {
   const otherLocale = locale === "ro" ? "en" : "ro";
   const nextPathname = pathname.replace(/^\/(?:ro|en)(?=\/|$)/, `/${otherLocale}`);
   const query = searchParams.toString();
+  const flag = otherLocale === "ro" ? "🇷🇴" : "🇬🇧";
+  const label = otherLocale === "ro" ? "Română" : "English";
 
   return (
-    <Link className="rounded-md px-3 py-2 hover:bg-slate-100" href={`${nextPathname}${query ? `?${query}` : ""}`}>
-      {otherLocale.toUpperCase()}
+    <Link
+      className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md px-2 text-xl leading-none hover:bg-slate-100"
+      href={`${nextPathname}${query ? `?${query}` : ""}`}
+      aria-label={label}
+      title={label}
+    >
+      <span aria-hidden="true">{flag}</span>
     </Link>
   );
 }

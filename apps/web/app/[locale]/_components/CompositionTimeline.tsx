@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { chamberLabels, type CompositionEvent, type Locale } from "@cumsevoteaza/parliament-model";
 import type { ChamberComposition, CompositionMode, CompositionTimelineStop } from "@/lib/composition-data";
-import { CompositionSeatMap } from "./CompositionSeatMap";
+import { CompositionSeatMap, CompositionSeatMapPreview } from "./CompositionSeatMap";
 
 interface CompositionTimelineProps {
   locale: Locale;
@@ -176,13 +176,52 @@ function MobileStop({ locale, mode, stop }: { locale: Locale; mode: CompositionM
 
 function MobileChamberSummary({ locale, chamber }: { locale: Locale; chamber: ChamberComposition }) {
   const labels = timelineLabels[locale];
+  const [open, setOpen] = useState(false);
+  const [zoom, setZoom] = useState(1);
   return (
-    <div className="border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-      <div className="font-medium text-slate-950">{chamberLabels[locale][chamber.chamber]}</div>
-      <div className="mt-1">
+    <>
+      <CompositionSeatMapPreview locale={locale} chamber={chamber.chamber} seats={chamber.seats} onOpen={() => setOpen(true)} />
+      <div className="-mt-1 text-xs text-slate-600">
         {chamber.seats.length} {labels.seats} · {chamber.groups.length} {labels.groups}
       </div>
-    </div>
+      {open ? (
+        <div className="fixed inset-0 z-[1000] bg-slate-950/70 p-3" role="dialog" aria-modal="true" aria-label={chamberLabels[locale][chamber.chamber]}>
+          <div className="mx-auto flex h-full max-w-5xl flex-col overflow-hidden bg-white shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-300 px-4 py-3">
+              <div>
+                <div className="text-sm font-semibold text-slate-950">{chamberLabels[locale][chamber.chamber]}</div>
+                <div className="text-xs text-slate-600">
+                  {chamber.seats.length} {labels.seats} · {chamber.groups.length} {labels.groups}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" className="border border-slate-300 px-3 py-2 text-sm" onClick={() => setZoom((value) => Math.max(0.8, Number((value - 0.2).toFixed(1))))}>
+                  -
+                </button>
+                <span className="min-w-12 text-center text-sm text-slate-600">{Math.round(zoom * 100)}%</span>
+                <button type="button" className="border border-slate-300 px-3 py-2 text-sm" onClick={() => setZoom((value) => Math.min(2.2, Number((value + 0.2).toFixed(1))))}>
+                  +
+                </button>
+                <button type="button" className="border border-slate-950 bg-slate-950 px-3 py-2 text-sm text-white" onClick={() => setOpen(false)}>
+                  {labels.close}
+                </button>
+              </div>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto p-4">
+              <div
+                className="mx-auto origin-top-left transition-transform"
+                style={{
+                  width: `${100 / zoom}%`,
+                  transform: `scale(${zoom})`
+                }}
+              >
+                <CompositionSeatMap locale={locale} chamber={chamber.chamber} seats={chamber.seats} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -283,6 +322,7 @@ type TimelineLabels = {
   emptyTimeline: string;
   seats: string;
   groups: string;
+  close: string;
   events: Record<CompositionEvent["eventType"], string>;
 };
 
@@ -312,6 +352,7 @@ const timelineLabels = {
     emptyTimeline: "Nu există încă evenimente de compoziție importate.",
     seats: "mandate",
     groups: "grupuri",
+    close: "Închide",
     events: {
       legislature_start: "Început legislatură",
       legislature_end: "Sfârșit legislatură",
@@ -357,6 +398,7 @@ const timelineLabels = {
     emptyTimeline: "No composition events are imported yet.",
     seats: "seats",
     groups: "groups",
+    close: "Close",
     events: {
       legislature_start: "Legislature start",
       legislature_end: "Legislature end",

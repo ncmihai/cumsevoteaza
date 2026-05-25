@@ -100,6 +100,28 @@ describe("official source discovery", () => {
     ]);
   });
 
+  it("uses the Chamber vote-list date when nominal rows do not repeat it", () => {
+    const html = `
+      <table>
+        <tr>
+          <td><a href="/ords/pls/steno/evot2015.nominal?idv=36976&idl=1">36976</a></td>
+          <td>Vot final</td>
+        </tr>
+      </table>
+    `;
+
+    const discoveries = discoverOfficialLinks(html, "https://www.cdep.ro/ords/pls/steno/evot2015.data?dat=20260518&cam=2&idl=1", "deputies");
+
+    expect(discoveries).toEqual([
+      expect.objectContaining({
+        chamber: "deputies",
+        kind: "vote",
+        officialId: "36976",
+        discoveredOn: "2026-05-18"
+      })
+    ]);
+  });
+
   it("parses Deputies yearly list rows as project discoveries", () => {
     const html = `
       <p>Număr înregistrări găsite: 2</p>

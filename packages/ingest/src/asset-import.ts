@@ -28,8 +28,12 @@ export type AssetImportOptions = {
   assetType?: AssetType;
   legislature?: string;
   limit?: number;
+  maxUniqueOfficialUrls?: number;
+  uniqueOfficialUrlOffset?: number;
   persist?: boolean;
   timeoutMs?: number;
+  delayMs?: number;
+  insecure?: boolean;
 };
 
 export type AssetImportSummary = {
@@ -46,7 +50,7 @@ export type AssetImportSummary = {
 };
 
 export async function importStoredAssetsFromInventory(options: AssetImportOptions): Promise<AssetImportSummary> {
-  const items = selectAssetInventoryItems(await readAssetInventory(options.assetsPath), options);
+  const items = selectAssetInventoryItemsForImport(await readAssetInventory(options.assetsPath), options);
   const summary: AssetImportSummary = {
     source: options.assetsPath,
     persist: Boolean(options.persist),
@@ -68,18 +72,31 @@ export async function importStoredAssetsFromInventory(options: AssetImportOption
   }
 
   const session = createDbSession();
+  const resultByOfficialUrl = new Map<string, StoredAssetResult>();
+  let processed = 0;
   try {
     for (const item of items) {
+      processed += 1;
       const existing = await session.db.query.storedAssets.findFirst({
         where: eq(storedAssets.id, item.id)
       });
       if (existing?.fetchStatus === "stored" && existing.blobUrl) {
         summary.skipped += 1;
+        if (processed % 100 === 0 || processed === items.length) {
+          logAssetImportProgress(processed, items.length, summary);
+        }
         continue;
       }
 
       summary.attempted += 1;
-      const result = await fetchAndStoreAsset(item, token, options.timeoutMs ?? 20_000);
+      let result = resultByOfficialUrl.get(item.officialUrl);
+      if (!result) {
+        result = await fetchAndStoreAsset(item, token, options.timeoutMs ?? 20_000, Boolean(options.insecure));
+        resultByOfficialUrl.set(item.officialUrl, result);
+        if (options.delayMs && options.delayMs > 0) {
+          await sleep(options.delayMs);
+        }
+      }
       await upsertAsset(session.db, item, result);
       if (result.status === "stored") summary.stored += 1;
       else if (result.status === "missing") summary.missing += 1;
@@ -93,12 +110,26 @@ export async function importStoredAssetsFromInventory(options: AssetImportOption
           error: result.error
         });
       }
+      if (processed % 100 === 0 || processed === items.length) {
+        logAssetImportProgress(processed, items.length, summary);
+      }
     }
   } finally {
     await session.close();
   }
 
   return summary;
+}
+
+function logAssetImportProgress(processed: number, total: number, summary: AssetImportSummary) {
+  console.log(
+    `assets:import progress ${processed}/${total} processed, ${summary.attempted} attempted, ` +
+      `${summary.stored} stored, ${summary.skipped} skipped, ${summary.failed} failed`
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function readAssetInventory(assetsPath: string): Promise<AssetInventoryItem[]> {
@@ -124,6 +155,25 @@ export function selectAssetInventoryItems(items: AssetInventoryItem[], options: 
   return options.limit && options.limit > 0 ? selected.slice(0, options.limit) : selected;
 }
 
+export function selectAssetInventoryItemsForImport(
+  items: AssetInventoryItem[],
+  options: Pick<AssetImportOptions, "assetType" | "legislature" | "limit" | "maxUniqueOfficialUrls" | "uniqueOfficialUrlOffset">
+) {
+  const selected = selectAssetInventoryItems(items, options);
+  if (!options.maxUniqueOfficialUrls || options.maxUniqueOfficialUrls <= 0) return selected;
+
+  const offset = Math.max(0, options.uniqueOfficialUrlOffset ?? 0);
+  const uniqueUrls: string[] = [];
+  const seen = new Set<string>();
+  for (const item of selected) {
+    if (seen.has(item.officialUrl)) continue;
+    seen.add(item.officialUrl);
+    uniqueUrls.push(item.officialUrl);
+  }
+  const allowed = new Set(uniqueUrls.slice(offset, offset + options.maxUniqueOfficialUrls));
+  return selected.filter((item) => allowed.has(item.officialUrl));
+}
+
 type StoredAssetResult = {
   status: StoredAssetStatus;
   blobUrl?: string;
@@ -133,11 +183,13 @@ type StoredAssetResult = {
   error?: string;
 };
 
-async function fetchAndStoreAsset(item: AssetInventoryItem, token: string, timeoutMs: number): Promise<StoredAssetResult> {
+async function fetchAndStoreAsset(item: AssetInventoryItem, token: string, timeoutMs: number, insecure: boolean): Promise<StoredAssetResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
   try {
-    const response = await fetch(item.officialUrl, {
+    if (insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    const response = await fetch(normalizeOfficialAssetUrl(item.officialUrl), {
       headers: { "User-Agent": "cumsevoteaza-asset-import/0.1 (+local asset backup)" },
       signal: controller.signal
     });
@@ -168,10 +220,26 @@ async function fetchAndStoreAsset(item: AssetInventoryItem, token: string, timeo
     if (error instanceof Error && error.name === "AbortError") {
       return { status: "official_timeout", error: `Timed out after ${timeoutMs}ms.` };
     }
-    return { status: "failed", error: error instanceof Error ? error.message : String(error) };
+    return { status: "failed", error: errorMessageWithCause(error) };
   } finally {
+    if (insecure) {
+      if (previousTlsSetting === undefined) delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+      else process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousTlsSetting;
+    }
     clearTimeout(timeout);
   }
+}
+
+function normalizeOfficialAssetUrl(url: string): string {
+  const parsed = new URL(url);
+  if (parsed.hostname === "cdep.ro") parsed.hostname = "www.cdep.ro";
+  return parsed.toString();
+}
+
+function errorMessageWithCause(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const cause = error.cause instanceof Error ? `: ${error.cause.message}` : "";
+  return `${error.message}${cause}`;
 }
 
 async function upsertAsset(

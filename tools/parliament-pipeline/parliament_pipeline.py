@@ -232,6 +232,11 @@ def add_cdep_asset_inventory(sub: argparse._SubParsersAction[argparse.ArgumentPa
     parser.add_argument("--out", type=Path, default=Path("data/cdep-history/parsed/assets.jsonl"))
     parser.add_argument("--report", type=Path, default=Path("data/cdep-history/reports/assets.json"))
 
+    latest = sub.add_parser("latest-historical-photos", help="Build an import inventory with one latest CDEP photo per historical-only person.")
+    latest.add_argument("--assets", type=Path, default=Path("data/cdep-history/parsed/assets.jsonl"))
+    latest.add_argument("--current-legislature", default="leg-2024-2028")
+    latest.add_argument("--out", type=Path, default=Path("data/cdep-history/parsed/latest-historical-photos.jsonl"))
+
 
 def add_tribunal_fetch_index(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser = sub.add_parser("fetch-index", help="Fetch Tribunalul București party/alliance index HTML snapshots.")
@@ -304,6 +309,11 @@ def run_cdep_command(args: argparse.Namespace) -> None:
         return
     if args.cdep_command == "asset-inventory":
         cdep.run_asset_inventory(args)
+        return
+    if args.cdep_command == "latest-historical-photos":
+        rows = select_latest_historical_photos(read_jsonl(args.assets), args.current_legislature)
+        write_jsonl(rows, args.out)
+        print_json({"selected": len(rows), "out": str(args.out), "currentLegislature": args.current_legislature})
         return
     raise SystemExit(f"Unsupported CDEP command: {args.cdep_command}")
 
@@ -628,6 +638,37 @@ def read_json(path: Path) -> Any:
     if not path.exists():
         raise SystemExit(f"Missing JSON file: {path}")
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def select_latest_historical_photos(records: list[dict[str, Any]], current_legislature: str) -> list[dict[str, Any]]:
+    photos = [record for record in records if record.get("assetType") == "photo" and record.get("officialUrl")]
+    current_people = {
+        person_asset_key(record)
+        for record in photos
+        if record.get("legislatureId") == current_legislature or record.get("legislature") == current_legislature.removeprefix("leg-").split("-")[0]
+    }
+    latest_by_person: dict[str, dict[str, Any]] = {}
+    for record in photos:
+        key = person_asset_key(record)
+        if key in current_people:
+            continue
+        current = latest_by_person.get(key)
+        if current is None or photo_sort_key(record) > photo_sort_key(current):
+            latest_by_person[key] = record
+    return sorted(latest_by_person.values(), key=lambda row: (str(row.get("name") or ""), str(row.get("memberId") or row.get("entityId") or "")))
+
+
+def person_asset_key(record: dict[str, Any]) -> str:
+    return str(record.get("personKey") or record.get("memberId") or record.get("entityId") or record.get("id"))
+
+
+def photo_sort_key(record: dict[str, Any]) -> tuple[int, str, str]:
+    legislature = str(record.get("legislature") or "")
+    match = re.search(r"\d{4}", legislature)
+    year = int(match.group(0)) if match else 0
+    fetched_at = str(record.get("sourceSnapshotFetchedAt") or "")
+    profile_key = str(record.get("profileKey") or record.get("id") or "")
+    return (year, fetched_at, profile_key)
 
 
 def filtered_tribunal_records(records: list[dict[str, Any]], kind: str, positions: list[int], limit: int) -> list[dict[str, Any]]:

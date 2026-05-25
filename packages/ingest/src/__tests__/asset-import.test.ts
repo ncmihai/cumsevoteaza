@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectAssetInventoryItems, type AssetInventoryItem } from "../asset-import";
+import { selectAssetInventoryItems, selectAssetInventoryItemsForImport, type AssetInventoryItem } from "../asset-import";
 
 const items: AssetInventoryItem[] = [
   {
@@ -32,5 +32,20 @@ describe("asset import inventory selection", () => {
 
   it("applies a stable limit after filtering", () => {
     expect(selectAssetInventoryItems(items, { limit: 1 })).toEqual(items.slice(0, 1));
+  });
+
+  it("can batch by unique official URL with an offset", () => {
+    const logoItem = items[1]!;
+    const batched = selectAssetInventoryItemsForImport(
+      [
+        logoItem,
+        { ...logoItem, id: "asset-3", entityId: "member-senate-2020-116" },
+        { ...logoItem, id: "asset-4", officialUrl: "https://cdep.ro/aleg/usr2020.jpg" },
+        { ...logoItem, id: "asset-5", officialUrl: "https://cdep.ro/aleg/psd2020.jpg" }
+      ],
+      { assetType: "party_logo", maxUniqueOfficialUrls: 1, uniqueOfficialUrlOffset: 1 }
+    );
+
+    expect(batched.map((item) => item.id)).toEqual(["asset-4"]);
   });
 });

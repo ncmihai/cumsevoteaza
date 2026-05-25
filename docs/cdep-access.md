@@ -63,8 +63,72 @@ npm run pipeline -- cdep-members crawl \
 After crawling, disconnect from the hotspot and do the rest locally:
 
 ```bash
-npm run pipeline -- cdep-members audit --legislature 2004
-npm run pipeline -- cdep-members preview-import
+npm run pipeline:parliament -- cdep-members audit --legislature 2004
+npm run pipeline:parliament -- cdep-members preview-import
+```
+
+## Asset Backup Shape
+
+CDEP profile images are backed up only after an asset inventory has been
+generated from cached profile snapshots:
+
+```bash
+npm run pipeline:parliament -- cdep-members asset-inventory
+```
+
+Priority order:
+
+1. Historical party logos. These are reused heavily by the Transfermarkt-style
+   member history and have only a small number of unique official URLs.
+2. Current-legislature member photos (`2024-2028`) for both chambers.
+3. One latest known CDEP photo for historical-only people.
+4. Optional full per-legislature photo history.
+
+Use resumable unique-URL batches for live CDEP asset fetches:
+
+```bash
+npm run ingest:assets:import -- \
+  --asset-type=party_logo \
+  --max-unique-official-urls=10 \
+  --unique-official-url-offset=0 \
+  --delay-ms=2000 \
+  --timeout-ms=20000 \
+  --insecure \
+  --persist
+```
+
+For current member photos, keep smaller batches:
+
+```bash
+npm run ingest:assets:import -- \
+  --asset-type=photo \
+  --legislature=2024 \
+  --max-unique-official-urls=50 \
+  --unique-official-url-offset=125 \
+  --delay-ms=2000 \
+  --timeout-ms=20000 \
+  --insecure \
+  --persist
+```
+
+For historical-only members, first generate a smaller file-only import list:
+
+```bash
+npm run pipeline:parliament -- cdep-members latest-historical-photos
+```
+
+Then import that generated file in the same cautious batch shape:
+
+```bash
+npm run ingest:assets:import -- \
+  --assets=data/cdep-history/parsed/latest-historical-photos.jsonl \
+  --asset-type=photo \
+  --max-unique-official-urls=50 \
+  --unique-official-url-offset=0 \
+  --delay-ms=2000 \
+  --timeout-ms=20000 \
+  --insecure \
+  --persist
 ```
 
 ## Rationale

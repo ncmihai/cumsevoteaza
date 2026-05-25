@@ -116,6 +116,67 @@ export function CompositionSeatMap({ locale, chamber, seats }: CompositionSeatMa
   );
 }
 
+export function CompositionSeatMapPreview({
+  locale,
+  chamber,
+  seats,
+  onOpen
+}: CompositionSeatMapProps & {
+  onOpen?: () => void;
+}) {
+  const labels = compositionMapLabels[locale];
+  const positionedSeats = positionSeats(seats);
+  const content = (
+    <>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-950">{chamberLabels[locale][chamber]}</h3>
+          <p className="mt-1 text-xs text-slate-600">
+            {seats.length} {labels.seats}
+          </p>
+        </div>
+        {onOpen ? <span className="text-xs font-medium text-[#0c6464]">{labels.openMap}</span> : null}
+      </div>
+      <div className="relative mx-auto mt-3 aspect-[2/1] min-h-[110px] w-full overflow-hidden">
+        {positionedSeats.map(({ seat, left, top }) => (
+          <span
+            key={seat.member.id}
+            className="absolute rounded-full border border-white shadow-sm"
+            style={{
+              left: percent(left),
+              top: percent(top),
+              transform: "translate(-50%, -50%)",
+              width: previewSeatSize(seats.length),
+              height: previewSeatSize(seats.length),
+              backgroundColor: seat.group?.color ?? "#94a3b8",
+              borderColor: alignmentBorderColor[seat.alignment]
+            }}
+          />
+        ))}
+        <div className="pointer-events-none absolute left-1/2 top-[76%] -translate-x-1/2 text-center">
+          <div className="text-3xl font-semibold leading-none text-slate-950">{seats.length}</div>
+          <div className="mt-0.5 text-[10px] font-semibold uppercase text-slate-500">{labels.seats}</div>
+        </div>
+      </div>
+    </>
+  );
+
+  if (!onOpen) {
+    return <div className="border border-slate-300 bg-white p-3">{content}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full border border-slate-300 bg-white p-3 text-left shadow-sm transition hover:border-[#309898] hover:bg-[#309898]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#309898]"
+      aria-label={`${labels.openMap}: ${chamberLabels[locale][chamber]}`}
+    >
+      {content}
+    </button>
+  );
+}
+
 function positionSeats(seats: CompositionSeat[]): PositionedSeat[] {
   const orderedSeats = [...seats].sort(
     (a, b) =>
@@ -177,6 +238,12 @@ function seatSize(total: number): string {
   return "clamp(9px, 2.15vw, 16px)";
 }
 
+function previewSeatSize(total: number): string {
+  if (total > 260) return "clamp(3px, 1.2vw, 7px)";
+  if (total > 150) return "clamp(4px, 1.4vw, 8px)";
+  return "clamp(5px, 1.8vw, 9px)";
+}
+
 function percent(value: number): string {
   return `${value.toFixed(4)}%`;
 }
@@ -185,6 +252,7 @@ const compositionMapLabels = {
   ro: {
     seats: "mandate",
     unknownGroup: "Grup necunoscut",
+    openMap: "Deschide harta",
     alignments: {
       government: "Guvern",
       governing_support: "Susținere",
@@ -197,6 +265,7 @@ const compositionMapLabels = {
   en: {
     seats: "seats",
     unknownGroup: "Unknown group",
+    openMap: "Open map",
     alignments: {
       government: "Government",
       governing_support: "Support",
@@ -206,4 +275,4 @@ const compositionMapLabels = {
       unknown: "Unknown"
     }
   }
-} satisfies Record<Locale, { seats: string; unknownGroup: string; alignments: Record<GovernanceAlignment, string> }>;
+} satisfies Record<Locale, { seats: string; unknownGroup: string; openMap: string; alignments: Record<GovernanceAlignment, string> }>;
