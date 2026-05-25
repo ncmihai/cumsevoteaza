@@ -990,6 +990,10 @@ implementation steps.
 - [x] Import the `2020-2024` historical-only latest-photo batch from
   `data/cdep-history/parsed/latest-historical-photos.jsonl`: `300` selected,
   `295` stored, `5` official 404 rows preserved for review.
+- [x] Import the `2016-2020` historical-only latest-photo batch:
+  `310` selected and `310` stored, with no official 404 rows.
+- [x] Import the `2012-2016` historical-only latest-photo batch:
+  `388` selected and `388` stored, with no official 404 rows.
 - [x] Add the current composition preview to the landing page under search,
   with compact Chamber/Senate maps, current PM, and active-government summary.
 - [x] Replace text-only locale switch labels with Romania/UK flag buttons while
@@ -1000,7 +1004,7 @@ implementation steps.
   from `evot2015.data?dat=YYYYMMDD`, then import all discovered Deputies votes
   from 13 May 2026 through 25 May 2026.
 - [ ] Continue `data/cdep-history/parsed/latest-historical-photos.jsonl` in
-  small batches for older historical-only members, next with the `2016-2020`
+  small batches for older historical-only members, next with the `2008-2012`
   latest-photo slice.
 - [ ] Consolidate Git/deploy workflow around the `ncmihai/cumvoteaza` repo so
   Vercel deployment no longer depends on remembering to push both `cumsevoteaza`

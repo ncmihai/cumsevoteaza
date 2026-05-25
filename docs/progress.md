@@ -2250,3 +2250,14 @@ Verification:
 - Remaining 2020 official missing URLs:
   `PopescuVirgilDaniel.jpg`, `SarmasIoanSabin.jpg`, `MariusVulcan.jpg`,
   `Adriana-Larisa_Antipa.jpg`, and `Alina_Dumitru.jpg`.
+
+## 2026-05-25 — Historical Member Photo Backup: 2016 and 2012 Slices
+
+- Completed the `2016-2020` historical-only latest-photo slice from
+  `data/cdep-history/parsed/latest-historical-photos.jsonl`: `310` selected,
+  `310` stored, no official `404`, no timeouts, and no failed rows.
+- Completed the `2012-2016` historical-only latest-photo slice: `388`
+  selected, `388` stored, no official `404`, no timeouts, and no failed rows.
+- Verified aggregate photo metadata through the completed slices:
+  `2024-2028` has `471` stored and `1` missing; `2020-2024` has `295` stored
+  and `5` missing; `2016-2020` has `310` stored; `2012-2016` has `388` stored.
