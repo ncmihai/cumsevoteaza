@@ -2261,3 +2261,17 @@ Verification:
 - Verified aggregate photo metadata through the completed slices:
   `2024-2028` has `471` stored and `1` missing; `2020-2024` has `295` stored
   and `5` missing; `2016-2020` has `310` stored; `2012-2016` has `388` stored.
+
+## 2026-05-26 — Historical Member Photo Backup: 2008 and 2004 Slices
+
+- Completed the `2008-2012` historical-only latest-photo slice from
+  `data/cdep-history/parsed/latest-historical-photos.jsonl`: `223` selected,
+  `223` stored, no official `404`, no timeouts, and no failed rows.
+- Completed the `2004-2008` historical-only latest-photo slice: `325`
+  selected, `325` stored, no official `404`, no timeouts, and no failed rows.
+- Started the `2000-2004` slice: dry run selected `337` candidates. The first
+  chunk stored `50`; the second chunk stored `15` more, then `35` rows failed
+  because Vercel Blob returned `This store has been suspended`.
+- Paused further photo imports to avoid spending official CDEP requests while
+  Blob writes are blocked. Resume the `2000-2004` slice at offset `50` after
+  Blob writes are restored; stored rows will skip and failed rows will retry.

@@ -994,6 +994,14 @@ implementation steps.
   `310` selected and `310` stored, with no official 404 rows.
 - [x] Import the `2012-2016` historical-only latest-photo batch:
   `388` selected and `388` stored, with no official 404 rows.
+- [x] Import the `2008-2012` historical-only latest-photo batch:
+  `223` selected and `223` stored, with no official 404 rows.
+- [x] Import the `2004-2008` historical-only latest-photo batch:
+  `325` selected and `325` stored, with no official 404 rows.
+- [ ] Resume the `2000-2004` historical-only latest-photo batch after the
+  Vercel Blob store suspension is resolved: `337` selected; `65` stored before
+  the suspension; `35` failed with `Vercel Blob: This store has been suspended`;
+  resume at offset `50` so stored rows skip and failed rows retry.
 - [x] Add the current composition preview to the landing page under search,
   with compact Chamber/Senate maps, current PM, and active-government summary.
 - [x] Replace text-only locale switch labels with Romania/UK flag buttons while
@@ -1004,8 +1012,8 @@ implementation steps.
   from `evot2015.data?dat=YYYYMMDD`, then import all discovered Deputies votes
   from 13 May 2026 through 25 May 2026.
 - [ ] Continue `data/cdep-history/parsed/latest-historical-photos.jsonl` in
-  small batches for older historical-only members, next with the `2008-2012`
-  latest-photo slice.
+  small batches for older historical-only members, next by resuming the
+  `2000-2004` latest-photo slice once Blob writes work again.
 - [ ] Consolidate Git/deploy workflow around the `ncmihai/cumvoteaza` repo so
   Vercel deployment no longer depends on remembering to push both `cumsevoteaza`
   and `cumvoteaza` remotes.
