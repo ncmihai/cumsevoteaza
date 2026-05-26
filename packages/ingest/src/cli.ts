@@ -170,12 +170,13 @@ async function main() {
       optimizePhotos: !hasFlag("no-optimize-photos"),
       photoWidth: numberFlag("photo-width"),
       photoHeight: numberFlag("photo-height"),
+      force: hasFlag("force"),
       persist: hasFlag("persist")
     });
     await writeImport("assets-import", result, JSON.stringify(result, null, 2));
     console.log(JSON.stringify(result, null, 2));
     if (!hasFlag("persist")) {
-      console.log("Dry run only. Re-run with --persist to upload to Blob and write stored_assets metadata.");
+      console.log("Dry run only. Re-run with --persist to upload to the configured asset store and write stored_assets metadata.");
     }
     return;
   }
@@ -1040,7 +1041,7 @@ function resolveRepoPath(value: string): string {
 }
 
 function loadLocalEnv() {
-  for (const file of [path.join(repoRoot, ".env"), path.join(repoRoot, "apps/web/.env.local")]) {
+  for (const file of [path.join(repoRoot, ".env"), path.join(repoRoot, ".env.local"), path.join(repoRoot, "apps/web/.env.local")]) {
     if (!existsSync(file)) continue;
     for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
       const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);

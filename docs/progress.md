@@ -2302,3 +2302,63 @@ Verification:
   slices: `2024-2028` has `337` stored rows using `7.32 MB`, and `2020-2024`
   has `209` stored rows using `5.19 MB`. Pending/failed deleted rows need to be
   reuploaded after Blob writes are restored.
+
+## 2026-05-26 — FTP Asset Storage Setup
+
+- Added `ASSET_STORAGE_PROVIDER=ftp` as a local importer storage target for
+  photos, party logos, and CVs. The importer now keeps Vercel Blob as the
+  default provider but can upload prepared files to FTP/FTPES with
+  `curl --ftp-create-dirs`.
+- Added FTP env documentation. The provider requires a browser-visible
+  `ASSET_FTP_PUBLIC_BASE_URL` before it writes `stored_assets.blob_url`, because
+  private FTP paths cannot be used directly by the web app.
+- Kept the DB model unchanged: Neon/Postgres remains the metadata source of
+  truth, while the file provider stores the binary asset.
+
+## 2026-05-26 — Digi Storage API Provider
+
+- Added `ASSET_STORAGE_PROVIDER=digi_storage` for local asset importer runs.
+  The provider follows the Digi Storage API flow: token auth, device mount
+  discovery, folder creation, upload-link request, multipart upload, and
+  shared/download link creation.
+- Digi shared links can be password-protected by account defaults, so the
+  provider removes shared-link passwords by default before storing the URL.
+- Updated local env loading to include root `.env.local`, so importer-only
+  secrets can live there without being committed.
+- Documented `DIGI_STORAGE_*` env vars and kept FTP as a fallback provider.
+- Smoke-tested API upload with two optimized WebP photos. Upload, folder
+  creation, link creation, and password removal worked, but Digi shared links
+  return HTML download pages rather than raw image bytes. The two DB smoke-test
+  rows were reset to `pending`; before bulk imports we need a web proxy or
+  another raw-public-URL strategy.
+
+## 2026-05-27 — Digi Asset Gateway
+
+- Added a Drizzle migration extending `stored_assets` with provider metadata:
+  `storage_provider`, `storage_path`, `public_url`, dimensions, and `variant`.
+  Existing Blob rows are backfilled as legacy `vercel_blob` rows in the
+  migration.
+- Changed the Digi importer to upload files and store only the Digi
+  `storage_path`; it no longer stores shared-link pages as image URLs.
+- Added `/api/assets/[id]` in the web app. For Digi rows, the route fetches a
+  temporary server-side raw download link, streams the bytes, and sets cache
+  headers/ETag without exposing Digi credentials or temporary links.
+- Updated member and party asset resolution so stored Digi assets resolve to
+  `/api/assets/<id>`, legacy Blob rows remain readable, and missing assets use
+  placeholders instead of live CDEP image URLs.
+
+## 2026-05-27 — Digi Party Logo Migration
+
+- Applied the new asset metadata migration to the configured Neon database with
+  `npm run db:migrate`.
+- First forced logo migration failed because CDEP image URLs require the
+  importer `--insecure` certificate fallback; the failing run was stopped after
+  `2,000` rows and then safely overwritten by the corrected run.
+- Reimported all `party_logo` inventory rows to Digi Storage with
+  `--force --insecure`: `4,306` rows stored, `0` skipped, `0` failed.
+- Verified the resulting metadata: all party-logo rows are
+  `storage_provider=digi_storage`, covering `79` unique Digi `storage_path`
+  files and about `2.78 MB` of unique logo bytes.
+- Smoke-tested the asset gateway locally with a migrated party-logo id:
+  `/api/assets/<id>` returned `200`, `image/jpeg`, `Content-Length`, long cache
+  headers, and an `ETag`.

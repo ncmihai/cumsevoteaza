@@ -891,12 +891,12 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
       formationEvents,
       votes: selectedVotes.individualVotes
     });
+    const resolvedHistory = resolveHistoryAssetUrls(history, storedAssetRows);
     const profilePhotoUrl =
-      storedAssetUrl(storedAssetRows, "photo", member.id, selectedLegislature?.id, mandate?.chamber) ??
-      firstSourceId(relatedMembers, "profilePhoto");
+      storedAssetUrl(storedAssetRows, "photo", member.id, selectedLegislature?.id, mandate?.chamber);
     const logoUrl =
       storedAssetUrl(storedAssetRows, "party_logo", member.id, selectedLegislature?.id, mandate?.chamber) ??
-      currentMembership?.logoUrl;
+      storedAssetUrlByOfficialUrl(storedAssetRows, currentMembership?.logoUrl);
 
     return {
       member,
@@ -905,13 +905,13 @@ async function tryDatabaseMember(slug: string, options: { legislature?: string }
       party,
       profilePhotoUrl,
       currentLogoUrl: logoUrl,
-      careerSegments: buildMemberCareerSegments(history, groups, parties, formationEvents, governments, governmentAlignments),
+      careerSegments: buildMemberCareerSegments(resolvedHistory, groups, parties, formationEvents, governments, governmentAlignments),
       source: sourceRow ? mapSource(sourceRow) : undefined,
       legislatures,
       selectedLegislature,
       activity: activity ?? activityFromRows(selectedVotes.individualVotes, sponsoredBills.length, history),
       voteCoverage,
-      history,
+      history: resolvedHistory,
       votes: selectedVotes.individualVotes,
       voteRecords: selectedVotes.voteRecords,
       sponsoredBills,
@@ -1064,7 +1064,7 @@ async function tryDatabaseParty(slug: string): Promise<PartyPageData | undefined
       if (current.length < 12) current.push(mapPartyLegislatureMember(row));
       sampleMembersByLegislature.set(key, current);
     }
-    const legislatureSummaries = legislatureSummaryRows.map((row) => ({
+    const rawLegislatureSummaries = legislatureSummaryRows.map((row) => ({
       legislature: {
         id: row.legislature_id,
         label: row.legislature_label,
@@ -1076,6 +1076,20 @@ async function tryDatabaseParty(slug: string): Promise<PartyPageData | undefined
       memberCount: Number(row.member_count ?? 0),
       logoUrls: jsonStringArray(row.logo_urls).slice(0, 4),
       sampleMembers: sampleMembersByLegislature.get(`${row.legislature_id}|${row.chamber}`) ?? []
+    }));
+    const logoOfficialUrls = Array.from(new Set(rawLegislatureSummaries.flatMap((summary) => summary.logoUrls)));
+    const storedLogoRows = logoOfficialUrls.length > 0
+      ? await session.db
+          .select()
+          .from(schema.storedAssets)
+          .where(and(inArray(schema.storedAssets.officialUrl, logoOfficialUrls), eq(schema.storedAssets.fetchStatus, "stored")))
+      : [];
+    const legislatureSummaries = rawLegislatureSummaries.map((summary) => ({
+      ...summary,
+      logoUrls: summary.logoUrls.flatMap((logoUrl) => {
+        const storedUrl = storedAssetUrlByOfficialUrl(storedLogoRows, logoUrl);
+        return storedUrl ? [storedUrl] : [];
+      })
     }));
     const [formationEventRows, formationEventEntityRows, governmentAlignmentRows, governmentRows] = await Promise.all([
       session.db.select().from(schema.politicalFormationEvents),
@@ -2288,13 +2302,40 @@ function storedAssetUrl(
   legislatureId?: string,
   chamber?: string
 ): string | undefined {
-  const candidates = assets.filter((asset) => asset.assetType === assetType && asset.entityId === memberId && asset.blobUrl);
+  const candidates = assets.filter((asset) => asset.assetType === assetType && asset.entityId === memberId && storedAssetPublicUrl(asset));
   return (
-    candidates.find((asset) => asset.legislatureId === legislatureId && asset.chamber === chamber)?.blobUrl ??
-    candidates.find((asset) => asset.legislatureId === legislatureId)?.blobUrl ??
-    candidates[0]?.blobUrl ??
+    storedAssetPublicUrl(candidates.find((asset) => asset.legislatureId === legislatureId && asset.chamber === chamber)) ??
+    storedAssetPublicUrl(candidates.find((asset) => asset.legislatureId === legislatureId)) ??
+    storedAssetPublicUrl(candidates[0]) ??
     undefined
   );
+}
+
+function storedAssetUrlByOfficialUrl(
+  assets: Array<typeof schema.storedAssets.$inferSelect>,
+  officialUrl?: string
+): string | undefined {
+  if (!officialUrl) return undefined;
+  return storedAssetPublicUrl(assets.find((asset) => asset.officialUrl === officialUrl));
+}
+
+function storedAssetPublicUrl(asset?: typeof schema.storedAssets.$inferSelect): string | undefined {
+  if (!asset || asset.fetchStatus !== "stored") return undefined;
+  if (asset.storageProvider === "digi_storage" && asset.storagePath) return `/api/assets/${encodeURIComponent(asset.id)}`;
+  if (asset.storageProvider === "vercel_blob" && asset.blobUrl) return asset.blobUrl;
+  if (asset.publicUrl) return asset.publicUrl;
+  if (asset.blobUrl) return asset.blobUrl;
+  return undefined;
+}
+
+function resolveHistoryAssetUrls(
+  history: MemberHistoryRow[],
+  assets: Array<typeof schema.storedAssets.$inferSelect>
+): MemberHistoryRow[] {
+  return history.map((row) => ({
+    ...row,
+    logoUrl: storedAssetUrlByOfficialUrl(assets, row.logoUrl)
+  }));
 }
 
 function firstSourceId(members: Member[], key: string): string | undefined {

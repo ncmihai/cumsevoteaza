@@ -1,11 +1,16 @@
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import { and, eq, gte, isNotNull } from "drizzle-orm";
 import { del, put } from "@vercel/blob";
 import sharp from "sharp";
 import { createDbSession, storedAssets } from "@cumsevoteaza/db";
 import type { ChamberId } from "@cumsevoteaza/parliament-model";
+
+const execFileAsync = promisify(execFile);
 
 export type AssetType = "photo" | "party_logo" | "cv";
 export type AssetEntityType = "member" | "person" | "party" | "formation" | "source_snapshot" | "pipeline_report";
@@ -38,6 +43,7 @@ export type AssetImportOptions = {
   optimizePhotos?: boolean;
   photoWidth?: number;
   photoHeight?: number;
+  force?: boolean;
 };
 
 export type AssetDeleteOptions = {
@@ -71,6 +77,19 @@ export type AssetDeleteSummary = {
   failures: Array<{ id: string; blobUrl: string | null; error: string }>;
 };
 
+type AssetStorageProviderName = "vercel_blob" | "ftp" | "digi_storage";
+type AssetStorageProviderResult = {
+  storageProvider: "digi_storage" | "vercel_blob" | "external";
+  storagePath: string;
+  publicUrl?: string;
+  blobUrl?: string;
+};
+
+type AssetStorageProvider = {
+  name: AssetStorageProviderName;
+  upload(input: { objectPath: string; bytes: Buffer; mimeType: string }): Promise<AssetStorageProviderResult>;
+};
+
 export async function importStoredAssetsFromInventory(options: AssetImportOptions): Promise<AssetImportSummary> {
   const items = selectAssetInventoryItemsForImport(await readAssetInventory(options.assetsPath), options);
   const summary: AssetImportSummary = {
@@ -88,10 +107,7 @@ export async function importStoredAssetsFromInventory(options: AssetImportOption
 
   if (!options.persist) return summary;
 
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) {
-    throw new Error("BLOB_READ_WRITE_TOKEN is required for assets:import --persist.");
-  }
+  const storage = createAssetStorageProvider();
 
   const session = createDbSession();
   const resultByOfficialUrl = new Map<string, StoredAssetResult>();
@@ -102,7 +118,7 @@ export async function importStoredAssetsFromInventory(options: AssetImportOption
       const existing = await session.db.query.storedAssets.findFirst({
         where: eq(storedAssets.id, item.id)
       });
-      if (existing?.fetchStatus === "stored" && existing.blobUrl) {
+      if (!options.force && existing?.fetchStatus === "stored" && (existing.storagePath || existing.blobUrl || existing.publicUrl)) {
         summary.skipped += 1;
         if (processed % 100 === 0 || processed === items.length) {
           logAssetImportProgress(processed, items.length, summary);
@@ -113,7 +129,7 @@ export async function importStoredAssetsFromInventory(options: AssetImportOption
       summary.attempted += 1;
       let result = resultByOfficialUrl.get(item.officialUrl);
       if (!result) {
-        result = await fetchAndStoreAsset(item, token, {
+        result = await fetchAndStoreAsset(item, storage, {
           timeoutMs: options.timeoutMs ?? 20_000,
           insecure: Boolean(options.insecure),
           optimizePhotos: options.optimizePhotos !== false,
@@ -197,6 +213,12 @@ export async function deleteStoredAssets(options: AssetDeleteOptions): Promise<A
             .update(storedAssets)
             .set({
               blobUrl: null,
+              storageProvider: null,
+              storagePath: null,
+              publicUrl: null,
+              width: null,
+              height: null,
+              variant: null,
               contentHash: null,
               mimeType: null,
               byteSize: null,
@@ -276,10 +298,16 @@ export function selectAssetInventoryItemsForImport(
 
 type StoredAssetResult = {
   status: StoredAssetStatus;
+  storageProvider?: "digi_storage" | "vercel_blob" | "external";
+  storagePath?: string;
+  publicUrl?: string;
   blobUrl?: string;
   contentHash?: string;
   mimeType?: string;
   byteSize?: number;
+  width?: number;
+  height?: number;
+  variant?: string;
   error?: string;
 };
 
@@ -291,7 +319,7 @@ type FetchAndStoreAssetOptions = {
   photoHeight: number;
 };
 
-async function fetchAndStoreAsset(item: AssetInventoryItem, token: string, options: FetchAndStoreAssetOptions): Promise<StoredAssetResult> {
+async function fetchAndStoreAsset(item: AssetInventoryItem, storage: AssetStorageProvider, options: FetchAndStoreAssetOptions): Promise<StoredAssetResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
   const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
@@ -313,19 +341,23 @@ async function fetchAndStoreAsset(item: AssetInventoryItem, token: string, optio
     const bytes = asset.bytes;
     const contentHash = createHash("sha256").update(bytes).digest("hex");
     const mimeType = asset.mimeType;
-    const blob = await put(blobPathFor(item, contentHash, mimeType), bytes, {
-      access: "public",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: mimeType,
-      token
+    const object = await storage.upload({
+      objectPath: assetPathFor(item, contentHash, mimeType),
+      bytes,
+      mimeType
     });
     return {
       status: "stored",
-      blobUrl: blob.url,
+      storageProvider: object.storageProvider,
+      storagePath: object.storagePath,
+      publicUrl: object.publicUrl,
+      blobUrl: object.blobUrl,
       contentHash,
       mimeType,
-      byteSize: bytes.byteLength
+      byteSize: bytes.byteLength,
+      width: asset.width,
+      height: asset.height,
+      variant: asset.variant
     };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
@@ -341,14 +373,324 @@ async function fetchAndStoreAsset(item: AssetInventoryItem, token: string, optio
   }
 }
 
+function createAssetStorageProvider(): AssetStorageProvider {
+  const provider = (process.env.ASSET_STORAGE_PROVIDER || "vercel_blob").trim().toLowerCase();
+  if (provider === "digi_storage") return createDigiStorageAssetProvider();
+  if (provider === "ftp") return createFtpAssetStorageProvider();
+  if (provider !== "vercel_blob") {
+    throw new Error(`Unsupported ASSET_STORAGE_PROVIDER "${provider}". Use "vercel_blob", "ftp", or "digi_storage".`);
+  }
+
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) {
+    throw new Error("BLOB_READ_WRITE_TOKEN is required for assets:import --persist when ASSET_STORAGE_PROVIDER is vercel_blob.");
+  }
+
+  return {
+    name: "vercel_blob",
+    async upload(input) {
+      const blob = await put(input.objectPath, input.bytes, {
+        access: "public",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: input.mimeType,
+        token
+      });
+      return {
+        storageProvider: "vercel_blob",
+        storagePath: input.objectPath,
+        publicUrl: blob.url,
+        blobUrl: blob.url
+      };
+    }
+  };
+}
+
+function createDigiStorageAssetProvider(): AssetStorageProvider {
+  const email = firstEnv(["DIGI_STORAGE_EMAIL", "DIGI_EMAIL", "ASSET_FTP_USERNAME"]);
+  const password = firstEnv(["DIGI_STORAGE_PASSWORD", "DIGI_PASSWORD", "ASSET_FTP_PASSWORD"]);
+  const baseUrl = (process.env.DIGI_STORAGE_BASE_URL || "https://storage.rcs-rds.ro").replace(/\/+$/, "");
+  const apiUrl = (process.env.DIGI_STORAGE_API_URL || `${baseUrl}/api/v2.1`).replace(/\/+$/, "");
+  const basePath = `/${trimSlashes(process.env.DIGI_STORAGE_BASE_PATH || "cumvoteaza-assets")}`;
+  const configuredMountId = process.env.DIGI_STORAGE_MOUNT_ID?.trim();
+  let auth: Promise<{ token: string; mountId: string }> | undefined;
+
+  return {
+    name: "digi_storage",
+    async upload(input) {
+      const state = (auth ??= resolveDigiStorageAuth({ email, password, baseUrl, apiUrl, mountId: configuredMountId }));
+      const { token, mountId } = await state;
+      const remotePath = `/${[trimSlashes(basePath), input.objectPath].filter(Boolean).map(trimSlashes).join("/")}`;
+      const folderPath = remotePath.slice(0, remotePath.lastIndexOf("/") + 1);
+      const fileName = remotePath.slice(remotePath.lastIndexOf("/") + 1);
+      await ensureDigiStorageFolders({ apiUrl, token, mountId, folderPath });
+      await uploadToDigiStorage({ apiUrl, token, mountId, folderPath, fileName, bytes: input.bytes, mimeType: input.mimeType });
+      return {
+        storageProvider: "digi_storage",
+        storagePath: remotePath
+      };
+    }
+  };
+}
+
+async function resolveDigiStorageAuth(input: {
+  email: string;
+  password: string;
+  baseUrl: string;
+  apiUrl: string;
+  mountId?: string;
+}): Promise<{ token: string; mountId: string }> {
+  const authResponse = await fetch(`${input.baseUrl}/token`, {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({ email: input.email, password: input.password })
+  });
+  const authJson = await readJsonResponse<{ token?: string }>(authResponse, "Digi Storage auth failed");
+  if (!authJson.token) throw new Error("Digi Storage auth did not return a token.");
+  const token = authJson.token;
+  const mountId = input.mountId || (await getPrimaryDigiStorageMountId({ apiUrl: input.apiUrl, token }));
+  return { token, mountId };
+}
+
+async function getPrimaryDigiStorageMountId(input: { apiUrl: string; token: string }): Promise<string> {
+  const response = await digiFetch(input.apiUrl, input.token, "/mounts?type=device");
+  const json = await readJsonResponse<{ mounts?: Array<{ id?: string; name?: string }> }>(response, "Digi Storage mount lookup failed");
+  const mountId = json.mounts?.find((mount) => Boolean(mount.id))?.id;
+  if (!mountId) throw new Error("Digi Storage account has no device mount. Set DIGI_STORAGE_MOUNT_ID explicitly.");
+  return mountId;
+}
+
+async function ensureDigiStorageFolders(input: { apiUrl: string; token: string; mountId: string; folderPath: string }) {
+  const parts = trimSlashes(input.folderPath).split("/").filter(Boolean);
+  let current = "/";
+  for (const part of parts) {
+    const parent = current;
+    current = `${current}${part}/`;
+    const infoResponse = await digiFetch(
+      input.apiUrl,
+      input.token,
+      `/mounts/${encodeURIComponent(input.mountId)}/files/info?path=${encodeURIComponent(current)}`
+    );
+    if (infoResponse.ok) continue;
+    if (infoResponse.status !== 404) {
+      await readJsonResponse(infoResponse, `Digi Storage folder check failed for ${current}`);
+    }
+    const createResponse = await digiFetch(input.apiUrl, input.token, `/mounts/${encodeURIComponent(input.mountId)}/files/folder?path=${encodeURIComponent(parent)}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: part })
+    });
+    if (!createResponse.ok && createResponse.status !== 409) {
+      await readJsonResponse(createResponse, `Digi Storage folder create failed for ${current}`);
+    }
+  }
+}
+
+async function uploadToDigiStorage(input: {
+  apiUrl: string;
+  token: string;
+  mountId: string;
+  folderPath: string;
+  fileName: string;
+  bytes: Buffer;
+  mimeType: string;
+}) {
+  const uploadLinkResponse = await digiFetch(
+    input.apiUrl,
+    input.token,
+    `/mounts/${encodeURIComponent(input.mountId)}/files/upload?path=${encodeURIComponent(input.folderPath)}`
+  );
+  const uploadLink = await readJsonResponse<{ link?: string }>(uploadLinkResponse, `Digi Storage upload-link lookup failed for ${input.folderPath}`);
+  if (!uploadLink.link) throw new Error(`Digi Storage did not return an upload link for ${input.folderPath}.`);
+
+  const form = new FormData();
+  const arrayBuffer = input.bytes.buffer.slice(input.bytes.byteOffset, input.bytes.byteOffset + input.bytes.byteLength) as ArrayBuffer;
+  form.set("file", new Blob([arrayBuffer], { type: input.mimeType }), input.fileName);
+  const uploadResponse = await fetch(uploadLink.link, {
+    method: "POST",
+    body: form
+  });
+  if (!uploadResponse.ok) {
+    throw new Error(`Digi Storage upload failed with HTTP ${uploadResponse.status}: ${(await uploadResponse.text()).slice(0, 500)}`);
+  }
+}
+
+async function getOrCreateDigiStorageSharedLink(input: {
+  apiUrl: string;
+  token: string;
+  mountId: string;
+  remotePath: string;
+  removePassword: boolean;
+}): Promise<string> {
+  const existingResponse = await digiFetch(
+    input.apiUrl,
+    input.token,
+    `/mounts/${encodeURIComponent(input.mountId)}/links?path=${encodeURIComponent(input.remotePath)}`
+  );
+  if (existingResponse.ok) {
+    const existing = await readJsonResponse<{ links?: DigiStorageLink[] }>(existingResponse, `Digi Storage shared-link lookup failed for ${input.remotePath}`);
+    const link = existing.links?.find((candidate) => candidate.path === input.remotePath && Boolean(candidate.url));
+    if (link?.url) {
+      await maybeRemoveDigiStorageLinkPassword({ ...input, link });
+      return link.url;
+    }
+  }
+
+  const createResponse = await digiFetch(input.apiUrl, input.token, `/mounts/${encodeURIComponent(input.mountId)}/links`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ path: input.remotePath })
+  });
+  const created = await readJsonResponse<DigiStorageLink>(createResponse, `Digi Storage shared-link create failed for ${input.remotePath}`);
+  if (!created.url) throw new Error(`Digi Storage did not return a shared link for ${input.remotePath}.`);
+  await maybeRemoveDigiStorageLinkPassword({ ...input, link: created });
+  return created.url;
+}
+
+type DigiStorageLink = {
+  id?: string;
+  path?: string;
+  url?: string;
+  shortUrl?: string;
+  hasPassword?: boolean;
+};
+
+async function maybeRemoveDigiStorageLinkPassword(input: {
+  apiUrl: string;
+  token: string;
+  mountId: string;
+  link: DigiStorageLink;
+  removePassword: boolean;
+}) {
+  if (!input.removePassword || !input.link.hasPassword || !input.link.id) return;
+  const response = await digiFetch(input.apiUrl, input.token, `/mounts/${encodeURIComponent(input.mountId)}/links/${encodeURIComponent(input.link.id)}/password`, {
+    method: "DELETE"
+  });
+  if (!response.ok && response.status !== 404) {
+    await readJsonResponse(response, `Digi Storage shared-link password removal failed for ${input.link.id}`);
+  }
+}
+
+async function getDigiStorageDownloadLink(input: { apiUrl: string; token: string; mountId: string; remotePath: string }): Promise<string> {
+  const response = await digiFetch(
+    input.apiUrl,
+    input.token,
+    `/mounts/${encodeURIComponent(input.mountId)}/files/download?path=${encodeURIComponent(input.remotePath)}`
+  );
+  const json = await readJsonResponse<{ link?: string }>(response, `Digi Storage download-link lookup failed for ${input.remotePath}`);
+  if (!json.link) throw new Error(`Digi Storage did not return a download link for ${input.remotePath}.`);
+  return json.link;
+}
+
+function digiFetch(apiUrl: string, token: string, pathAndQuery: string, init?: RequestInit): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  headers.set("accept", "application/json");
+  headers.set("authorization", `Token token="${token}"`);
+  return fetch(`${apiUrl}${pathAndQuery}`, {
+    ...init,
+    headers
+  });
+}
+
+async function readJsonResponse<T>(response: Response, message: string): Promise<T> {
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`${message} with HTTP ${response.status}: ${text.slice(0, 500)}`);
+  }
+  if (!text.trim()) return {} as T;
+  return JSON.parse(text) as T;
+}
+
+function createFtpAssetStorageProvider(): AssetStorageProvider {
+  const host = requiredEnv("ASSET_FTP_HOST");
+  const username = requiredEnv("ASSET_FTP_USERNAME");
+  const password = requiredEnv("ASSET_FTP_PASSWORD");
+  const publicBaseUrl = requiredEnv("ASSET_FTP_PUBLIC_BASE_URL").replace(/\/+$/, "");
+  const basePath = trimSlashes(process.env.ASSET_FTP_BASE_PATH || "cumvoteaza-assets");
+  const port = numberFromEnv("ASSET_FTP_PORT", 21);
+  const secure = process.env.ASSET_FTP_SECURE !== "false";
+  const timeoutMs = numberFromEnv("ASSET_FTP_TIMEOUT_MS", 60_000);
+
+  return {
+    name: "ftp",
+    async upload(input) {
+      const remotePath = [basePath, input.objectPath].filter(Boolean).map(trimSlashes).join("/");
+      const tempDir = await mkdtemp(path.join(tmpdir(), "cumvoteaza-asset-"));
+      const tempPath = path.join(tempDir, path.basename(input.objectPath));
+      const netrcPath = path.join(tempDir, ".netrc");
+      try {
+        await writeFile(tempPath, input.bytes);
+        await writeFile(netrcPath, `machine ${host}\nlogin ${username}\npassword ${password}\n`, { mode: 0o600 });
+        const args = [
+          "--fail",
+          "--silent",
+          "--show-error",
+          "--ftp-create-dirs",
+          "--upload-file",
+          tempPath,
+          "--netrc-file",
+          netrcPath,
+          ftpUrlFor(host, port, remotePath)
+        ];
+        if (secure) args.splice(3, 0, "--ssl-reqd");
+        await execFileAsync("curl", args, { timeout: timeoutMs, maxBuffer: 1024 * 1024 });
+        const publicUrl = `${publicBaseUrl}/${remotePath.split("/").map(encodeURIComponent).join("/")}`;
+        return {
+          storageProvider: "external",
+          storagePath: remotePath,
+          publicUrl,
+          blobUrl: publicUrl
+        };
+      } finally {
+        await unlink(tempPath).catch(() => undefined);
+        await rm(tempDir, { recursive: true, force: true }).catch(() => undefined);
+      }
+    }
+  };
+}
+
+function requiredEnv(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`${name} is required when ASSET_STORAGE_PROVIDER=ftp.`);
+  return value;
+}
+
+function firstEnv(names: string[]): string {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+  throw new Error(`${names.join(" or ")} is required for this asset storage provider.`);
+}
+
+function numberFromEnv(name: string, fallback: number): number {
+  const value = process.env[name];
+  if (!value) return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) throw new Error(`${name} must be a positive number.`);
+  return parsed;
+}
+
+function ftpUrlFor(host: string, port: number, remotePath: string): string {
+  const encodedPath = remotePath.split("/").map(encodeURIComponent).join("/");
+  return `ftp://${host}:${port}/${encodedPath}`;
+}
+
+function trimSlashes(value: string): string {
+  return value.replace(/^\/+|\/+$/g, "");
+}
+
 async function prepareAssetForStorage(
   item: AssetInventoryItem,
   bytes: Buffer,
   mimeType: string,
   options: FetchAndStoreAssetOptions
-): Promise<{ bytes: Buffer; mimeType: string }> {
+): Promise<{ bytes: Buffer; mimeType: string; width?: number; height?: number; variant?: string }> {
   if (item.assetType !== "photo" || !options.optimizePhotos || !mimeType.startsWith("image/")) {
-    return { bytes, mimeType };
+    return { bytes, mimeType, variant: item.assetType === "cv" ? "original_pdf" : "original" };
   }
 
   const optimized = await sharp(bytes)
@@ -360,7 +702,13 @@ async function prepareAssetForStorage(
     .webp({ quality: 78 })
     .toBuffer();
 
-  return { bytes: optimized, mimeType: "image/webp" };
+  return {
+    bytes: optimized,
+    mimeType: "image/webp",
+    width: options.photoWidth,
+    height: options.photoHeight,
+    variant: `profile_${options.photoWidth}x${options.photoHeight}`
+  };
 }
 
 function normalizeOfficialAssetUrl(url: string): string {
@@ -392,6 +740,12 @@ async function upsertAsset(
       chamber: item.chamber || null,
       officialUrl: item.officialUrl,
       blobUrl: result.blobUrl ?? null,
+      storageProvider: result.storageProvider ?? null,
+      storagePath: result.storagePath ?? null,
+      publicUrl: result.publicUrl ?? null,
+      width: result.width ?? null,
+      height: result.height ?? null,
+      variant: result.variant ?? null,
       contentHash: result.contentHash ?? null,
       mimeType: result.mimeType ?? null,
       byteSize: result.byteSize ?? null,
@@ -403,6 +757,12 @@ async function upsertAsset(
       target: storedAssets.id,
       set: {
         blobUrl: result.blobUrl ?? null,
+        storageProvider: result.storageProvider ?? null,
+        storagePath: result.storagePath ?? null,
+        publicUrl: result.publicUrl ?? null,
+        width: result.width ?? null,
+        height: result.height ?? null,
+        variant: result.variant ?? null,
         contentHash: result.contentHash ?? null,
         mimeType: result.mimeType ?? null,
         byteSize: result.byteSize ?? null,
@@ -413,7 +773,7 @@ async function upsertAsset(
     });
 }
 
-function blobPathFor(item: AssetInventoryItem, contentHash: string, mimeType: string): string {
+function assetPathFor(item: AssetInventoryItem, contentHash: string, mimeType: string): string {
   const section = item.assetType === "party_logo" ? "party-logos" : item.assetType === "cv" ? "cvs" : "photos";
   const legislature = safePathSegment(item.legislatureId || item.legislature || "unknown");
   const chamber = safePathSegment(item.chamber || "unknown");

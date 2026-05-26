@@ -81,6 +81,11 @@ export const storedAssetStatusEnum = pgEnum("stored_asset_status", [
   "missing",
   "official_timeout"
 ]);
+export const storedAssetStorageProviderEnum = pgEnum("stored_asset_storage_provider", [
+  "digi_storage",
+  "vercel_blob",
+  "external"
+]);
 export const politicalFormationEventTypeEnum = pgEnum("political_formation_event_type", [
   "party_founded",
   "party_reestablished",
@@ -214,6 +219,12 @@ export const storedAssets = pgTable("stored_assets", {
   chamber: chamberEnum("chamber"),
   officialUrl: text("official_url"),
   blobUrl: text("blob_url"),
+  storageProvider: storedAssetStorageProviderEnum("storage_provider"),
+  storagePath: text("storage_path"),
+  publicUrl: text("public_url"),
+  width: integer("width"),
+  height: integer("height"),
+  variant: text("variant"),
   contentHash: text("content_hash"),
   mimeType: text("mime_type"),
   byteSize: integer("byte_size"),
@@ -226,7 +237,8 @@ export const storedAssets = pgTable("stored_assets", {
   entityIdx: index("stored_assets_entity_idx").on(table.entityType, table.entityId, table.assetType),
   officialUrlIdx: index("stored_assets_official_url_idx").on(table.officialUrl),
   contentHashIdx: index("stored_assets_content_hash_idx").on(table.contentHash),
-  statusIdx: index("stored_assets_status_idx").on(table.fetchStatus, table.lastAttemptAt)
+  statusIdx: index("stored_assets_status_idx").on(table.fetchStatus, table.lastAttemptAt),
+  storageIdx: index("stored_assets_storage_idx").on(table.storageProvider, table.storagePath)
 }));
 
 export const politicalFormationEvents = pgTable("political_formation_events", {

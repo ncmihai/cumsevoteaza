@@ -861,24 +861,41 @@ implementation steps.
   `data/cdep-history/reports/assets.json` from parsed CDEP profile rows.
 - [x] Inventory official CDEP member photos and legislature-scoped party/logo
   image URLs without writing to the database.
-- [x] Add `stored_assets` metadata table and Drizzle migration for Blob-backed
-  photos, CVs, party logos, source snapshots, and reports.
+- [x] Add `stored_assets` metadata table and Drizzle migrations for photos,
+  CVs, party logos, source snapshots, reports, and provider-specific storage
+  metadata.
 - [x] Add `npm run ingest:assets:import` as a dry-run-first TypeScript command
   that reads `assets.jsonl`.
+- [x] Add `--force` to `ingest:assets:import` for intentional provider
+  migration of already stored legacy rows.
 - [x] Upload assets to Vercel Blob only when `--persist` is passed and
   `BLOB_READ_WRITE_TOKEN` is present.
+- [x] Add an FTP/FTPES asset storage provider for local importer runs using
+  `ASSET_STORAGE_PROVIDER=ftp`, keeping Postgres as metadata-only storage.
+- [x] Add a Digi Storage API asset provider using token auth, mount discovery,
+  upload links, and metadata-only `storage_path` persistence.
+- [x] Add `/api/assets/[id]` as the web asset gateway for Digi Storage: Digi
+  shared links are HTML download pages, so the app streams raw bytes through a
+  cached server route instead of exposing shared links in the UI.
 - [x] Normalize member photos before Blob upload: future `photo` imports are
   resized to `150x200` WebP by default, keeping official source URLs in DB.
 - [x] Add dry-run-first `npm run ingest:assets:delete-stored` for deleting
   oversized/superseded Blob objects and marking rows pending before reimport.
-- [x] Store only asset metadata in Postgres: owner entity, source URL, Blob URL,
-  content hash, MIME type, byte size, fetch status, and attempt timestamp.
+- [x] Store only asset metadata in Postgres: owner entity, source URL, provider,
+  storage path, legacy Blob/public URL, dimensions, variant, content hash, MIME
+  type, byte size, fetch status, and attempt timestamp.
 - [x] Apply the `stored_assets` migration to local Docker Postgres.
-- [ ] Rerun the asset importer against a very small live batch once CDEP is
-  responsive again, then inspect `stored_assets` and Blob paths. The first
-  token-backed test recorded fetch failures because CDEP image URLs timed out.
-- [x] Wire stored member photos/logos into member profile data with fallback to
-  official CDEP profile photo and period logo URLs.
+- [x] Apply the Digi asset metadata migration to the configured Neon database
+  before reimporting assets.
+- [x] Reimport all party-logo rows to Digi Storage: `4,306` party-logo metadata
+  rows now point to `79` unique Digi paths, about `2.78 MB` of unique files.
+- [x] Smoke-check `/api/assets/<id>` for a migrated party logo locally:
+  returned `200`, `image/jpeg`, cache headers, content length, and ETag.
+- [ ] Rerun the Digi asset importer against a very small live photo and CV
+  batch, then inspect `/api/assets/<id>` for one photo and one CV.
+- [x] Wire stored member photos/logos into member profile data through the app
+  asset resolver; missing assets now fall back to placeholders instead of live
+  CDEP image URLs.
 - [x] Add a Transfermarkt-style member career strip showing party/group periods
   under the profile header.
 - [x] Add political formation events as a separate curated layer for member

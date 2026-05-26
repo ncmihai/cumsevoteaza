@@ -74,6 +74,62 @@ CUMSEVOTEAZA_PERF_LOG=1
 Use this only while profiling. It logs server data-function timings and is not
 needed in production.
 
+For local asset imports, choose one storage provider:
+
+```text
+ASSET_STORAGE_PROVIDER=vercel_blob
+BLOB_READ_WRITE_TOKEN=<vercel-blob-token>
+```
+
+or, for FTP/FTPES-backed uploads:
+
+```text
+ASSET_STORAGE_PROVIDER=ftp
+ASSET_FTP_HOST=storage.rcs-rds.ro
+ASSET_FTP_PORT=21
+ASSET_FTP_SECURE=true
+ASSET_FTP_USERNAME=<ftp-user-or-email>
+ASSET_FTP_PASSWORD=<ftp-password>
+ASSET_FTP_BASE_PATH=cumvoteaza-assets
+ASSET_FTP_PUBLIC_BASE_URL=<https-public-base-url-for-that-folder>
+ASSET_FTP_TIMEOUT_MS=60000
+```
+
+The FTP provider is intended for local importer runs only. It uploads optimized
+photos, party logos, and CVs with `curl --ftp-create-dirs`; Postgres still keeps
+only metadata and the public URL. `ASSET_FTP_PUBLIC_BASE_URL` must be an HTTP(S)
+base URL that browsers can load directly. If the storage account only exposes
+private FTP paths, use the provider for backups only and add a public-link/API
+provider before wiring those URLs into the web app.
+
+Preferred Digi Storage API-backed imports:
+
+```text
+ASSET_STORAGE_PROVIDER=digi_storage
+DIGI_STORAGE_EMAIL=<account-email>
+DIGI_STORAGE_PASSWORD=<account-password>
+DIGI_STORAGE_MOUNT_ID=<optional-specific-mount-id>
+DIGI_STORAGE_BASE_PATH=cumvoteaza-assets
+DIGI_STORAGE_BASE_URL=https://storage.rcs-rds.ro
+DIGI_STORAGE_API_URL=https://storage.rcs-rds.ro/api/v2.1
+```
+
+The API provider logs in locally, resolves the first `device` mount unless
+`DIGI_STORAGE_MOUNT_ID` is set, creates folders, uploads each file through the
+Digi upload endpoint, and stores `storage_provider=digi_storage` plus the Digi
+`storage_path` in `stored_assets`. The public UI must use
+`/api/assets/<stored_asset_id>` instead of Digi shared-link pages. The gateway
+uses server-side Digi credentials to obtain a temporary raw download link,
+streams the bytes, and adds long-lived public cache headers for photos/logos.
+For convenience, the provider also accepts the Digi example names
+`DIGI_EMAIL`/`DIGI_PASSWORD`, or the FTP names
+`ASSET_FTP_USERNAME`/`ASSET_FTP_PASSWORD`, as credential aliases.
+
+Member-photo imports are resized to `150x200` WebP by default. Party logos keep
+their source dimensions for now, and CV PDFs are uploaded as originals.
+Use `--force` on `ingest:assets:import` only when deliberately migrating
+already stored legacy rows to the currently configured provider.
+
 ## Current Deploy Mode
 
 - Web app deploys with Neon through `DATABASE_URL`.
