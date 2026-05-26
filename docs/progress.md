@@ -2288,3 +2288,17 @@ Verification:
 - Dry-run check for oversized photos found `224` stored `photo` rows over
   `100000` bytes. No delete was run. Blob currently returns `Your store is
   blocked`, so deletion/reimport should wait until the store is unblocked.
+
+## 2026-05-26 — Oversized Photo Blob Cleanup
+
+- Deleted `224` oversized stored member-photo Blob objects selected by
+  `asset_type=photo` and `byte_size >= 100000`; deletion completed with
+  `224` deleted and `0` failures.
+- The delete command marked those rows for reimport. A follow-up optimized
+  `2024-2028` import attempted `135` rows: the known `Afloarei` official `404`
+  remained missing, and `134` resized rows failed because Blob still returned
+  `Vercel Blob: This store has been suspended`.
+- Current stored photo footprint after deletion is much smaller for active
+  slices: `2024-2028` has `337` stored rows using `7.32 MB`, and `2020-2024`
+  has `209` stored rows using `5.19 MB`. Pending/failed deleted rows need to be
+  reuploaded after Blob writes are restored.

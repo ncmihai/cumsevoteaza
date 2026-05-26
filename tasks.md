@@ -1006,10 +1006,12 @@ implementation steps.
   Vercel Blob store suspension is resolved: `337` selected; `65` stored before
   the suspension; `35` failed with `Vercel Blob: This store has been suspended`;
   resume at offset `50` so stored rows skip and failed rows retry.
-- [ ] After Vercel Blob is unblocked, delete and reimport oversized existing
-  photos using the optimized importer. Dry run found `224` stored `photo` rows
-  over `100000` bytes. Use `ingest:assets:delete-stored` first, then re-run
-  `ingest:assets:import` for the affected legislatures.
+- [x] Delete oversized existing photo blobs: `224` stored `photo` rows over
+  `100000` bytes were removed from Blob and marked for reimport.
+- [ ] Reimport the deleted oversized photos after Vercel Blob writes are
+  unsuspended. The first optimized `2024-2028` retry resized photos correctly
+  but failed to upload because Blob still returned
+  `Vercel Blob: This store has been suspended`.
 - [x] Add the current composition preview to the landing page under search,
   with compact Chamber/Senate maps, current PM, and active-government summary.
 - [x] Replace text-only locale switch labels with Romania/UK flag buttons while
