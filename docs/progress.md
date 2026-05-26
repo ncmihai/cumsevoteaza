@@ -2275,3 +2275,16 @@ Verification:
 - Paused further photo imports to avoid spending official CDEP requests while
   Blob writes are blocked. Resume the `2000-2004` slice at offset `50` after
   Blob writes are restored; stored rows will skip and failed rows will retry.
+
+## 2026-05-26 — Photo Storage Optimization
+
+- Added Sharp-backed photo normalization to `ingest:assets:import`.
+  Future `photo` assets are resized to `150x200` and encoded as WebP before
+  Blob upload; party logos and CVs remain unchanged.
+- Added CLI controls for the optimized importer:
+  `--photo-width`, `--photo-height`, and `--no-optimize-photos`.
+- Added dry-run-first `ingest:assets:delete-stored` to delete stored Blob
+  objects and mark rows `pending` before reimporting optimized versions.
+- Dry-run check for oversized photos found `224` stored `photo` rows over
+  `100000` bytes. No delete was run. Blob currently returns `Your store is
+  blocked`, so deletion/reimport should wait until the store is unblocked.

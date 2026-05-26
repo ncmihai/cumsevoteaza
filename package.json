@@ -29,6 +29,7 @@
     "ingest:cdep-history:import": "npm --workspace @cumsevoteaza/ingest run cdep-history:import --",
     "ingest:cdep-history:cleanup": "npm --workspace @cumsevoteaza/ingest run cdep-history:cleanup --",
     "ingest:assets:import": "npm --workspace @cumsevoteaza/ingest run assets:import --",
+    "ingest:assets:delete-stored": "npm --workspace @cumsevoteaza/ingest run assets:delete-stored --",
     "ingest:roster:all": "npm --workspace @cumsevoteaza/ingest run roster:all --",
     "ingest:roster:reset": "npm --workspace @cumsevoteaza/ingest run roster:reset --",
     "ingest:wikipedia:roster": "npm --workspace @cumsevoteaza/ingest run wikipedia:roster --",

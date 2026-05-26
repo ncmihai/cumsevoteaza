@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { eq } from "drizzle-orm";
-import { put } from "@vercel/blob";
+import { and, eq, gte, isNotNull } from "drizzle-orm";
+import { del, put } from "@vercel/blob";
+import sharp from "sharp";
 import { createDbSession, storedAssets } from "@cumsevoteaza/db";
 import type { ChamberId } from "@cumsevoteaza/parliament-model";
 
@@ -34,6 +35,18 @@ export type AssetImportOptions = {
   timeoutMs?: number;
   delayMs?: number;
   insecure?: boolean;
+  optimizePhotos?: boolean;
+  photoWidth?: number;
+  photoHeight?: number;
+};
+
+export type AssetDeleteOptions = {
+  assetType?: AssetType;
+  legislature?: string;
+  minByteSize?: number;
+  limit?: number;
+  confirm?: boolean;
+  markPending?: boolean;
 };
 
 export type AssetImportSummary = {
@@ -47,6 +60,15 @@ export type AssetImportSummary = {
   officialTimeout: number;
   failed: number;
   failures: Array<{ id: string; officialUrl: string; status: StoredAssetStatus; error?: string }>;
+};
+
+export type AssetDeleteSummary = {
+  selected: number;
+  confirm: boolean;
+  deleted: number;
+  failed: number;
+  candidates: Array<{ id: string; legislatureId: string | null; blobUrl: string | null; byteSize: number | null }>;
+  failures: Array<{ id: string; blobUrl: string | null; error: string }>;
 };
 
 export async function importStoredAssetsFromInventory(options: AssetImportOptions): Promise<AssetImportSummary> {
@@ -91,7 +113,13 @@ export async function importStoredAssetsFromInventory(options: AssetImportOption
       summary.attempted += 1;
       let result = resultByOfficialUrl.get(item.officialUrl);
       if (!result) {
-        result = await fetchAndStoreAsset(item, token, options.timeoutMs ?? 20_000, Boolean(options.insecure));
+        result = await fetchAndStoreAsset(item, token, {
+          timeoutMs: options.timeoutMs ?? 20_000,
+          insecure: Boolean(options.insecure),
+          optimizePhotos: options.optimizePhotos !== false,
+          photoWidth: options.photoWidth ?? 150,
+          photoHeight: options.photoHeight ?? 200
+        });
         resultByOfficialUrl.set(item.officialUrl, result);
         if (options.delayMs && options.delayMs > 0) {
           await sleep(options.delayMs);
@@ -119,6 +147,78 @@ export async function importStoredAssetsFromInventory(options: AssetImportOption
   }
 
   return summary;
+}
+
+export async function deleteStoredAssets(options: AssetDeleteOptions): Promise<AssetDeleteSummary> {
+  const session = createDbSession();
+  try {
+    const conditions = [eq(storedAssets.fetchStatus, "stored"), isNotNull(storedAssets.blobUrl)];
+    if (options.assetType) conditions.push(eq(storedAssets.assetType, options.assetType));
+    if (options.legislature) {
+      const normalized = options.legislature.startsWith("leg-") ? options.legislature : `leg-${options.legislature}`;
+      conditions.push(eq(storedAssets.legislatureId, normalized));
+    }
+    if (options.minByteSize && options.minByteSize > 0) {
+      conditions.push(gte(storedAssets.byteSize, Math.floor(options.minByteSize)));
+    }
+
+    const rows = await session.db.query.storedAssets.findMany({
+      where: and(...conditions),
+      limit: options.limit && options.limit > 0 ? options.limit : undefined
+    });
+    const summary: AssetDeleteSummary = {
+      selected: rows.length,
+      confirm: Boolean(options.confirm),
+      deleted: 0,
+      failed: 0,
+      candidates: rows.slice(0, 20).map((row) => ({
+        id: row.id,
+        legislatureId: row.legislatureId,
+        blobUrl: row.blobUrl,
+        byteSize: row.byteSize
+      })),
+      failures: []
+    };
+
+    if (!options.confirm) return summary;
+
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) {
+      throw new Error("BLOB_READ_WRITE_TOKEN is required for assets:delete-stored --confirm.");
+    }
+
+    for (const row of rows) {
+      try {
+        if (!row.blobUrl) continue;
+        await del(row.blobUrl, { token });
+        summary.deleted += 1;
+        if (options.markPending !== false) {
+          await session.db
+            .update(storedAssets)
+            .set({
+              blobUrl: null,
+              contentHash: null,
+              mimeType: null,
+              byteSize: null,
+              fetchStatus: "pending",
+              updatedAt: new Date()
+            })
+            .where(eq(storedAssets.id, row.id));
+        }
+      } catch (error) {
+        summary.failed += 1;
+        summary.failures.push({
+          id: row.id,
+          blobUrl: row.blobUrl,
+          error: errorMessageWithCause(error)
+        });
+      }
+    }
+
+    return summary;
+  } finally {
+    await session.close();
+  }
 }
 
 function logAssetImportProgress(processed: number, total: number, summary: AssetImportSummary) {
@@ -183,12 +283,20 @@ type StoredAssetResult = {
   error?: string;
 };
 
-async function fetchAndStoreAsset(item: AssetInventoryItem, token: string, timeoutMs: number, insecure: boolean): Promise<StoredAssetResult> {
+type FetchAndStoreAssetOptions = {
+  timeoutMs: number;
+  insecure: boolean;
+  optimizePhotos: boolean;
+  photoWidth: number;
+  photoHeight: number;
+};
+
+async function fetchAndStoreAsset(item: AssetInventoryItem, token: string, options: FetchAndStoreAssetOptions): Promise<StoredAssetResult> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
   const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
   try {
-    if (insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    if (options.insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     const response = await fetch(normalizeOfficialAssetUrl(item.officialUrl), {
       headers: { "User-Agent": "cumsevoteaza-asset-import/0.1 (+local asset backup)" },
       signal: controller.signal
@@ -199,9 +307,12 @@ async function fetchAndStoreAsset(item: AssetInventoryItem, token: string, timeo
     if (!response.ok) {
       return { status: "failed", error: `Official asset returned HTTP ${response.status}.` };
     }
-    const bytes = Buffer.from(await response.arrayBuffer());
+    const officialBytes = Buffer.from(await response.arrayBuffer());
+    const officialMimeType = response.headers.get("content-type")?.split(";")[0]?.trim() || mimeTypeFromUrl(item.officialUrl);
+    const asset = await prepareAssetForStorage(item, officialBytes, officialMimeType, options);
+    const bytes = asset.bytes;
     const contentHash = createHash("sha256").update(bytes).digest("hex");
-    const mimeType = response.headers.get("content-type")?.split(";")[0]?.trim() || mimeTypeFromUrl(item.officialUrl);
+    const mimeType = asset.mimeType;
     const blob = await put(blobPathFor(item, contentHash, mimeType), bytes, {
       access: "public",
       addRandomSuffix: false,
@@ -218,16 +329,38 @@ async function fetchAndStoreAsset(item: AssetInventoryItem, token: string, timeo
     };
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      return { status: "official_timeout", error: `Timed out after ${timeoutMs}ms.` };
+      return { status: "official_timeout", error: `Timed out after ${options.timeoutMs}ms.` };
     }
     return { status: "failed", error: errorMessageWithCause(error) };
   } finally {
-    if (insecure) {
+    if (options.insecure) {
       if (previousTlsSetting === undefined) delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
       else process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousTlsSetting;
     }
     clearTimeout(timeout);
   }
+}
+
+async function prepareAssetForStorage(
+  item: AssetInventoryItem,
+  bytes: Buffer,
+  mimeType: string,
+  options: FetchAndStoreAssetOptions
+): Promise<{ bytes: Buffer; mimeType: string }> {
+  if (item.assetType !== "photo" || !options.optimizePhotos || !mimeType.startsWith("image/")) {
+    return { bytes, mimeType };
+  }
+
+  const optimized = await sharp(bytes)
+    .rotate()
+    .resize(options.photoWidth, options.photoHeight, {
+      fit: "cover",
+      position: "attention"
+    })
+    .webp({ quality: 78 })
+    .toBuffer();
+
+  return { bytes: optimized, mimeType: "image/webp" };
 }
 
 function normalizeOfficialAssetUrl(url: string): string {
@@ -290,6 +423,7 @@ function blobPathFor(item: AssetInventoryItem, contentHash: string, mimeType: st
 
 function extensionFor(url: string, mimeType: string): string {
   const fromUrl = path.extname(new URL(url).pathname).toLowerCase();
+  if (mimeType === "image/webp") return ".webp";
   if (fromUrl && fromUrl.length <= 8) return fromUrl;
   if (mimeType === "image/jpeg") return ".jpg";
   if (mimeType === "image/png") return ".png";

@@ -867,6 +867,10 @@ implementation steps.
   that reads `assets.jsonl`.
 - [x] Upload assets to Vercel Blob only when `--persist` is passed and
   `BLOB_READ_WRITE_TOKEN` is present.
+- [x] Normalize member photos before Blob upload: future `photo` imports are
+  resized to `150x200` WebP by default, keeping official source URLs in DB.
+- [x] Add dry-run-first `npm run ingest:assets:delete-stored` for deleting
+  oversized/superseded Blob objects and marking rows pending before reimport.
 - [x] Store only asset metadata in Postgres: owner entity, source URL, Blob URL,
   content hash, MIME type, byte size, fetch status, and attempt timestamp.
 - [x] Apply the `stored_assets` migration to local Docker Postgres.
@@ -1002,6 +1006,10 @@ implementation steps.
   Vercel Blob store suspension is resolved: `337` selected; `65` stored before
   the suspension; `35` failed with `Vercel Blob: This store has been suspended`;
   resume at offset `50` so stored rows skip and failed rows retry.
+- [ ] After Vercel Blob is unblocked, delete and reimport oversized existing
+  photos using the optimized importer. Dry run found `224` stored `photo` rows
+  over `100000` bytes. Use `ingest:assets:delete-stored` first, then re-run
+  `ingest:assets:import` for the affected legislatures.
 - [x] Add the current composition preview to the landing page under search,
   with compact Chamber/Senate maps, current PM, and active-government summary.
 - [x] Replace text-only locale switch labels with Romania/UK flag buttons while

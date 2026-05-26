@@ -18,6 +18,7 @@
     "cdep-history:import": "tsx src/cli.ts cdep-history:import",
     "cdep-history:cleanup": "tsx src/cli.ts cdep-history:cleanup",
     "assets:import": "tsx src/cli.ts assets:import",
+    "assets:delete-stored": "tsx src/cli.ts assets:delete-stored",
     "roster:all": "tsx src/cli.ts roster:all",
     "roster:reset": "tsx src/cli.ts roster:reset",
     "wikipedia:roster": "tsx src/cli.ts wikipedia:roster",
@@ -43,7 +44,8 @@
     "@cumsevoteaza/db": "0.1.0",
     "@cumsevoteaza/parliament-model": "0.1.0",
     "@vercel/blob": "^2.4.0",
-    "cheerio": "^1.0.0"
+    "cheerio": "^1.0.0",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "typescript": "^5.7.2",
