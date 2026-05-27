@@ -2362,3 +2362,17 @@ Verification:
 - Smoke-tested the asset gateway locally with a migrated party-logo id:
   `/api/assets/<id>` returned `200`, `image/jpeg`, `Content-Length`, long cache
   headers, and an `ETag`.
+
+## 2026-05-27 — Current Legislature Photos on Digi
+
+- Changed member-photo object paths to group by legislature:
+  `parliament-assets/photos/legislature-YYYY-YYYY/<chamber>/...`.
+- Reimported the `2024-2028` member-photo inventory to Digi Storage with
+  `--force --insecure`. Result: `472` selected, `471` stored, `1` missing
+  official CDEP `404`, `0` failed.
+- Verified the stored rows are `150x200` WebP files under
+  `/cumvoteaza-assets/parliament-assets/photos/legislature-2024-2028/...`.
+  Total current-legislature photo payload is about `1.26 MB`.
+- Smoke-tested one current-legislature photo through `/api/assets/<id>`:
+  returned `200`, `image/webp`, `Content-Length`, long cache headers, and an
+  `ETag`.

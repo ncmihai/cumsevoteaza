@@ -127,6 +127,8 @@ For convenience, the provider also accepts the Digi example names
 
 Member-photo imports are resized to `150x200` WebP by default. Party logos keep
 their source dimensions for now, and CV PDFs are uploaded as originals.
+Photo object paths are grouped by legislature:
+`cumvoteaza-assets/parliament-assets/photos/legislature-YYYY-YYYY/<chamber>/...`.
 Use `--force` on `ingest:assets:import` only when deliberately migrating
 already stored legacy rows to the currently configured provider.
 

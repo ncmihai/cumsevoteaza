@@ -868,6 +868,8 @@ implementation steps.
   that reads `assets.jsonl`.
 - [x] Add `--force` to `ingest:assets:import` for intentional provider
   migration of already stored legacy rows.
+- [x] Group future member-photo Digi paths by legislature:
+  `parliament-assets/photos/legislature-YYYY-YYYY/<chamber>/...`.
 - [x] Upload assets to Vercel Blob only when `--persist` is passed and
   `BLOB_READ_WRITE_TOKEN` is present.
 - [x] Add an FTP/FTPES asset storage provider for local importer runs using
@@ -891,8 +893,13 @@ implementation steps.
   rows now point to `79` unique Digi paths, about `2.78 MB` of unique files.
 - [x] Smoke-check `/api/assets/<id>` for a migrated party logo locally:
   returned `200`, `image/jpeg`, cache headers, content length, and ETag.
-- [ ] Rerun the Digi asset importer against a very small live photo and CV
-  batch, then inspect `/api/assets/<id>` for one photo and one CV.
+- [x] Reimport current-legislature member photos to Digi Storage under
+  `parliament-assets/photos/legislature-2024-2028/...`: `471` stored
+  `150x200` WebP rows, `1` official 404.
+- [x] Smoke-check `/api/assets/<id>` for a migrated current-legislature photo:
+  returned `200`, `image/webp`, cache headers, content length, and ETag.
+- [ ] Rerun the Digi asset importer against a very small CV batch, then inspect
+  `/api/assets/<id>` for one CV.
 - [x] Wire stored member photos/logos into member profile data through the app
   asset resolver; missing assets now fall back to placeholders instead of live
   CDEP image URLs.

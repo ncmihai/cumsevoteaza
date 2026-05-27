@@ -774,11 +774,15 @@ async function upsertAsset(
 }
 
 function assetPathFor(item: AssetInventoryItem, contentHash: string, mimeType: string): string {
-  const section = item.assetType === "party_logo" ? "party-logos" : item.assetType === "cv" ? "cvs" : "photos";
-  const legislature = safePathSegment(item.legislatureId || item.legislature || "unknown");
+  const legislature = safeLegislaturePathSegment(item.legislatureId || item.legislature || "unknown");
   const chamber = safePathSegment(item.chamber || "unknown");
   const entity = safePathSegment(item.entityId);
-  return `parliament-assets/${section}/${entity}/${legislature}-${chamber}-${contentHash.slice(0, 16)}${extensionFor(item.officialUrl, mimeType)}`;
+  const extension = extensionFor(item.officialUrl, mimeType);
+  if (item.assetType === "photo") {
+    return `parliament-assets/photos/legislature-${legislature}/${chamber}/${entity}-${contentHash.slice(0, 16)}${extension}`;
+  }
+  const section = item.assetType === "party_logo" ? "party-logos" : "cvs";
+  return `parliament-assets/${section}/${entity}/${legislature}-${chamber}-${contentHash.slice(0, 16)}${extension}`;
 }
 
 function extensionFor(url: string, mimeType: string): string {
@@ -803,4 +807,9 @@ function mimeTypeFromUrl(url: string): string {
 
 function safePathSegment(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "unknown";
+}
+
+function safeLegislaturePathSegment(value: string): string {
+  const normalized = value.replace(/^leg-/i, "");
+  return safePathSegment(normalized);
 }
