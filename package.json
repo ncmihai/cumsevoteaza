@@ -23,6 +23,7 @@
     "ingest:senate:bill": "npm --workspace @cumsevoteaza/ingest run senate:bill --",
     "ingest:bill:deputies": "npm --workspace @cumsevoteaza/ingest run bill:deputies --",
     "ingest:bill:senate": "npm --workspace @cumsevoteaza/ingest run bill:senate --",
+    "ingest:bill-documents:classify": "npm --workspace @cumsevoteaza/ingest run bill-documents:classify --",
     "ingest:bill-text": "npm --workspace @cumsevoteaza/ingest run bill-text --",
     "ingest:senate:vote": "npm --workspace @cumsevoteaza/ingest run senate:vote --",
     "ingest:chamber:vote": "npm --workspace @cumsevoteaza/ingest run chamber:vote --",

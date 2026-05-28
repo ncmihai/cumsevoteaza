@@ -1179,3 +1179,13 @@ implementation steps.
   `PL-x 56/2026` stored `asset-bill-text-doc-bill-pl-x-56-2026-14` (`5566`
   bytes, `3` chunks); `PL-x 335/2026` was marked `unsupported` because the
   official PDF did not yield useful text.
+- [x] Confirm 2026 Deputies bill discoveries are fully imported under the
+  current filter: `440` imported, `0` pending/failed.
+- [x] Add `ingest:bill-documents:classify` to repair existing document rows
+  without refetching CDEP pages. Applied it to 2026 rows: `4555` scanned,
+  `1111` updated on first pass, then `8` corrected after tightening `_cd`
+  adopted-form handling.
+- [x] Attempt selected vote-linked proposal text extraction after repair.
+  `PL-x 49/2026`, `PL-x 30/2026`, `PL-x 27/2026`, and `PL-x 22/2026`
+  were marked `unsupported` because their official archive PDFs did not yield
+  useful text.

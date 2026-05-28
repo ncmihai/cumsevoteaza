@@ -2,8 +2,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
+import * as schema from "@cumsevoteaza/db";
 import type { ChamberId } from "@cumsevoteaza/parliament-model";
 import { deleteStoredAssets, importStoredAssetsFromInventory, type AssetType } from "./asset-import";
 import { importBillText } from "./bill-text";
@@ -11,7 +12,7 @@ import { cleanupSupersededCdepHistoryRows } from "./cdep-history-cleanup";
 import { importCdepHistoryProfiles } from "./cdep-history-import";
 import { auditCurrentLegislature } from "./current-legislature-audit";
 import { parseChamberNominalVote } from "./parsers/chamber-vote";
-import { parseDeputiesBill } from "./parsers/deputies-bill";
+import { classifyDeputiesDocumentKind, parseDeputiesBill } from "./parsers/deputies-bill";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "./parsers/deputies-roster";
 import { legislatureCatalog, legislatureFromFlag, partyCatalog, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
 import { parseSenateBill } from "./parsers/senate-bill";
@@ -96,6 +97,20 @@ async function main() {
     await writeImport("senate-bill", parsed, html);
     if (hasFlag("persist")) {
       console.log(JSON.stringify(await persistSenateBill(parsed), null, 2));
+    }
+    return;
+  }
+
+  if (command === "bill-documents:classify") {
+    const result = await reclassifyBillDocuments({
+      year: numberFlag("year"),
+      limit: numberFlag("limit"),
+      persist: hasFlag("persist")
+    });
+    await writeImport("bill-documents-classify", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    if (!hasFlag("persist")) {
+      console.log("Dry run only. Re-run with --persist to update document_kind on existing document rows.");
     }
     return;
   }
@@ -1093,6 +1108,60 @@ function syncOptions() {
     officialId: flag("official-id"),
     sourceUrl: flag("source-url")
   };
+}
+
+async function reclassifyBillDocuments(options: { year?: number; limit?: number; persist?: boolean }) {
+  const session = createDbSession();
+  try {
+    const filters = [
+      "d.url like '%cdep.ro%'",
+      options.year ? `(d.url like '%/${options.year}/%' or d.url like '%?${options.year}/%')` : undefined
+    ].filter(Boolean);
+    const query = `
+      select d.id, d.bill_id, d.label, d.url, d.document_kind
+      from documents d
+      where ${filters.join(" and ")}
+      order by d.bill_id, d.id
+      ${options.limit ? `limit ${Math.max(1, options.limit)}` : ""}
+    `;
+    const rows = await session.db.execute<{
+      id: string;
+      bill_id: string;
+      label: string;
+      url: string;
+      document_kind: string;
+    }>(sql.raw(query));
+    const changes = rows
+      .map((row) => {
+        const nextKind = classifyDeputiesDocumentKind(`${row.label} ${row.url}`);
+        return {
+          id: row.id,
+          billId: row.bill_id,
+          previousKind: row.document_kind,
+          nextKind,
+          url: row.url
+        };
+      })
+      .filter((change) => change.nextKind !== change.previousKind);
+
+    if (options.persist) {
+      for (const change of changes) {
+        await session.db
+          .update(schema.documents)
+          .set({ documentKind: change.nextKind })
+          .where(eq(schema.documents.id, change.id));
+      }
+    }
+
+    return {
+      scanned: rows.length,
+      changed: changes.length,
+      persisted: Boolean(options.persist),
+      sample: changes.slice(0, 25)
+    };
+  } finally {
+    await session.close();
+  }
 }
 
 function numberFlag(name: string): number | undefined {

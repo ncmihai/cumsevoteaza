@@ -2562,3 +2562,20 @@ Verification:
   asset `asset-bill-text-doc-bill-pl-x-56-2026-14` (`5566` bytes, `3`
   chunks). `PL-x 335/2026` was marked `unsupported` because the official PDF
   did not yield useful extractable text.
+- Continued the dossier backfill. The next `import:pending` pass found only
+  one remaining pending 2026 Deputies bill and imported it; status check then
+  showed `440` imported and no pending/failed 2026 Deputies bill discoveries.
+- Added `ingest:bill-documents:classify`, a DB-only repair command for
+  existing document rows. It reuses the CDEP filename classifier without
+  refetching official pages. Applied to 2026 CDEP document rows:
+  `4555` scanned and `1111` changed on the first pass.
+- Tightened classification again after detecting `_cd.pdf` adopted Chamber
+  forms had been treated as proposals due `_plx_` in the filename. Re-ran the
+  repair and corrected `8` rows.
+- Attempted selected vote-linked proposal text extraction after the repair:
+  `PL-x 49/2026`, `PL-x 30/2026`, `PL-x 27/2026`, and `PL-x 22/2026` were
+  marked `unsupported`; these archive-style PDFs did not yield useful text
+  with the current pypdf extraction path.
+- Current 2026 CDEP document summary after repair: `228` proposal documents
+  still pending text extraction, `2` proposal texts stored, `6` unsupported,
+  plus classified committee reports/opinions/adopted forms for dossier UI.
