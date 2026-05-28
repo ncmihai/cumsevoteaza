@@ -2549,3 +2549,16 @@ Verification:
 - Expanded vote detail pages so a linked bill now renders a compact dossier
   preview with document count/kinds, initiators, decision chamber, and recent
   procedure steps before the vote. Smoke-checked locally on `idv=37006`.
+- Imported the next capped CDEP 2026 bill batch: `25` imported, `0` partial,
+  `0` failed. Read models refreshed to `2251` bill summaries and `8361`
+  search rows.
+- Tightened CDEP document-kind classification from official filename patterns:
+  `pl*.pdf`/`_pr_` proposal documents, `rp*.pdf` committee reports, `av*.pdf`
+  committee opinions, `_cd_` adopted forms, and `_stema` promulgation forms.
+  Added focused parser coverage for generic `PDF` labels.
+- Reimported `PL-x 335/2026`, `PL-x 42/2026`, and `PL-x 56/2026` to update
+  existing Neon document rows with corrected document kinds.
+- Ran selective proposal text extraction. `PL-x 56/2026` stored derived text
+  asset `asset-bill-text-doc-bill-pl-x-56-2026-14` (`5566` bytes, `3`
+  chunks). `PL-x 335/2026` was marked `unsupported` because the official PDF
+  did not yield useful extractable text.

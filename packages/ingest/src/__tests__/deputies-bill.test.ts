@@ -31,6 +31,34 @@ describe("parseDeputiesBill", () => {
     );
     expect(parsed.events.length).toBe(parsed.procedureSteps.length);
   });
+
+  it("classifies CDEP document kinds from official filename conventions when labels are generic", () => {
+    const html = `
+      <html>
+        <body>
+          <h3>Proiect de Lege pentru testare</h3>
+          <table>
+            <tr><td>01.02.2026</td><td><a href="/proiecte/2026/300/30/5/pl335.pdf">PDF</a></td></tr>
+            <tr><td>02.02.2026</td><td><a href="/comisii/invatamant/pdf/2026/rp335.pdf">PDF</a></td></tr>
+            <tr><td>03.02.2026</td><td><a href="/comisii/munca/pdf/2026/av335.pdf">PDF</a></td></tr>
+            <tr><td>04.02.2026</td><td><a href="/ords/pls/proiecte/docs?2026/pl335_plx_335_26_stema.pdf">PDF</a></td></tr>
+            <tr><td>05.02.2026</td><td><a href="/ords/pls/proiecte/docs?2026/pl335_cd335_26.pdf">PDF</a></td></tr>
+          </table>
+        </body>
+      </html>
+    `;
+    const parsed = parseDeputiesBill(html, "https://www.cdep.ro/ords/pls/proiecte/upl_pck2015.proiect?idp=23100");
+
+    expect(parsed.documents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ documentKind: "proposal" }),
+        expect.objectContaining({ documentKind: "committee_report" }),
+        expect.objectContaining({ documentKind: "committee_opinion" }),
+        expect.objectContaining({ documentKind: "promulgation_form" }),
+        expect.objectContaining({ documentKind: "adopted_form" })
+      ])
+    );
+  });
 });
 
 describe("bill text helpers", () => {

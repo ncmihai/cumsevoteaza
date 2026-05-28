@@ -164,14 +164,22 @@ function documentLabelFromContext(text: string): string | undefined {
 
 function classifyDocumentKind(text: string): DocumentKind {
   const normalized = normalize(text);
+  const filename = normalized.split(/[/?#]/).pop() ?? normalized;
   if (/^forma adoptata de camera|^forma adoptata de deputat/.test(normalized)) return "adopted_form";
   if (/^forma pentru promulgare/.test(normalized)) return "promulgation_form";
-  if (/_pr_|proiect de lege|propunere legislativa|forma initiatorului/.test(normalized)) return "proposal";
+  if (/promulgare/.test(normalized) || /_stema\.pdf$/.test(normalized)) return "promulgation_form";
+  if (
+    /_pr_|proiect de lege|propunere legislativa|forma initiatorului/.test(normalized) ||
+    /^pl\d+\.pdf$/.test(filename) ||
+    /\/pl\d+_pr_|\/pl\d+_plx_|\/pl\d+_pr_plx_/.test(normalized)
+  ) {
+    return "proposal";
+  }
   if (/forma adoptata de senat/.test(normalized)) return "senate_adopted_form";
-  if (/raport/.test(normalized)) return "committee_report";
-  if (/aviz/.test(normalized)) return "committee_opinion";
-  if (/promulgare/.test(normalized)) return "promulgation_form";
+  if (/raport/.test(normalized) || /^rp\d+\.pdf$/.test(filename) || /\/rp\d+\.pdf$/.test(normalized)) return "committee_report";
+  if (/aviz/.test(normalized) || /^av\d+\.pdf$/.test(filename) || /\/av\d+\.pdf$/.test(normalized)) return "committee_opinion";
   if (/forma adoptata de camera|forma adoptata de deputat/.test(normalized)) return "adopted_form";
+  if (/_cd_|cd\d+_/.test(normalized)) return "adopted_form";
   return "other";
 }
 

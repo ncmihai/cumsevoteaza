@@ -1166,3 +1166,16 @@ implementation steps.
   procedure steps before the vote.
 - [ ] Continue CDEP dossier imports in small batches, then extract proposal
   text only for selected/high-value bills.
+- [x] Run the next capped CDEP dossier batch for 2026. Result: `25`
+  additional Deputies bill discoveries imported, `0` partial, `0` failed,
+  read models refreshed to `2251` bill summaries and `8361` search rows.
+- [x] Improve CDEP document classification from filename conventions so
+  generic labels like `PDF` still classify `pl*.pdf` as proposals, `rp*.pdf`
+  as reports, `av*.pdf` as opinions, `_cd_` as adopted forms, and `_stema`
+  as promulgation forms.
+- [x] Reimport high-value dossier pages `PL-x 335/2026`, `PL-x 42/2026`, and
+  `PL-x 56/2026` after the classifier fix.
+- [x] Extract selected proposal text only where useful. Result:
+  `PL-x 56/2026` stored `asset-bill-text-doc-bill-pl-x-56-2026-14` (`5566`
+  bytes, `3` chunks); `PL-x 335/2026` was marked `unsupported` because the
+  official PDF did not yield useful text.
