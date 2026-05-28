@@ -38,6 +38,9 @@ import { CACHE_TAGS, createWebDbSession, timed } from "./server-db";
 export interface VotePageData {
   vote: Vote;
   bill?: Bill;
+  billProcedureSteps: BillProcedureStep[];
+  billDocuments: DocumentSource[];
+  billSponsorContexts: BillSponsorContext[];
   source?: SourceSnapshot;
   governmentContext?: GovernmentContextData;
   groupContexts: VoteGroupContext[];
@@ -341,6 +344,9 @@ async function getVotePageDataUncached(id: string): Promise<VotePageData | undef
   return {
     vote,
     bill: demoDataset.bills.find((item) => item.id === vote.billId),
+    billProcedureSteps: [],
+    billDocuments: [],
+    billSponsorContexts: [],
     source: demoDataset.sourceSnapshots.find((item) => item.id === vote.sourceSnapshotId),
     groupContexts: [],
     groups: demoDataset.groups,
@@ -497,6 +503,16 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
     const [billRow] = voteRow.billId
       ? await session.db.select().from(schema.bills).where(eq(schema.bills.id, voteRow.billId)).limit(1)
       : [];
+    const [billProcedureRows, billDocumentRows, billSponsorRows] = billRow
+      ? await Promise.all([
+          session.db
+            .select()
+            .from(schema.billProcedureSteps)
+            .where(eq(schema.billProcedureSteps.billId, billRow.id)),
+          session.db.select().from(schema.documents).where(eq(schema.documents.billId, billRow.id)),
+          session.db.select().from(schema.billSponsors).where(eq(schema.billSponsors.billId, billRow.id))
+        ])
+      : [[], [], []];
     const [sourceRow] = await session.db
       .select()
       .from(schema.sourceSnapshots)
@@ -583,6 +599,13 @@ async function tryDatabaseVote(id: string): Promise<VotePageData | undefined> {
     return {
       vote: mapVote(voteRow),
       bill: billRow ? mapBill(billRow) : undefined,
+      billProcedureSteps: billProcedureRows
+        .map(mapBillProcedureStep)
+        .sort((a, b) => `${a.occurredOn}-${a.displayOrder}`.localeCompare(`${b.occurredOn}-${b.displayOrder}`)),
+      billDocuments: billDocumentRows.map(mapDocument),
+      billSponsorContexts: billSponsorRows.length > 0
+        ? await loadBillSponsorContexts(session.db, billSponsorRows.map(mapBillSponsor), voteRow.heldOn)
+        : [],
       source: sourceRow ? mapSource(sourceRow) : undefined,
       governmentContext,
       groupContexts: buildVoteGroupContexts(contextGroupTotals, groups, parties, governmentContext),

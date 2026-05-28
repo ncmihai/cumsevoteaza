@@ -1154,5 +1154,15 @@ implementation steps.
 - [x] Smoke-check the local bill dossier page for `bill-pl-x-158-2026`.
   Verified structured procedure rows, official documents, government context,
   and lazy extracted text loading from `/api/bill-documents/[id]/text`.
-- [ ] Continue CDEP dossier imports from vote-linked bills in small batches,
-  then refresh bill read models so public pages show richer dossier metadata.
+- [x] Continue the first CDEP dossier batch from discovered 2026 Deputies bills.
+  Result: `424` discovered from the 2026 yearly list, `5` imported in the first
+  capped batch (`PL-x 424/2026` through `PL-x 420/2026`), and read models
+  refreshed.
+- [x] Inspect the first batch for parser failures. No failed rows appeared; the
+  parser handled a Senate-first dedupe case where `PL-x 420/2026` mapped to the
+  existing `bill-l269-2026` row with both Senate and Deputies identifiers.
+- [x] Upgrade vote detail pages with a richer compact bill dossier preview:
+  document count/kinds, initiator summary, decision chamber, and latest
+  procedure steps before the vote.
+- [ ] Continue CDEP dossier imports in small batches, then extract proposal
+  text only for selected/high-value bills.

@@ -2539,3 +2539,13 @@ Verification:
   the live imported Neon rows. The dossier page rendered the structured
   procedure timeline, official document list, government context, and lazy
   extracted proposal text through `/api/bill-documents/[id]/text`.
+- Pushed the bill dossier pipeline to both `origin/main` and `vercel/main` at
+  commit `c0db43c`.
+- Ran the first capped Deputies bill dossier batch for 2026. Discovery found
+  `424` entries from the official yearly list; `import:pending` imported `5`
+  rows (`PL-x 424/2026` through `PL-x 420/2026`) and refreshed read models.
+  `PL-x 420/2026` deduped into the Senate-first `bill-l269-2026` row.
+- Checked the first batch for parser failures; none appeared in the capped run.
+- Expanded vote detail pages so a linked bill now renders a compact dossier
+  preview with document count/kinds, initiators, decision chamber, and recent
+  procedure steps before the vote. Smoke-checked locally on `idv=37006`.
