@@ -5,6 +5,7 @@ import { getBillPageData } from "@/lib/data";
 import { getHotCount } from "@/lib/explorer-data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
 import { EngagementTracker } from "../../_components/EngagementTracker";
+import { BillDocumentTextToggle } from "../../_components/BillDocumentTextToggle";
 import { GovernmentContextPanel } from "../../_components/GovernmentContextPanel";
 import { HotButton } from "../../_components/HotButton";
 import { SourceBadge } from "../../_components/SourceBadge";
@@ -16,8 +17,10 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
   const labels = billPageLabels[locale];
   const data = await getBillPageData(id);
   if (!data) notFound();
-  const { bill, events, documents, votes, source, governmentContext, sponsorContexts } = data;
+  const { bill, events, procedureSteps, documents, votes, source, governmentContext, sponsorContexts } = data;
   const hotCount = await getHotCount("bill", bill.id);
+  const timeline = procedureSteps.length > 0 ? procedureSteps : events;
+  const committees = [...new Set(procedureSteps.map((step) => step.committeeName).filter(Boolean))] as string[];
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8">
@@ -27,6 +30,11 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
           <div className="text-sm font-semibold uppercase text-blue-800">{bill.identifiers.senate}</div>
           <h1 className="mt-2 max-w-5xl text-3xl font-semibold text-slate-950">{bill.title}</h1>
           <p className="mt-3 text-slate-600">{bill.status}</p>
+          <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-700">
+            {bill.identifiers.deputies ? <span className="border border-slate-300 px-2 py-1">PL-x: {bill.identifiers.deputies}</span> : null}
+            {bill.identifiers.senate ? <span className="border border-slate-300 px-2 py-1">Senat: {bill.identifiers.senate}</span> : null}
+            {bill.decisionChamber ? <span className="border border-slate-300 px-2 py-1">{labels.decisionChamber}: {labels.chambers[bill.decisionChamber]}</span> : null}
+          </div>
         </div>
         <div className="flex flex-col items-start gap-2">
           <HotButton entityType="bill" entityId={bill.id} initialCount={hotCount} label={labels.publicInterest} />
@@ -38,14 +46,16 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
 
       <section className="mt-6 grid gap-5 lg:grid-cols-[1fr_380px]">
         <div className="border border-slate-300 bg-white">
-          <div className="border-b border-slate-300 px-4 py-3 font-semibold">Timeline</div>
+          <div className="border-b border-slate-300 px-4 py-3 font-semibold">{labels.timeline}</div>
           <div className="divide-y divide-slate-200">
-            {events.map((event) => (
-              <div key={event.id} className="grid gap-2 px-4 py-4 md:grid-cols-[140px_1fr]">
-                <div className="text-sm font-medium text-slate-700">{formatDate(event.occurredOn, locale)}</div>
+            {timeline.map((item) => (
+              <div key={item.id} className="grid gap-2 px-4 py-4 md:grid-cols-[140px_1fr]">
+                <div className="text-sm font-medium text-slate-700">{formatDate(item.occurredOn, locale)}</div>
                 <div>
-                  <div className="font-medium text-slate-950">{event.label}</div>
-                  <div className="text-sm text-slate-600">{event.chamber}</div>
+                  <div className="font-medium text-slate-950">{"title" in item ? item.title : item.label}</div>
+                  {"description" in item && item.description ? <div className="mt-1 text-sm text-slate-700">{item.description}</div> : null}
+                  {"committeeName" in item && item.committeeName ? <div className="mt-2 text-sm font-medium text-teal-700">{item.committeeName}</div> : null}
+                  <div className="mt-1 text-sm text-slate-600">{item.chamber}</div>
                 </div>
               </div>
             ))}
@@ -65,13 +75,43 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
             </div>
           </div>
 
+          {committees.length > 0 ? (
+            <div className="border border-slate-300 bg-white">
+              <div className="border-b border-slate-300 px-4 py-3 font-semibold">{labels.committees}</div>
+              <div className="divide-y divide-slate-200">
+                {committees.map((committee) => (
+                  <div key={committee} className="px-4 py-3 text-sm text-slate-800">
+                    {committee}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="border border-slate-300 bg-white">
-            <div className="border-b border-slate-300 px-4 py-3 font-semibold">Documente</div>
+            <div className="border-b border-slate-300 px-4 py-3 font-semibold">{labels.documents}</div>
             <div className="divide-y divide-slate-200">
               {documents.map((document) => (
-                <a key={document.id} href={document.url} target="_blank" rel="noreferrer" className="block px-4 py-3 text-sm underline">
-                  {document.label}
-                </a>
+                <div key={document.id} className="px-4 py-3 text-sm">
+                  <a href={document.url} target="_blank" rel="noreferrer" className="font-medium underline">
+                    {document.label}
+                  </a>
+                  <div className="mt-1 text-xs uppercase text-slate-500">{document.documentKind ?? "other"}</div>
+                  {document.textStatus === "stored" ? (
+                    <BillDocumentTextToggle
+                      documentId={document.id}
+                      preview={document.textPreview}
+                      labels={{
+                        show: labels.showText,
+                        hide: labels.hideText,
+                        loading: labels.loadingText,
+                        failed: labels.failedText
+                      }}
+                    />
+                  ) : document.textStatus && document.textStatus !== "pending" ? (
+                    <div className="mt-2 text-xs text-slate-500">{labels.textUnavailable}</div>
+                  ) : null}
+                </div>
               ))}
             </div>
           </div>
@@ -83,9 +123,47 @@ export default async function BillPage({ params }: { params: Promise<{ locale: s
 
 const billPageLabels = {
   ro: {
-    publicInterest: "Marchează interes"
+    publicInterest: "Marchează interes",
+    decisionChamber: "Cameră decizională",
+    timeline: "Procedură legislativă",
+    committees: "Comisii",
+    documents: "Documente oficiale",
+    showText: "Vezi text extras",
+    hideText: "Ascunde textul",
+    loadingText: "Se încarcă textul...",
+    failedText: "Textul extras nu este disponibil.",
+    textUnavailable: "Textul extras nu este disponibil pentru acest document.",
+    chambers: {
+      deputies: "Camera Deputaților",
+      senate: "Senat"
+    }
   },
   en: {
-    publicInterest: "Mark interest"
+    publicInterest: "Mark interest",
+    decisionChamber: "Decision chamber",
+    timeline: "Legislative procedure",
+    committees: "Committees",
+    documents: "Official documents",
+    showText: "Show extracted text",
+    hideText: "Hide text",
+    loadingText: "Loading text...",
+    failedText: "Extracted text is not available.",
+    textUnavailable: "Extracted text is not available for this document.",
+    chambers: {
+      deputies: "Chamber of Deputies",
+      senate: "Senate"
+    }
   }
-} satisfies Record<AppLocale, Record<string, string>>;
+} satisfies Record<AppLocale, {
+  publicInterest: string;
+  decisionChamber: string;
+  timeline: string;
+  committees: string;
+  documents: string;
+  showText: string;
+  hideText: string;
+  loadingText: string;
+  failedText: string;
+  textUnavailable: string;
+  chambers: Record<"deputies" | "senate", string>;
+}>;

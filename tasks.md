@@ -898,6 +898,52 @@ implementation steps.
   `150x200` WebP rows, `1` official 404.
 - [x] Smoke-check `/api/assets/<id>` for a migrated current-legislature photo:
   returned `200`, `image/webp`, cache headers, content length, and ETag.
+- [x] Reimport the full `2020-2024` legislature member-photo inventory to Digi
+  Storage under `parliament-assets/photos/legislature-2020-2024/...`: `491`
+  stored `150x200` WebP rows, `8` official 404 rows, `0` importer failures.
+- [x] Smoke-check a deployed `/api/assets/<id>` URL for a migrated `2020-2024`
+  photo: returned `200`, `image/webp`, cache headers, content length, and ETag.
+- [x] Reimport the full `2016-2020` legislature member-photo inventory to Digi
+  Storage under `parliament-assets/photos/legislature-2016-2020/...`: `502`
+  stored `150x200` WebP rows, `0` missing, `0` importer failures.
+- [x] Smoke-check a deployed `/api/assets/<id>` URL for a migrated `2016-2020`
+  photo: returned `200`, `image/webp`, cache headers, content length, and ETag.
+- [x] Reimport the full `2012-2016` legislature member-photo inventory to Digi
+  Storage under `parliament-assets/photos/legislature-2012-2016/...`: `596`
+  stored `150x200` WebP rows, `0` missing, `0` importer failures. One binary
+  path is intentionally reused because CDEP has the same official photo URL for
+  two Ovidiu Ioan Silaghi rows.
+- [x] Reimport the full `2008-2012` legislature member-photo inventory to Digi
+  Storage under `parliament-assets/photos/legislature-2008-2012/...`: `476`
+  stored `150x200` WebP rows, `0` missing, `0` importer failures.
+- [x] Smoke-check deployed `/api/assets/<id>` URLs for migrated `2012-2016` and
+  `2008-2012` photos: both returned `200`, `image/webp`, cache headers,
+  content length, and ETag.
+- [x] Reimport the full `2004-2008` legislature member-photo inventory to Digi
+  Storage under `parliament-assets/photos/legislature-2004-2008/...`: `541`
+  stored `150x200` WebP rows, `0` missing, `0` importer failures.
+- [x] Reimport the full `2000-2004` legislature member-photo inventory to Digi
+  Storage under `parliament-assets/photos/legislature-2000-2004/...`: `546`
+  stored `150x200` WebP rows, `0` missing, `0` importer failures.
+- [x] Smoke-check deployed `/api/assets/<id>` URLs for migrated `2004-2008` and
+  `2000-2004` photos: both returned `200`, `image/webp`, cache headers,
+  content length, and ETag.
+- [x] Reimport the full `1996-2000` legislature member-photo inventory to Digi
+  Storage under `parliament-assets/photos/legislature-1996-2000/...`: `509`
+  stored `150x200` WebP rows, `0` missing, `0` importer failures. One binary
+  path is reused because CDEP has the same official URL for two rows
+  (`gheorghm.jpg`).
+- [x] Reimport the full `1992-1996` legislature member-photo inventory to Digi
+  Storage under `parliament-assets/photos/legislature-1992-1996/...`: `460`
+  stored `150x200` WebP rows, `0` missing, `0` importer failures.
+- [x] Reimport the full `1990-1992` legislature member-photo inventory to Digi
+  Storage under `parliament-assets/photos/legislature-1990-1992/...`: `318`
+  stored `150x200` WebP rows, `0` missing, `0` importer failures. One binary
+  path is reused because CDEP has the same official URL for two rows
+  (`stoica.jpg`).
+- [x] Smoke-check deployed encoded `/api/assets/<id>` URLs for migrated
+  `1996-2000`, `1992-1996`, and `1990-1992` photos: returned `200`,
+  `image/webp`, cache headers, content length, and ETag.
 - [ ] Rerun the Digi asset importer against a very small CV batch, then inspect
   `/api/assets/<id>` for one CV.
 - [x] Wire stored member photos/logos into member profile data through the app
@@ -1064,3 +1110,49 @@ implementation steps.
   post-1989 timeline first, original founding/re-establishment context,
   legislature vote/activity summaries, alliance/merger events, and dissolved
   state where applicable.
+
+## Active Milestone — Local Data Cleanup + Hybrid Storage Planning
+
+- [x] Add `npm run data:clean` as a dry-run-first local cleanup command.
+- [x] Document the `data/` directory contract: curated files stay in git,
+  generated crawl/import/snapshot artifacts remain local and rebuildable.
+- [x] Remove safe system junk only: `.DS_Store`, Python bytecode, and
+  `__pycache__` files. Deleted `7` files / `233470` bytes.
+- [ ] Decide which generated local artifacts to archive or prune later:
+  CDEP raw crawl files, importer JSON reports, raw HTML snapshots, and parsed
+  JSONL outputs.
+- [ ] Brainstorm the hybrid plan for bill texts and heavy documents: Neon for
+  metadata/searchable facts, Digi Storage for full text/PDF/source artifacts,
+  and cached read models for public pages.
+
+## Active Milestone — Efficient Bill Dossiers
+
+- [x] Add bill dossier schema for structured procedure steps, document kinds,
+  document text status, extracted text chunks, and bill decision chamber.
+- [x] Upgrade the CDEP bill parser to extract `upl_pck2015.proiect` procedure
+  rows, committee names, document links, document kinds, initiator, status, and
+  decision chamber while keeping legacy `bill_events` populated.
+- [x] Add `ingest:bill:deputies`, `ingest:bill:senate`, and
+  `ingest:bill-text` commands. Bill text fetches official PDFs temporarily,
+  extracts text when possible, stores only cleaned `.txt` in Digi, and keeps
+  PDF links pointed at official sources.
+- [x] Add `/api/bill-documents/[id]/text` for cached, lazy loading of extracted
+  text without exposing Digi credentials or temporary links.
+- [x] Update bill pages into dossier pages: identifiers, status, decision
+  chamber, government context, procedure timeline, committees, document list,
+  and optional extracted text expansion.
+- [x] Add a compact linked-bill dossier preview on vote detail pages.
+- [x] Add CDEP `PL-x 158/2026` parser fixture coverage and bill text helper
+  tests.
+- [x] Apply the generated bill-dossier migrations to the configured Neon
+  database before running the new import commands against real bill pages.
+- [x] Import a real CDEP bill page:
+  `https://www.cdep.ro/ords/pls/proiecte/upl_pck2015.proiect?idp=22820`, then
+  run proposal text extraction for the main document as the first live check.
+  Result: `bill-pl-x-158-2026`, `15` procedure steps, `12` documents,
+  proposal text stored as `asset-bill-text-doc-bill-pl-x-158-2026-12`.
+- [x] Smoke-check the local bill dossier page for `bill-pl-x-158-2026`.
+  Verified structured procedure rows, official documents, government context,
+  and lazy extracted text loading from `/api/bill-documents/[id]/text`.
+- [ ] Continue CDEP dossier imports from vote-linked bills in small batches,
+  then refresh bill read models so public pages show richer dossier metadata.

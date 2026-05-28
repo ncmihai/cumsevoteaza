@@ -12,8 +12,8 @@ import type { ChamberId } from "@cumsevoteaza/parliament-model";
 
 const execFileAsync = promisify(execFile);
 
-export type AssetType = "photo" | "party_logo" | "cv";
-export type AssetEntityType = "member" | "person" | "party" | "formation" | "source_snapshot" | "pipeline_report";
+export type AssetType = "photo" | "party_logo" | "cv" | "bill_text";
+export type AssetEntityType = "member" | "person" | "party" | "formation" | "bill_document" | "source_snapshot" | "pipeline_report";
 export type StoredAssetStatus = "pending" | "stored" | "failed" | "missing" | "official_timeout";
 
 export type AssetInventoryItem = {
@@ -89,6 +89,14 @@ type AssetStorageProvider = {
   name: AssetStorageProviderName;
   upload(input: { objectPath: string; bytes: Buffer; mimeType: string }): Promise<AssetStorageProviderResult>;
 };
+
+export async function uploadDerivedAsset(input: {
+  objectPath: string;
+  bytes: Buffer;
+  mimeType: string;
+}): Promise<AssetStorageProviderResult> {
+  return createAssetStorageProvider().upload(input);
+}
 
 export async function importStoredAssetsFromInventory(options: AssetImportOptions): Promise<AssetImportSummary> {
   const items = selectAssetInventoryItemsForImport(await readAssetInventory(options.assetsPath), options);
@@ -780,6 +788,9 @@ function assetPathFor(item: AssetInventoryItem, contentHash: string, mimeType: s
   const extension = extensionFor(item.officialUrl, mimeType);
   if (item.assetType === "photo") {
     return `parliament-assets/photos/legislature-${legislature}/${chamber}/${entity}-${contentHash.slice(0, 16)}${extension}`;
+  }
+  if (item.assetType === "bill_text") {
+    return `parliament-assets/bill-text/${entity}/${contentHash.slice(0, 16)}${extension}`;
   }
   const section = item.assetType === "party_logo" ? "party-logos" : "cvs";
   return `parliament-assets/${section}/${entity}/${legislature}-${chamber}-${contentHash.slice(0, 16)}${extension}`;

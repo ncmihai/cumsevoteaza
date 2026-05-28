@@ -40,6 +40,13 @@ The product has two core surfaces:
   store; Postgres keeps only metadata, ownership, source URL, provider/path,
   dimensions, variant, content hash, and status. The web UI reads Digi assets
   only through `/api/assets/[id]`.
+- Bill dossiers use a hybrid model: Postgres stores official facts, procedure
+  steps, committees, document metadata, source links, extracted-text previews,
+  and searchable chunks; Digi Storage stores only small derived text artifacts
+  when useful. Official PDFs remain on CDEP/Senate and are linked, not copied.
+- Full legal diffs are future work. They need separate reviewed modeling for
+  target law/article, current legal text source, amendment extraction, and
+  before/after display; raw extracted bill text alone is not enough.
 - V1 avoids political scoring, ideological labels, or editorial conclusions.
 - Romanian is default; English exists from the beginning.
 

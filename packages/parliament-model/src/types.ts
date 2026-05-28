@@ -12,6 +12,32 @@ export type VoteChoice =
 
 export type SourceStatus = "parsed" | "partial" | "failed";
 
+export type DocumentKind =
+  | "proposal"
+  | "senate_adopted_form"
+  | "committee_report"
+  | "committee_opinion"
+  | "adopted_form"
+  | "promulgation_form"
+  | "other";
+
+export type DocumentTextStatus = "pending" | "stored" | "missing" | "failed" | "unsupported";
+
+export type BillProcedureStepType =
+  | "registered"
+  | "sent_to_senate"
+  | "adopted_by_senate"
+  | "sent_to_deputies"
+  | "sent_to_committee"
+  | "committee_opinion_requested"
+  | "committee_opinion_received"
+  | "committee_report_received"
+  | "plenary_debate"
+  | "final_vote"
+  | "promulgation"
+  | "constitutional_review"
+  | "other";
+
 export type GovernanceAlignment =
   | "government"
   | "governing_support"
@@ -289,6 +315,7 @@ export interface Bill {
   title: string;
   identifiers: Record<string, string>;
   chamberOfOrigin: ChamberId | "unknown";
+  decisionChamber?: ChamberId;
   status: string;
   sourceSnapshotIds: string[];
 }
@@ -315,6 +342,35 @@ export interface DocumentSource {
   billId: string;
   label: string;
   url: string;
+  documentKind?: DocumentKind;
+  sourceChamber?: ChamberId;
+  officialUrlHash?: string;
+  textAssetId?: string;
+  textStatus?: DocumentTextStatus;
+  textPreview?: string;
+  lastTextAttemptAt?: string;
+}
+
+export interface BillProcedureStep {
+  id: string;
+  billId: string;
+  occurredOn: string;
+  chamber: ChamberId | "joint" | "unknown";
+  stepType: BillProcedureStepType;
+  title: string;
+  description?: string;
+  committeeName?: string;
+  documentId?: string;
+  sourceUrl?: string;
+  displayOrder: number;
+}
+
+export interface BillDocumentTextChunk {
+  id: string;
+  documentId: string;
+  billId: string;
+  chunkIndex: number;
+  text: string;
 }
 
 export interface VoteTotals {
@@ -427,8 +483,10 @@ export interface NormalizedDataset {
   roles: MemberRole[];
   bills: Bill[];
   billEvents: BillEvent[];
+  billProcedureSteps?: BillProcedureStep[];
   billSponsors: BillSponsor[];
   documents: DocumentSource[];
+  billDocumentTextChunks?: BillDocumentTextChunk[];
   votes: Vote[];
   groupVoteTotals: GroupVoteTotal[];
   individualVotes: IndividualVote[];

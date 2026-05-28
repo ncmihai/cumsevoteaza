@@ -3,7 +3,9 @@ import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import type {
   Bill,
+  BillDocumentTextChunk,
   BillEvent,
+  BillProcedureStep,
   BillSponsor,
   CompositionEvent,
   DocumentSource,
@@ -105,11 +107,13 @@ export async function persistDeputiesBill(parsed: ParsedDeputiesBill) {
     await Promise.all(parsed.events.map((event) => upsertBillEvent(session.db, event)));
     await Promise.all(parsed.sponsors.map((sponsor) => upsertBillSponsor(session.db, sponsor)));
     await Promise.all(parsed.documents.map((document) => upsertDocument(session.db, document)));
+    await upsertBillProcedureSteps(session.db, parsed.procedureSteps);
 
     return {
       billId: parsed.bill.id,
       sourceSnapshotId: parsed.sourceSnapshot.id,
       events: parsed.events.length,
+      procedureSteps: parsed.procedureSteps.length,
       documents: parsed.documents.length
     };
   } finally {
@@ -1011,6 +1015,7 @@ async function upsertBill(db: Db, bill: Bill) {
       title: bill.title,
       identifiers: bill.identifiers,
       chamberOfOrigin: bill.chamberOfOrigin,
+      decisionChamber: bill.decisionChamber,
       status: bill.status,
       sourceSnapshotIds: bill.sourceSnapshotIds
     })
@@ -1021,6 +1026,7 @@ async function upsertBill(db: Db, bill: Bill) {
         title: bill.title,
         identifiers: bill.identifiers,
         chamberOfOrigin: bill.chamberOfOrigin,
+        decisionChamber: bill.decisionChamber,
         status: bill.status,
         sourceSnapshotIds: bill.sourceSnapshotIds
       }
@@ -1036,6 +1042,7 @@ async function ensurePlaceholderBill(db: Db, bill: Bill) {
       title: bill.title,
       identifiers: bill.identifiers,
       chamberOfOrigin: bill.chamberOfOrigin,
+      decisionChamber: bill.decisionChamber,
       status: bill.status,
       sourceSnapshotIds: bill.sourceSnapshotIds
     })
@@ -1060,6 +1067,44 @@ async function upsertBillEvent(db: Db, event: BillEvent) {
     });
 }
 
+async function upsertBillProcedureSteps(db: Db, steps: BillProcedureStep[]) {
+  if (steps.length === 0) return;
+  for (const batch of chunks(steps)) {
+    await db
+      .insert(schema.billProcedureSteps)
+      .values(
+        batch.map((step) => ({
+          id: step.id,
+          billId: step.billId,
+          occurredOn: step.occurredOn,
+          chamber: step.chamber,
+          stepType: step.stepType,
+          title: step.title,
+          description: step.description,
+          committeeName: step.committeeName,
+          documentId: step.documentId,
+          sourceUrl: step.sourceUrl,
+          displayOrder: step.displayOrder
+        }))
+      )
+      .onConflictDoUpdate({
+        target: schema.billProcedureSteps.id,
+        set: {
+          billId: sql`excluded.bill_id`,
+          occurredOn: sql`excluded.occurred_on`,
+          chamber: sql`excluded.chamber`,
+          stepType: sql`excluded.step_type`,
+          title: sql`excluded.title`,
+          description: sql`excluded.description`,
+          committeeName: sql`excluded.committee_name`,
+          documentId: sql`excluded.document_id`,
+          sourceUrl: sql`excluded.source_url`,
+          displayOrder: sql`excluded.display_order`
+        }
+      });
+  }
+}
+
 async function upsertBillSponsor(db: Db, sponsor: BillSponsor) {
   await db
     .insert(schema.billSponsors)
@@ -1078,15 +1123,50 @@ async function upsertBillSponsor(db: Db, sponsor: BillSponsor) {
 async function upsertDocument(db: Db, document: DocumentSource) {
   await db
     .insert(schema.documents)
-    .values(document)
+    .values({
+      id: document.id,
+      billId: document.billId,
+      label: document.label,
+      url: document.url,
+      documentKind: document.documentKind,
+      sourceChamber: document.sourceChamber,
+      officialUrlHash: document.officialUrlHash,
+      textAssetId: document.textAssetId,
+      textStatus: document.textStatus,
+      textPreview: document.textPreview,
+      lastTextAttemptAt: document.lastTextAttemptAt ? new Date(document.lastTextAttemptAt) : undefined
+    })
     .onConflictDoUpdate({
       target: schema.documents.id,
       set: {
         billId: document.billId,
         label: document.label,
-        url: document.url
+        url: document.url,
+        documentKind: document.documentKind,
+        sourceChamber: document.sourceChamber,
+        officialUrlHash: document.officialUrlHash
       }
     });
+}
+
+export async function replaceBillDocumentTextChunks(documentId: string, billId: string, chunks: BillDocumentTextChunk[]) {
+  const session = createDbSession();
+  try {
+    await session.db.delete(schema.billDocumentTextChunks).where(eq(schema.billDocumentTextChunks.documentId, documentId));
+    if (chunks.length > 0) {
+      await session.db.insert(schema.billDocumentTextChunks).values(
+        chunks.map((chunk) => ({
+          id: chunk.id,
+          documentId,
+          billId,
+          chunkIndex: chunk.chunkIndex,
+          text: chunk.text
+        }))
+      );
+    }
+  } finally {
+    await session.close();
+  }
 }
 
 async function upsertVote(db: Db, vote: Vote) {

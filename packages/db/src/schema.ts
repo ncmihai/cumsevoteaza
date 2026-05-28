@@ -64,6 +64,7 @@ export const storedAssetEntityTypeEnum = pgEnum("stored_asset_entity_type", [
   "person",
   "party",
   "formation",
+  "bill_document",
   "source_snapshot",
   "pipeline_report"
 ]);
@@ -71,6 +72,7 @@ export const storedAssetTypeEnum = pgEnum("stored_asset_type", [
   "photo",
   "cv",
   "party_logo",
+  "bill_text",
   "html_snapshot",
   "report"
 ]);
@@ -115,6 +117,37 @@ export const politicalFormationEventEntityRoleEnum = pgEnum("political_formation
   "split_from",
   "split_to",
   "subject"
+]);
+export const documentKindEnum = pgEnum("document_kind", [
+  "proposal",
+  "senate_adopted_form",
+  "committee_report",
+  "committee_opinion",
+  "adopted_form",
+  "promulgation_form",
+  "other"
+]);
+export const documentTextStatusEnum = pgEnum("document_text_status", [
+  "pending",
+  "stored",
+  "missing",
+  "failed",
+  "unsupported"
+]);
+export const billProcedureStepTypeEnum = pgEnum("bill_procedure_step_type", [
+  "registered",
+  "sent_to_senate",
+  "adopted_by_senate",
+  "sent_to_deputies",
+  "sent_to_committee",
+  "committee_opinion_requested",
+  "committee_opinion_received",
+  "committee_report_received",
+  "plenary_debate",
+  "final_vote",
+  "promulgation",
+  "constitutional_review",
+  "other"
 ]);
 
 export const legislatures = pgTable("legislatures", {
@@ -445,11 +478,13 @@ export const bills = pgTable("bills", {
   title: text("title").notNull(),
   identifiers: jsonb("identifiers").$type<Record<string, string>>().notNull().default({}),
   chamberOfOrigin: text("chamber_of_origin").notNull().default("unknown"),
+  decisionChamber: chamberEnum("decision_chamber"),
   status: text("status").notNull().default("unknown"),
   sourceSnapshotIds: jsonb("source_snapshot_ids").$type<string[]>().notNull().default([])
 }, (table) => ({
   slugIdx: uniqueIndex("bills_slug_idx").on(table.slug),
   chamberOriginIdx: index("bills_chamber_origin_idx").on(table.chamberOfOrigin),
+  decisionChamberIdx: index("bills_decision_chamber_idx").on(table.decisionChamber),
   statusIdx: index("bills_status_idx").on(table.status)
 }));
 
@@ -493,8 +528,49 @@ export const documents = pgTable("documents", {
   id: text("id").primaryKey(),
   billId: text("bill_id").notNull().references(() => bills.id),
   label: text("label").notNull(),
-  url: text("url").notNull()
-});
+  url: text("url").notNull(),
+  documentKind: documentKindEnum("document_kind").notNull().default("other"),
+  sourceChamber: chamberEnum("source_chamber"),
+  officialUrlHash: text("official_url_hash"),
+  textAssetId: text("text_asset_id").references(() => storedAssets.id),
+  textStatus: documentTextStatusEnum("text_status").notNull().default("pending"),
+  textPreview: text("text_preview"),
+  lastTextAttemptAt: timestamp("last_text_attempt_at", { withTimezone: true })
+}, (table) => ({
+  billKindIdx: index("documents_bill_kind_idx").on(table.billId, table.documentKind),
+  officialUrlHashIdx: index("documents_official_url_hash_idx").on(table.officialUrlHash),
+  textStatusIdx: index("documents_text_status_idx").on(table.textStatus)
+}));
+
+export const billProcedureSteps = pgTable("bill_procedure_steps", {
+  id: text("id").primaryKey(),
+  billId: text("bill_id").notNull().references(() => bills.id),
+  occurredOn: date("occurred_on").notNull(),
+  chamber: text("chamber").notNull().default("unknown"),
+  stepType: billProcedureStepTypeEnum("step_type").notNull().default("other"),
+  title: text("title").notNull(),
+  description: text("description"),
+  committeeName: text("committee_name"),
+  documentId: text("document_id").references(() => documents.id),
+  sourceUrl: text("source_url"),
+  displayOrder: integer("display_order").notNull().default(0)
+}, (table) => ({
+  billDateIdx: index("bill_procedure_steps_bill_date_idx").on(table.billId, table.occurredOn, table.displayOrder),
+  documentIdx: index("bill_procedure_steps_document_idx").on(table.documentId),
+  typeIdx: index("bill_procedure_steps_type_idx").on(table.stepType)
+}));
+
+export const billDocumentTextChunks = pgTable("bill_document_text_chunks", {
+  id: text("id").primaryKey(),
+  documentId: text("document_id").notNull().references(() => documents.id),
+  billId: text("bill_id").notNull().references(() => bills.id),
+  chunkIndex: integer("chunk_index").notNull(),
+  text: text("text").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+}, (table) => ({
+  documentChunkIdx: uniqueIndex("bill_document_text_chunks_document_chunk_idx").on(table.documentId, table.chunkIndex),
+  billIdx: index("bill_document_text_chunks_bill_idx").on(table.billId)
+}));
 
 export const votes = pgTable("votes", {
   id: text("id").primaryKey(),

@@ -6,10 +6,12 @@ import { sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import type { ChamberId } from "@cumsevoteaza/parliament-model";
 import { deleteStoredAssets, importStoredAssetsFromInventory, type AssetType } from "./asset-import";
+import { importBillText } from "./bill-text";
 import { cleanupSupersededCdepHistoryRows } from "./cdep-history-cleanup";
 import { importCdepHistoryProfiles } from "./cdep-history-import";
 import { auditCurrentLegislature } from "./current-legislature-audit";
 import { parseChamberNominalVote } from "./parsers/chamber-vote";
+import { parseDeputiesBill } from "./parsers/deputies-bill";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "./parsers/deputies-roster";
 import { legislatureCatalog, legislatureFromFlag, partyCatalog, uniqueBy, type ParsedMemberProfile, type ParsedRoster } from "./parsers/roster";
 import { parseSenateBill } from "./parsers/senate-bill";
@@ -23,8 +25,17 @@ import {
 } from "./parsers/wikipedia-roster";
 import { fetchOfficialSource } from "./fetch-source";
 import { governmentSkeletonData } from "./government-skeleton";
+import { cleanupLocalData } from "./local-data-cleanup";
 import { canonicalizeOfficialUrl } from "./official-urls";
-import { backfillPeopleFromMembers, persistChamberVote, persistGovernmentSkeleton, persistRoster, persistSenateBill, persistSenateVote } from "./persist";
+import {
+  backfillPeopleFromMembers,
+  persistChamberVote,
+  persistDeputiesBill,
+  persistGovernmentSkeleton,
+  persistRoster,
+  persistSenateBill,
+  persistSenateVote
+} from "./persist";
 import { snapshotFor } from "./parsers/utils";
 import { refreshReadModels } from "./read-models";
 import { resetRosterData } from "./roster-reset";
@@ -62,6 +73,46 @@ async function main() {
     await writeImport("senate-bill", parsed, html);
     if (hasFlag("persist")) {
       console.log(JSON.stringify(await persistSenateBill(parsed), null, 2));
+    }
+    return;
+  }
+
+  if (command === "bill:deputies") {
+    const url = canonicalizeOfficialUrl(flag("url") ?? "https://www.cdep.ro/ords/pls/proiecte/upl_pck2015.proiect?idp=22820");
+    const html = await loadHtml(url);
+    const parsed = parseDeputiesBill(html, url);
+    await writeImport("deputies-bill", parsed, html);
+    if (hasFlag("persist")) {
+      console.log(JSON.stringify(await persistDeputiesBill(parsed), null, 2));
+    }
+    return;
+  }
+
+  if (command === "bill:senate") {
+    const cod = flag("cod") ?? "27035";
+    const url = flag("url") ?? `https://www.senat.ro/Legis/Lista.aspx?cod=${cod}`;
+    const html = await loadHtml(url);
+    const parsed = parseSenateBill(html, url);
+    await writeImport("senate-bill", parsed, html);
+    if (hasFlag("persist")) {
+      console.log(JSON.stringify(await persistSenateBill(parsed), null, 2));
+    }
+    return;
+  }
+
+  if (command === "bill-text") {
+    const result = await importBillText({
+      billId: flag("bill"),
+      documentId: flag("document"),
+      documentKind: flag("document-kind"),
+      timeoutMs: numberFlag("timeout-ms"),
+      insecure: hasFlag("insecure"),
+      persist: hasFlag("persist")
+    });
+    await writeImport("bill-text", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    if (!hasFlag("persist")) {
+      console.log("Dry run only. Re-run with --persist to fetch the official PDF temporarily and store derived text.");
     }
     return;
   }
@@ -194,6 +245,45 @@ async function main() {
     console.log(JSON.stringify(result, null, 2));
     if (!hasFlag("confirm")) {
       console.log("Dry run only. Re-run with --confirm to delete matching Blob objects and mark rows pending.");
+    }
+    return;
+  }
+
+  if (command === "data:clean") {
+    const result = await cleanupLocalData({
+      repoRoot,
+      confirm: hasFlag("confirm"),
+      includeSystemJunk: !hasFlag("no-system-junk"),
+      includeImports: hasFlag("imports") || hasFlag("all-generated"),
+      includeSnapshots: hasFlag("snapshots") || hasFlag("all-generated"),
+      includeCdepRaw: hasFlag("cdep-raw") || hasFlag("all-generated"),
+      includePipelineRaw: hasFlag("pipeline-raw") || hasFlag("all-generated"),
+      includeParsed: hasFlag("parsed"),
+      keepDays: numberFlag("keep-days"),
+      keepLatest: numberFlag("keep-latest")
+    });
+    const wroteReport = await writeJsonReport("data-clean", result);
+    const selectedCandidates = result.candidates.filter((candidate) => candidate.selected);
+    const previewSource = selectedCandidates.length > 0 ? selectedCandidates : result.candidates;
+    const previewLimit = selectedCandidates.length > 0 ? 50 : 20;
+    console.log(
+      JSON.stringify(
+        {
+          ...result,
+          candidatePreview: selectedCandidates.length > 0 ? "selected" : "first_unselected",
+          candidates: previewSource.slice(0, previewLimit)
+        },
+        null,
+        2
+      )
+    );
+    if (wroteReport && result.candidates.length > previewLimit) {
+      console.log(`Showing ${Math.min(previewLimit, previewSource.length)} of ${result.candidates.length} cleanup candidates. Full report was written to data/imports.`);
+    }
+    if (!hasFlag("confirm")) {
+      console.log(
+        "Dry run only. Re-run with --confirm plus explicit flags such as --imports, --snapshots, --cdep-raw, --pipeline-raw, or --all-generated to delete selected files."
+      );
     }
     return;
   }
@@ -893,6 +983,19 @@ async function writeImport(name: string, payload: unknown, raw: string) {
   console.log(`Wrote ${name} import at ${now}`);
 }
 
+async function writeJsonReport(name: string, payload: unknown): Promise<boolean> {
+  if (hasFlag("no-files") || process.env.VERCEL === "1") {
+    console.log(`Skipped local file output for ${name}`);
+    return false;
+  }
+  const now = new Date().toISOString().replace(/[:.]/g, "-");
+  const importDir = path.join(repoRoot, "data/imports");
+  await mkdir(importDir, { recursive: true });
+  await writeFile(path.join(importDir, `${now}-${name}.json`), JSON.stringify(payload, null, 2));
+  console.log(`Wrote ${name} report at ${now}`);
+  return true;
+}
+
 async function writeCdepHistoryWarningFiles(result: Awaited<ReturnType<typeof importCdepHistoryProfiles>>) {
   if (hasFlag("no-files") || process.env.VERCEL === "1") return;
   const warnings = result.chambers.flatMap((chamber) => chamber.warningItems);
@@ -1033,7 +1136,7 @@ function chamberFlag(): "senate" | "deputies" | undefined {
 
 function assetTypeFlag(): AssetType | undefined {
   const value = flag("asset-type");
-  return value === "photo" || value === "party_logo" || value === "cv" ? value : undefined;
+  return value === "photo" || value === "party_logo" || value === "cv" || value === "bill_text" ? value : undefined;
 }
 
 function resolveRepoPath(value: string): string {

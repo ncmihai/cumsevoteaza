@@ -29,9 +29,15 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
           <div className="text-sm font-semibold uppercase text-blue-800">{formatDate(vote.heldOn, locale)}</div>
           <h1 className="mt-2 max-w-4xl text-3xl font-semibold text-slate-950">{vote.title}</h1>
           {bill ? (
-            <Link href={`/${locale}/bills/${bill.slug}`} className="mt-2 block text-sm text-slate-600 underline">
-              {[bill.identifiers.senate, bill.identifiers.deputies].filter(Boolean).join(" / ")} · {bill.title}
-            </Link>
+            <div className="mt-3 max-w-4xl border border-slate-300 bg-white p-3 text-sm">
+              <Link href={`/${locale}/bills/${bill.slug}`} className="font-medium text-slate-900 underline">
+                {[bill.identifiers.senate, bill.identifiers.deputies].filter(Boolean).join(" / ")} · {bill.title}
+              </Link>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
+                {bill.status ? <span>{bill.status}</span> : null}
+                {bill.decisionChamber ? <span>{labels.decisionChamber}: {labels.chambers[bill.decisionChamber]}</span> : null}
+              </div>
+            </div>
           ) : null}
         </div>
         <div className="flex flex-col items-start gap-2">
@@ -67,9 +73,23 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
 
 const votePageLabels = {
   ro: {
-    publicInterest: "Marchează interes"
+    publicInterest: "Marchează interes",
+    decisionChamber: "Cameră decizională",
+    chambers: {
+      deputies: "Camera Deputaților",
+      senate: "Senat"
+    }
   },
   en: {
-    publicInterest: "Mark interest"
+    publicInterest: "Mark interest",
+    decisionChamber: "Decision chamber",
+    chambers: {
+      deputies: "Chamber of Deputies",
+      senate: "Senate"
+    }
   }
-} satisfies Record<AppLocale, Record<string, string>>;
+} satisfies Record<AppLocale, {
+  publicInterest: string;
+  decisionChamber: string;
+  chambers: Record<"deputies" | "senate", string>;
+}>;

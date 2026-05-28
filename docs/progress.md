@@ -2376,3 +2376,166 @@ Verification:
 - Smoke-tested one current-legislature photo through `/api/assets/<id>`:
   returned `200`, `image/webp`, `Content-Length`, long cache headers, and an
   `ETag`.
+
+## 2026-05-27 — 2020-2024 Legislature Photos on Digi
+
+- Reimported the full `2020-2024` member-photo inventory to Digi Storage with
+  `--force --insecure`. Result: `499` selected, `491` stored, `8` missing
+  official CDEP `404` rows, `0` failed.
+- Verified the stored rows are `150x200` WebP files under
+  `/cumvoteaza-assets/parliament-assets/photos/legislature-2020-2024/...`.
+  Total `2020-2024` legislature photo payload is about `1.50 MB`.
+- Smoke-tested one deployed `2020-2024` photo through `/api/assets/<id>`:
+  returned `200`, `image/webp`, `Content-Length`, cache headers, and an `ETag`.
+- Missing official image URLs preserved for manual review:
+  - Adriana-Larisa Antipa:
+    `https://cdep.ro/parlamentari/l2020/Adriana-Larisa_Antipa.jpg`
+  - Răzvan-Iulian Ciortea:
+    `https://cdep.ro/parlamentari/l2020/Razvan-Iulian_Ciortea.jpg`
+  - Andrei-Emil Dîrlău:
+    `https://cdep.ro/parlamentari/l2020/Andrei_Dirlau.jpg`
+  - Ionela-Alina Dumitru:
+    `https://cdep.ro/parlamentari/l2020/Alina_Dumitru.jpg`
+  - Iulius Marian Firczak:
+    `https://cdep.ro/parlamentari/l2020/FirczakIulius Marian.JPG`
+  - Virgil-Daniel Popescu:
+    `https://cdep.ro/parlamentari/l2020/PopescuVirgilDaniel.jpg`
+  - Ioan-Sabin Sărmaş:
+    `https://cdep.ro/parlamentari/l2020/SarmasIoanSabin.jpg`
+  - Marius Vulcan:
+    `https://cdep.ro/parlamentari/l2020/MariusVulcan.jpg`
+
+## 2026-05-27 — 2016-2020 Legislature Photos on Digi
+
+- Reimported the full `2016-2020` member-photo inventory to Digi Storage with
+  `--force --insecure`. Result: `502` selected, `502` stored, `0` missing,
+  `0` failed.
+- Verified the stored rows are `150x200` WebP files under
+  `/cumvoteaza-assets/parliament-assets/photos/legislature-2016-2020/...`.
+  Total `2016-2020` legislature photo payload is about `1.59 MB`.
+- Smoke-tested one deployed `2016-2020` photo through `/api/assets/<id>`:
+  returned `200`, `image/webp`, `Content-Length`, cache headers, and an `ETag`.
+
+## 2026-05-27 — 2012-2016 and 2008-2012 Legislature Photos on Digi
+
+- Reimported the full `2012-2016` member-photo inventory to Digi Storage with
+  `--force --insecure`. Result: `596` selected, `596` stored, `0` missing,
+  `0` failed.
+- Verified the `2012-2016` rows are `150x200` WebP files under
+  `/cumvoteaza-assets/parliament-assets/photos/legislature-2012-2016/...`.
+  Total `2012-2016` legislature photo payload is about `2.01 MB`.
+- The `2012-2016` batch has `596` stored rows and `595` unique storage paths
+  because CDEP exposes the same official URL and same image hash for two
+  Ovidiu Ioan Silaghi rows.
+- Reimported the full `2008-2012` member-photo inventory to Digi Storage with
+  `--force --insecure`. Result: `476` selected, `476` stored, `0` missing,
+  `0` failed.
+- Verified the `2008-2012` rows are `150x200` WebP files under
+  `/cumvoteaza-assets/parliament-assets/photos/legislature-2008-2012/...`.
+  Total `2008-2012` legislature photo payload is about `1.58 MB`.
+- Smoke-tested one deployed photo from each batch through `/api/assets/<id>`:
+  both returned `200`, `image/webp`, `Content-Length`, cache headers, and an
+  `ETag`.
+
+## 2026-05-27 — 1996-2000, 1992-1996, and 1990-1992 Legislature Photos on Digi
+
+- Reimported the full `1996-2000` member-photo inventory to Digi Storage with
+  `--force --insecure`. Result: `509` selected, `509` stored, `0` missing,
+  `0` failed.
+- Verified the `1996-2000` rows are `150x200` WebP files under
+  `/cumvoteaza-assets/parliament-assets/photos/legislature-1996-2000/...`.
+  Total `1996-2000` legislature photo payload is about `2.07 MB`.
+- The `1996-2000` batch has `509` stored rows and `508` unique storage paths
+  because CDEP exposes the same official URL, `gheorghm.jpg`, for Mihai
+  Gheorghiu and Gheorghe Marin.
+- Reimported the full `1992-1996` member-photo inventory to Digi Storage with
+  `--force --insecure`. Result: `460` selected, `460` stored, `0` missing,
+  `0` failed.
+- Verified the `1992-1996` rows are `150x200` WebP files under
+  `/cumvoteaza-assets/parliament-assets/photos/legislature-1992-1996/...`.
+  Total `1992-1996` legislature photo payload is about `1.83 MB`.
+- Reimported the full `1990-1992` member-photo inventory to Digi Storage with
+  `--force --insecure`. Result: `318` selected, `318` stored, `0` missing,
+  `0` failed.
+- Verified the `1990-1992` rows are `150x200` WebP files under
+  `/cumvoteaza-assets/parliament-assets/photos/legislature-1990-1992/...`.
+  Total `1990-1992` legislature photo payload is about `1.23 MB`.
+- The `1990-1992` batch has `318` stored rows and `317` unique storage paths
+  because CDEP exposes the same official URL, `stoica.jpg`, for Emil Stoica
+  and Mihail Stoica.
+- Smoke-tested deployed encoded `/api/assets/<id>` URLs for one photo from each
+  batch: all returned `200`, `image/webp`, `Content-Length`, cache headers, and
+  an `ETag`.
+
+## 2026-05-27 — 2004-2008 and 2000-2004 Legislature Photos on Digi
+
+- Reimported the full `2004-2008` member-photo inventory to Digi Storage with
+  `--force --insecure`. Result: `541` selected, `541` stored, `0` missing,
+  `0` failed.
+- Verified the `2004-2008` rows are `150x200` WebP files under
+  `/cumvoteaza-assets/parliament-assets/photos/legislature-2004-2008/...`.
+  Total `2004-2008` legislature photo payload is about `1.63 MB`.
+- Reimported the full `2000-2004` member-photo inventory to Digi Storage with
+  `--force --insecure`. Result: `546` selected, `546` stored, `0` missing,
+  `0` failed.
+- Verified the `2000-2004` rows are `150x200` WebP files under
+  `/cumvoteaza-assets/parliament-assets/photos/legislature-2000-2004/...`.
+  Total `2000-2004` legislature photo payload is about `1.72 MB`.
+- Smoke-tested one deployed photo from each batch through `/api/assets/<id>`:
+  both returned `200`, `image/webp`, `Content-Length`, cache headers, and an
+  `ETag`.
+
+## 2026-05-27 — Local Data Cleanup Tooling
+
+- Added a dry-run-first `npm run data:clean` command for local generated
+  artifacts. By default it only selects safe system junk; importer reports,
+  HTML snapshots, raw CDEP crawls, Tribunal raw downloads, and parsed JSONL
+  artifacts require explicit flags.
+- Added `data/README.md` to document the data directory contract: reviewed
+  curated files belong in git, while crawl/import/snapshot outputs are local
+  audit artifacts and should not be required at public request time.
+- Ran the cleanup with `--confirm --no-files` after reviewing the dry run.
+  Deleted `7` system-junk files totaling `233470` bytes. No CDEP raw data,
+  importer reports, source snapshots, or parsed pipeline outputs were removed.
+- Current generated-artifact inventory remains available for later review:
+  CDEP raw crawl files about `90.65 MB`, HTML snapshots about `38.48 MB`,
+  importer JSON reports about `36.02 MB`, and parsed JSON/JSONL outputs about
+  `22.91 MB`.
+
+## 2026-05-28 — Efficient Bill Dossier Pipeline
+
+- Added bill-dossier schema support: document kinds/text status, structured
+  `bill_procedure_steps`, `bill_document_text_chunks`, and bill decision
+  chamber. Generated migrations `0013_pale_microbe.sql` and
+  `0014_pale_silvermane.sql`.
+- Upgraded the CDEP bill parser for `upl_pck2015.proiect` pages so it extracts
+  identifiers, status, initiator, decision chamber, document links/kinds,
+  committee references, structured procedure steps, and compatibility
+  `bill_events`.
+- Added `ingest:bill:deputies`, `ingest:bill:senate`, and `ingest:bill-text`.
+  Text extraction fetches official PDFs temporarily, stores only derived
+  cleaned `.txt` files in Digi, and writes previews/chunks/status into
+  Postgres.
+- Added `/api/bill-documents/[id]/text` for lazy cached text retrieval through
+  the server-side Digi gateway.
+- Updated bill pages to show dossier fields, procedure timeline, committees,
+  official document links, and optional extracted text expansion. Vote pages
+  now show a compact linked-bill preview.
+- Added a CDEP `PL-x 158/2026` fixture test for dossier parsing and text helper
+  tests. Verified `@cumsevoteaza/ingest` tests plus DB/web/ingest typechecks.
+- Applied the generated migrations to the configured Neon database.
+- Imported the live CDEP dossier
+  `https://www.cdep.ro/ords/pls/proiecte/upl_pck2015.proiect?idp=22820`.
+  Result: `bill-pl-x-158-2026`, `15` structured procedure steps, `12`
+  official document links.
+- First text extraction attempt reached the official PDF but the built-in
+  lightweight PDF string parser could not extract useful text. Added a local
+  Python/pypdf fallback that writes the PDF only to a temporary directory and
+  deletes it after extraction.
+- Retried proposal text extraction with CDEP insecure TLS mode. Result:
+  stored derived text asset `asset-bill-text-doc-bill-pl-x-158-2026-12`, `1`
+  chunk, `1130` bytes. Official PDF remains linked at CDEP, not stored.
+- Smoke-checked `http://localhost:3001/ro/bills/bill-pl-x-158-2026` against
+  the live imported Neon rows. The dossier page rendered the structured
+  procedure timeline, official document list, government context, and lazy
+  extracted proposal text through `/api/bill-documents/[id]/text`.

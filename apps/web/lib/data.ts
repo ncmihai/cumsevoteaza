@@ -7,6 +7,7 @@ import {
   demoDataset,
   type Bill,
   type BillEvent,
+  type BillProcedureStep,
   type BillSponsor,
   type DocumentSource,
   type AlignmentBasis,
@@ -75,6 +76,7 @@ export interface BillDirectoryData {
 export interface BillPageData {
   bill: Bill;
   events: BillEvent[];
+  procedureSteps: BillProcedureStep[];
   documents: DocumentSource[];
   votes: Vote[];
   source?: SourceSnapshot;
@@ -364,6 +366,7 @@ async function getBillPageDataUncached(id: string): Promise<BillPageData | undef
   return {
     bill,
     events: demoDataset.billEvents.filter((event) => event.billId === bill.id),
+    procedureSteps: [],
     documents: demoDataset.documents.filter((document) => document.billId === bill.id),
     votes: demoDataset.votes.filter((vote) => vote.billId === bill.id),
     source: demoDataset.sourceSnapshots.find((item) => bill.sourceSnapshotIds.includes(item.id)),
@@ -651,10 +654,13 @@ async function tryDatabaseBill(id: string): Promise<BillPageData | undefined> {
       .limit(1);
     if (!billRow) return undefined;
 
-    const eventRows = await session.db.select().from(schema.billEvents).where(eq(schema.billEvents.billId, billRow.id));
-    const documentRows = await session.db.select().from(schema.documents).where(eq(schema.documents.billId, billRow.id));
-    const voteRows = await session.db.select().from(schema.votes).where(eq(schema.votes.billId, billRow.id));
-    const sponsorRows = await session.db.select().from(schema.billSponsors).where(eq(schema.billSponsors.billId, billRow.id));
+    const [eventRows, procedureRows, documentRows, voteRows, sponsorRows] = await Promise.all([
+      session.db.select().from(schema.billEvents).where(eq(schema.billEvents.billId, billRow.id)),
+      session.db.select().from(schema.billProcedureSteps).where(eq(schema.billProcedureSteps.billId, billRow.id)),
+      session.db.select().from(schema.documents).where(eq(schema.documents.billId, billRow.id)),
+      session.db.select().from(schema.votes).where(eq(schema.votes.billId, billRow.id)),
+      session.db.select().from(schema.billSponsors).where(eq(schema.billSponsors.billId, billRow.id))
+    ]);
     const sourceId = Array.isArray(billRow.sourceSnapshotIds) ? billRow.sourceSnapshotIds[0] : undefined;
     const [sourceRow] = sourceId
       ? await session.db.select().from(schema.sourceSnapshots).where(eq(schema.sourceSnapshots.id, sourceId)).limit(1)
@@ -673,6 +679,9 @@ async function tryDatabaseBill(id: string): Promise<BillPageData | undefined> {
     return {
       bill: mapBill(billRow),
       events,
+      procedureSteps: procedureRows
+        .map(mapBillProcedureStep)
+        .sort((a, b) => `${a.occurredOn}-${a.displayOrder}`.localeCompare(`${b.occurredOn}-${b.displayOrder}`)),
       documents: documentRows.map(mapDocument),
       votes: voteRows.map(mapVote),
       source: sourceRow ? mapSource(sourceRow) : undefined,
@@ -1143,6 +1152,7 @@ function mapBill(row: typeof schema.bills.$inferSelect): Bill {
     title: row.title,
     identifiers: row.identifiers,
     chamberOfOrigin: row.chamberOfOrigin === "senate" || row.chamberOfOrigin === "deputies" ? row.chamberOfOrigin : "unknown",
+    decisionChamber: row.decisionChamber ?? undefined,
     status: row.status,
     sourceSnapshotIds: row.sourceSnapshotIds
   };
@@ -1668,12 +1678,38 @@ function mapBillEvent(row: typeof schema.billEvents.$inferSelect): BillEvent {
   };
 }
 
+function mapBillProcedureStep(row: typeof schema.billProcedureSteps.$inferSelect): BillProcedureStep {
+  return {
+    id: row.id,
+    billId: row.billId,
+    occurredOn: row.occurredOn,
+    chamber:
+      row.chamber === "senate" || row.chamber === "deputies" || row.chamber === "joint" || row.chamber === "unknown"
+        ? row.chamber
+        : "unknown",
+    stepType: row.stepType,
+    title: row.title,
+    description: row.description ?? undefined,
+    committeeName: row.committeeName ?? undefined,
+    documentId: row.documentId ?? undefined,
+    sourceUrl: row.sourceUrl ?? undefined,
+    displayOrder: row.displayOrder
+  };
+}
+
 function mapDocument(row: typeof schema.documents.$inferSelect): DocumentSource {
   return {
     id: row.id,
     billId: row.billId,
     label: row.label,
-    url: row.url
+    url: row.url,
+    documentKind: row.documentKind,
+    sourceChamber: row.sourceChamber ?? undefined,
+    officialUrlHash: row.officialUrlHash ?? undefined,
+    textAssetId: row.textAssetId ?? undefined,
+    textStatus: row.textStatus,
+    textPreview: row.textPreview ?? undefined,
+    lastTextAttemptAt: row.lastTextAttemptAt?.toISOString()
   };
 }
 
