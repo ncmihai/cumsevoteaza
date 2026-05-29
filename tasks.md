@@ -1169,6 +1169,20 @@ implementation steps.
   links, and lazy extracted text without opening the bill page first.
 - [ ] Continue CDEP dossier imports in small batches, then extract proposal
   text only for selected/high-value bills.
+- [x] Refresh CDEP Deputies 2026 discovery and verify the yearly project list
+  remains fully imported: official list reported `424` projects and no
+  importable pending 2026 Deputies bill rows remained.
+- [x] Refresh CDEP Deputies May 2026 vote discovery and import the current
+  pending vote batch. Result: `113` May vote discoveries observed, `21`
+  vote details imported, `0` partial, `0` failed, `3` skipped by retry guard,
+  read models refreshed.
+- [x] Refresh older Deputies project lists and import remaining small pending
+  bill batches. Results: 2025 list `592` projects with `3` pending bills
+  imported; 2024 list `684` projects with `2` pending bills imported.
+- [ ] Fix current-legislature reconciliation warnings before larger backfills:
+  imported discoveries without high-confidence DB matches, duplicate
+  Senate/Deputies lifecycle identifiers, weak amendment vote titles, and
+  procedural votes without linked bills.
 - [x] Run the next capped CDEP dossier batch for 2026. Result: `25`
   additional Deputies bill discoveries imported, `0` partial, `0` failed,
   read models refreshed to `2251` bill summaries and `8361` search rows.

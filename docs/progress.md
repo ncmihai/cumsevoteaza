@@ -2583,3 +2583,23 @@ Verification:
   vote page can now reveal the full `bill_procedure_steps` timeline, official
   document links, and lazy extracted text through the existing
   `/api/bill-documents/[id]/text` route when a Digi text artifact exists.
+- Continued production-data refresh for bill/vote dossiers:
+  - Baseline current-legislature audit showed `1455` bill discoveries, `540`
+    vote discoveries, `477` DB votes, `27` votes without linked bills, and
+    duplicate identifier warnings to resolve before broad backfills.
+  - Refreshed CDEP Deputies 2026 yearly project discovery. Official list
+    reported `424` projects; there were no importable pending 2026 Deputies
+    bill rows.
+  - Refreshed CDEP Deputies May 2026 vote discovery. It found `113` vote
+    discovery rows; importing pending 2026 Deputies votes added `21` vote
+    details, with `0` partial and `0` failed rows. Three rows were skipped by
+    retry guard. Read models refreshed to `2254` bill summaries, `621` vote
+    coverage summaries, `5289` member activity rows, and `8385` search rows.
+  - Refreshed older Deputies project lists. The 2025 list reported `592`
+    projects and imported the remaining `3` pending bill dossiers; the 2024
+    list reported `684` projects and imported the remaining `2` pending bill
+    dossiers.
+  - Follow-up Deputies audit still shows reconciliation work, not ordinary
+    importer failures: `64` imported discoveries without high-confidence DB
+    matches, `10` duplicate official identifier groups, `30` votes without a
+    linked bill, and `8` weak amendment vote titles.
