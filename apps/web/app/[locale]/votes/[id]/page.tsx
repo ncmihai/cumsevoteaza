@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDate, voteChoiceLabels } from "@cumsevoteaza/parliament-model";
 import { getVotePageData } from "@/lib/data";
@@ -9,6 +8,7 @@ import { GovernmentContextPanel } from "../../_components/GovernmentContextPanel
 import { HotButton } from "../../_components/HotButton";
 import { SourceBadge } from "../../_components/SourceBadge";
 import { Stat } from "../../_components/Stat";
+import { VoteBillDossierPanel } from "../../_components/VoteBillDossierPanel";
 import { VoteExplorer } from "../../_components/VoteExplorer";
 
 export default async function VotePage({ params }: { params: Promise<{ locale: string; id: string }> }) {
@@ -34,16 +34,8 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
     seatVotes
   } = data;
   const hotCount = await getHotCount("vote", vote.id);
-  const billIdentifiers = bill ? [bill.identifiers.senate, bill.identifiers.deputies].filter(Boolean).join(" / ") : "";
-  const previewSteps = billProcedureSteps
-    .filter((step) => step.occurredOn <= vote.heldOn)
-    .slice(-3)
-    .reverse();
   const sponsorNames = uniqueDisplayNames(
     billSponsorContexts.map((item) => item.member?.displayName ?? item.sponsor.name ?? "").filter(Boolean)
-  ).slice(0, 4);
-  const documentKinds = uniqueDisplayNames(
-    billDocuments.flatMap((document) => document.documentKind ? [document.documentKind] : [])
   ).slice(0, 4);
 
   return (
@@ -54,40 +46,17 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
           <div className="text-sm font-semibold uppercase text-blue-800">{formatDate(vote.heldOn, locale)}</div>
           <h1 className="mt-2 max-w-4xl text-3xl font-semibold text-slate-950">{vote.title}</h1>
           {bill ? (
-            <div className="mt-3 max-w-4xl border border-slate-300 bg-white p-4 text-sm">
-              <div className="text-xs font-semibold uppercase text-teal-700">{labels.billDossier}</div>
-              <Link href={`/${locale}/bills/${bill.slug}`} className="font-medium text-slate-900 underline">
-                {billIdentifiers ? `${billIdentifiers} · ` : null}{bill.title}
-              </Link>
-              <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
-                {bill.status ? <span>{bill.status}</span> : null}
-                {bill.decisionChamber ? <span>{labels.decisionChamber}: {labels.chambers[bill.decisionChamber]}</span> : null}
-                {billDocuments.length > 0 ? <span>{labels.documents}: {billDocuments.length}</span> : null}
-                {documentKinds.length > 0 ? (
-                  <span>{documentKinds.map((kind) => (labels.documentKinds as Record<string, string>)[kind] ?? kind).join(", ")}</span>
-                ) : null}
-              </div>
-              {sponsorNames.length > 0 ? (
-                <div className="mt-3 text-xs text-slate-700">
-                  <span className="font-semibold uppercase text-slate-500">{labels.initiators}</span>{" "}
-                  {sponsorNames.join(", ")}
-                  {billSponsorContexts.length > sponsorNames.length ? ` +${billSponsorContexts.length - sponsorNames.length}` : null}
-                </div>
-              ) : null}
-              {previewSteps.length > 0 ? (
-                <ol className="mt-3 grid gap-2 border-t border-slate-200 pt-3 text-xs text-slate-700">
-                  {previewSteps.map((step) => (
-                    <li key={step.id} className="grid gap-1 md:grid-cols-[7rem_1fr]">
-                      <span className="font-semibold text-slate-500">{formatDate(step.occurredOn, locale)}</span>
-                      <span>
-                        <span className="font-medium text-slate-900">{step.title}</span>
-                        {step.committeeName ? <span className="text-slate-500"> · {step.committeeName}</span> : null}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              ) : null}
-            </div>
+            <VoteBillDossierPanel
+              locale={locale}
+              bill={bill}
+              billHref={`/${locale}/bills/${bill.slug}`}
+              voteDate={vote.heldOn}
+              procedureSteps={billProcedureSteps}
+              documents={billDocuments}
+              sponsorNames={sponsorNames}
+              sponsorOverflowCount={Math.max(0, billSponsorContexts.length - sponsorNames.length)}
+              labels={labels}
+            />
           ) : null}
         </div>
         <div className="flex flex-col items-start gap-2">
@@ -128,9 +97,24 @@ const votePageLabels = {
     decisionChamber: "Cameră decizională",
     documents: "Documente",
     initiators: "Inițiatori",
+    recentProcedure: "Ultimii pași înainte de vot",
+    fullProcedure: "Procedură legislativă completă",
+    showFullDossier: "Vezi procedura completă și textul",
+    hideFullDossier: "Ascunde procedura completă",
+    officialDocuments: "Documente oficiale",
+    extractedText: "Text extras",
+    noExtractedText: "Textul extras nu este încă disponibil pentru documentele acestui proiect.",
+    fullBillPage: "Deschide pagina completă a proiectului",
+    showText: "Vezi text extras",
+    hideText: "Ascunde textul",
+    loadingText: "Se încarcă textul...",
+    failedText: "Textul extras nu este disponibil.",
+    textUnavailable: "Textul extras nu este disponibil pentru acest document.",
     chambers: {
       deputies: "Camera Deputaților",
-      senate: "Senat"
+      senate: "Senat",
+      joint: "Ședință comună",
+      unknown: "Cameră necunoscută"
     },
     documentKinds: {
       proposal: "propunere",
@@ -148,9 +132,24 @@ const votePageLabels = {
     decisionChamber: "Decision chamber",
     documents: "Documents",
     initiators: "Initiators",
+    recentProcedure: "Recent steps before the vote",
+    fullProcedure: "Full legislative procedure",
+    showFullDossier: "Show full procedure and text",
+    hideFullDossier: "Hide full procedure",
+    officialDocuments: "Official documents",
+    extractedText: "Extracted text",
+    noExtractedText: "Extracted text is not available yet for this bill's documents.",
+    fullBillPage: "Open full bill page",
+    showText: "Show extracted text",
+    hideText: "Hide text",
+    loadingText: "Loading text...",
+    failedText: "Extracted text is not available.",
+    textUnavailable: "Extracted text is not available for this document.",
     chambers: {
       deputies: "Chamber of Deputies",
-      senate: "Senate"
+      senate: "Senate",
+      joint: "Joint sitting",
+      unknown: "Unknown chamber"
     },
     documentKinds: {
       proposal: "proposal",
@@ -168,7 +167,20 @@ const votePageLabels = {
   decisionChamber: string;
   documents: string;
   initiators: string;
-  chambers: Record<"deputies" | "senate", string>;
+  recentProcedure: string;
+  fullProcedure: string;
+  showFullDossier: string;
+  hideFullDossier: string;
+  officialDocuments: string;
+  extractedText: string;
+  noExtractedText: string;
+  fullBillPage: string;
+  showText: string;
+  hideText: string;
+  loadingText: string;
+  failedText: string;
+  textUnavailable: string;
+  chambers: Record<string, string>;
   documentKinds: Record<string, string>;
 }>;
 

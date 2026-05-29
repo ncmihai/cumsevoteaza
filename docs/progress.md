@@ -2579,3 +2579,7 @@ Verification:
 - Current 2026 CDEP document summary after repair: `228` proposal documents
   still pending text extraction, `2` proposal texts stored, `6` unsupported,
   plus classified committee reports/opinions/adopted forms for dossier UI.
+- Upgraded vote detail bill previews into expandable dossiers. The PL-x-linked
+  vote page can now reveal the full `bill_procedure_steps` timeline, official
+  document links, and lazy extracted text through the existing
+  `/api/bill-documents/[id]/text` route when a Digi text artifact exists.

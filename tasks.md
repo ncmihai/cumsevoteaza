@@ -1164,6 +1164,9 @@ implementation steps.
 - [x] Upgrade vote detail pages with a richer compact bill dossier preview:
   document count/kinds, initiator summary, decision chamber, and latest
   procedure steps before the vote.
+- [x] Add an expandable full bill dossier panel to vote detail pages so a
+  linked vote can show the complete procedure timeline, official document
+  links, and lazy extracted text without opening the bill page first.
 - [ ] Continue CDEP dossier imports in small batches, then extract proposal
   text only for selected/high-value bills.
 - [x] Run the next capped CDEP dossier batch for 2026. Result: `25`
