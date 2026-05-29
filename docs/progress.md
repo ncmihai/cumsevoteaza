@@ -2603,3 +2603,22 @@ Verification:
     importer failures: `64` imported discoveries without high-confidence DB
     matches, `10` duplicate official identifier groups, `30` votes without a
     linked bill, and `8` weak amendment vote titles.
+- Added a more actionable dossier reconciliation layer:
+  - New command `npm run ingest:audit:dossier-reconciliation` reports exact
+    rows for missing CDEP procedure timelines, duplicate identifier groups,
+    unmatched imported discoveries, unlinked votes, and weak amendment-style
+    vote titles. The report includes candidate matches where identifier/title
+    evidence is strong enough to review.
+  - New command `npm run ingest:bill-dossiers:refresh` safely refetches
+    existing CDEP bill pages that already have source URLs but no structured
+    `bill_procedure_steps`. It is capped by `--limit`, supports `--year`, and
+    refuses to persist if the parsed canonical bill ID differs from the
+    existing row unless explicitly reviewed with `--allow-id-mismatch`.
+  - Ran two guarded 2026 refresh batches. They updated `20` existing bill rows
+    with official procedure timelines, had `0` skips and `0` failures, and
+    reduced Deputies bills missing procedure steps from `1148` to `1129`.
+  - Latest reconciliation audit still shows the next repair queues:
+    `64` unmatched imported discoveries, `183` duplicate identifier groups
+    requiring lifecycle review, `30` unlinked procedural/source-limited votes,
+    and `9` weak amendment vote titles that should use linked bill context
+    rather than overwriting the raw vote title.

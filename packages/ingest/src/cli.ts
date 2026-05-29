@@ -11,6 +11,7 @@ import { importBillText } from "./bill-text";
 import { cleanupSupersededCdepHistoryRows } from "./cdep-history-cleanup";
 import { importCdepHistoryProfiles } from "./cdep-history-import";
 import { auditCurrentLegislature } from "./current-legislature-audit";
+import { auditDossierReconciliation } from "./dossier-reconciliation-audit";
 import { parseChamberNominalVote } from "./parsers/chamber-vote";
 import { classifyDeputiesDocumentKind, parseDeputiesBill } from "./parsers/deputies-bill";
 import { parseDeputiesMemberProfile, parseDeputiesRosterGroup, parseDeputiesRosterIndex } from "./parsers/deputies-roster";
@@ -111,6 +112,21 @@ async function main() {
     console.log(JSON.stringify(result, null, 2));
     if (!hasFlag("persist")) {
       console.log("Dry run only. Re-run with --persist to update document_kind on existing document rows.");
+    }
+    return;
+  }
+
+  if (command === "bill-dossiers:refresh") {
+    const result = await refreshDeputiesBillDossiers({
+      year: numberFlag("year"),
+      limit: numberFlag("limit") ?? 10,
+      persist: hasFlag("persist"),
+      allowIdMismatch: hasFlag("allow-id-mismatch")
+    });
+    await writeImport("bill-dossiers-refresh", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    if (!hasFlag("persist")) {
+      console.log("Dry run only. Re-run with --persist to update bill dossier rows.");
     }
     return;
   }
@@ -474,12 +490,137 @@ async function main() {
     return;
   }
 
+  if (command === "audit:dossier-reconciliation") {
+    const result = await auditDossierReconciliation({
+      legislatureId: flag("legislature-id") ?? (flag("legislature") ? `leg-${flag("legislature")}` : undefined),
+      chamber: chamberFlag(),
+      sampleLimit: numberFlag("sample-limit")
+    });
+    await writeImport("audit-dossier-reconciliation", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
   if (command === "refresh-read-models") {
     console.log(JSON.stringify(await refreshReadModels(), null, 2));
     return;
   }
 
   throw new Error(`Unknown command: ${command ?? "(missing)"}`);
+}
+
+interface RefreshDeputiesDossiersOptions {
+  year?: number;
+  limit: number;
+  persist: boolean;
+  allowIdMismatch: boolean;
+}
+
+interface RefreshDeputiesDossierCandidate extends Record<string, unknown> {
+  id: string;
+  title: string;
+  source_url: string;
+  event_on: string | null;
+  procedure_steps: number;
+  documents: number;
+}
+
+async function refreshDeputiesBillDossiers(options: RefreshDeputiesDossiersOptions) {
+  const candidates = await loadDeputiesDossierRefreshCandidates(options);
+  const refreshed = [];
+  const skipped = [];
+  const failed = [];
+
+  for (const candidate of candidates) {
+    const sourceUrl = canonicalizeOfficialUrl(candidate.source_url);
+    try {
+      const html = await fetchOfficialSource(sourceUrl, 3);
+      const parsed = parseDeputiesBill(html, sourceUrl);
+      const idMismatch = parsed.bill.id !== candidate.id;
+      if (idMismatch && !options.allowIdMismatch) {
+        skipped.push({
+          billId: candidate.id,
+          parsedBillId: parsed.bill.id,
+          sourceUrl,
+          reason: "parsed bill id differs from existing row; rerun with --allow-id-mismatch only after manual review"
+        });
+        continue;
+      }
+
+      const persisted = options.persist ? await persistDeputiesBill(parsed) : undefined;
+      refreshed.push({
+        billId: candidate.id,
+        parsedBillId: parsed.bill.id,
+        sourceUrl,
+        procedureStepsBefore: candidate.procedure_steps,
+        documentsBefore: candidate.documents,
+        procedureSteps: parsed.procedureSteps.length,
+        documents: parsed.documents.length,
+        persisted
+      });
+      await sleep(500);
+    } catch (error) {
+      failed.push({
+        billId: candidate.id,
+        sourceUrl,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  if (options.persist && refreshed.length > 0) {
+    await refreshReadModels();
+  }
+
+  return {
+    filters: {
+      year: options.year,
+      limit: options.limit,
+      persist: options.persist,
+      allowIdMismatch: options.allowIdMismatch
+    },
+    candidates: candidates.length,
+    refreshed: refreshed.length,
+    skipped: skipped.length,
+    failed: failed.length,
+    rows: refreshed,
+    skippedRows: skipped,
+    failedRows: failed
+  };
+}
+
+async function loadDeputiesDossierRefreshCandidates(options: RefreshDeputiesDossiersOptions): Promise<RefreshDeputiesDossierCandidate[]> {
+  const session = createDbSession();
+  try {
+    return await session.db.execute<RefreshDeputiesDossierCandidate>(sql`
+      select
+        b.id,
+        b.title,
+        min(ss.source_url) filter (where ss.source_url ilike '%cdep.ro%upl_pck2015.proiect%') as source_url,
+        coalesce(bvs.latest_event_on, bvs.submitted_on) as event_on,
+        count(distinct bps.id)::int as procedure_steps,
+        count(distinct d.id)::int as documents
+      from bills b
+      left join bill_vote_summaries bvs on bvs.bill_id = b.id
+      left join lateral jsonb_array_elements_text(b.source_snapshot_ids) as sid(id) on true
+      left join source_snapshots ss on ss.id = sid.id
+      left join bill_procedure_steps bps on bps.bill_id = b.id
+      left join documents d on d.bill_id = b.id
+      where b.identifiers ? 'deputies'
+        ${options.year ? sql`and coalesce(bvs.latest_event_on, bvs.submitted_on) >= ${`${options.year}-01-01`}::date and coalesce(bvs.latest_event_on, bvs.submitted_on) < ${`${options.year + 1}-01-01`}::date` : sql``}
+      group by b.id, b.title, bvs.latest_event_on, bvs.submitted_on
+      having count(distinct bps.id) = 0
+        and min(ss.source_url) filter (where ss.source_url ilike '%cdep.ro%upl_pck2015.proiect%') is not null
+      order by coalesce(bvs.latest_event_on, bvs.submitted_on) desc nulls last, b.id
+      limit ${options.limit}
+    `);
+  } finally {
+    await session.close();
+  }
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function importSenateRoster(): Promise<ParsedRoster> {

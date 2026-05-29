@@ -1183,6 +1183,17 @@ implementation steps.
   imported discoveries without high-confidence DB matches, duplicate
   Senate/Deputies lifecycle identifiers, weak amendment vote titles, and
   procedural votes without linked bills.
+- [x] Add `ingest:audit:dossier-reconciliation`, an actionable audit report
+  that lists missing dossier timelines, duplicate identifier groups,
+  unmatched imported discoveries, unlinked votes, and weak amendment vote
+  titles with suggested review actions.
+- [x] Add guarded `ingest:bill-dossiers:refresh` command for existing CDEP
+  bill rows missing procedure steps. It refetches official dossier pages in
+  capped batches and skips rows if the parsed canonical bill ID does not match
+  the existing DB row.
+- [x] Run two guarded 2026 CDEP dossier refresh batches. Result: `20` existing
+  bill rows refreshed, `0` skipped, `0` failed; missing Deputies procedure-step
+  rows dropped from `1148` to `1129`.
 - [x] Run the next capped CDEP dossier batch for 2026. Result: `25`
   additional Deputies bill discoveries imported, `0` partial, `0` failed,
   read models refreshed to `2251` bill summaries and `8361` search rows.
