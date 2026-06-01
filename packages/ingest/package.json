@@ -15,6 +15,8 @@
     "bill-documents:classify": "tsx src/cli.ts bill-documents:classify",
     "bill-dossiers:refresh": "tsx src/cli.ts bill-dossiers:refresh",
     "bill-text": "tsx src/cli.ts bill-text",
+    "bill-text:batch": "tsx src/cli.ts bill-text:batch",
+    "audit:bill-text-quality": "tsx src/cli.ts audit:bill-text-quality",
     "senate:vote": "tsx src/cli.ts senate:vote",
     "chamber:vote": "tsx src/cli.ts chamber:vote",
     "senate:roster": "tsx src/cli.ts senate:roster",

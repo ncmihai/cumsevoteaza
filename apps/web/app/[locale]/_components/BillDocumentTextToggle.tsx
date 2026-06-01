@@ -16,6 +16,8 @@ export function BillDocumentTextToggle({
     hide: string;
     loading: string;
     failed: string;
+    status: string;
+    note: string;
   };
 }) {
   const [state, setState] = useState<LoadState>("idle");
@@ -30,13 +32,17 @@ export function BillDocumentTextToggle({
     setOpen(true);
     if (state === "loaded") return;
     setState("loading");
-    const response = await fetch(`/api/bill-documents/${encodeURIComponent(documentId)}/text`);
-    if (!response.ok) {
+    try {
+      const response = await fetch(`/api/bill-documents/${encodeURIComponent(documentId)}/text`);
+      if (!response.ok) {
+        setState("failed");
+        return;
+      }
+      setText(await response.text());
+      setState("loaded");
+    } catch {
       setState("failed");
-      return;
     }
-    setText(await response.text());
-    setState("loaded");
   }
 
   return (
@@ -50,6 +56,10 @@ export function BillDocumentTextToggle({
       </button>
       {open ? (
         <div className="mt-3 max-h-80 overflow-auto border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-800">
+          <div className="mb-3 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2 text-xs text-slate-600">
+            <span className="border border-slate-300 bg-white px-2 py-1 font-semibold uppercase text-slate-700">{labels.status}</span>
+            <span>{labels.note}</span>
+          </div>
           {state === "loading" ? labels.loading : state === "failed" ? labels.failed : <pre className="whitespace-pre-wrap font-sans">{text}</pre>}
         </div>
       ) : null}

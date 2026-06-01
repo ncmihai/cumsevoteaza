@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { formatDate, type Bill, type BillProcedureStep, type DocumentSource } from "@cumsevoteaza/parliament-model";
+import { formatDate, type Bill, type BillProcedureStep, type DocumentSource, type GovernanceAlignment } from "@cumsevoteaza/parliament-model";
+import type { BillSponsorContext } from "@/lib/data";
 import type { AppLocale } from "@/lib/i18n";
+import type { SourceConfidence } from "@/lib/source-confidence";
+import { confidenceForDocument } from "@/lib/source-confidence";
 import { BillDocumentTextToggle } from "./BillDocumentTextToggle";
+import { ConfidenceBadge } from "./ConfidenceBadge";
 
 type VoteBillDossierLabels = {
   billDossier: string;
@@ -19,11 +23,14 @@ type VoteBillDossierLabels = {
   extractedText: string;
   noExtractedText: string;
   fullBillPage: string;
+  showProjectText: string;
   showText: string;
   hideText: string;
   loadingText: string;
   failedText: string;
   textUnavailable: string;
+  automaticTextStatus: string;
+  automaticTextNote: string;
   chambers: Record<string, string>;
   documentKinds: Record<string, string>;
 };
@@ -35,8 +42,10 @@ export function VoteBillDossierPanel({
   voteDate,
   procedureSteps,
   documents,
+  documentConfidence = {},
   sponsorNames,
   sponsorOverflowCount,
+  sponsorContexts = [],
   labels
 }: {
   locale: AppLocale;
@@ -45,8 +54,10 @@ export function VoteBillDossierPanel({
   voteDate: string;
   procedureSteps: BillProcedureStep[];
   documents: DocumentSource[];
+  documentConfidence?: Record<string, SourceConfidence>;
   sponsorNames: string[];
   sponsorOverflowCount: number;
+  sponsorContexts?: BillSponsorContext[];
   labels: VoteBillDossierLabels;
 }) {
   const [open, setOpen] = useState(false);
@@ -79,6 +90,17 @@ export function VoteBillDossierPanel({
             <span className="font-semibold uppercase text-slate-500">{labels.initiators}</span>{" "}
             {sponsorNames.join(", ")}
             {sponsorOverflowCount > 0 ? ` +${sponsorOverflowCount}` : null}
+          </div>
+        ) : null}
+        {sponsorContexts.length > 0 ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {sponsorContexts.slice(0, 8).map((item) => (
+              <span key={item.sponsor.id} className="inline-flex items-center gap-1 border border-slate-200 px-2 py-1 text-xs text-slate-700">
+                <span className="font-medium">{item.group?.shortName ?? item.party?.shortName ?? item.sponsor.name}</span>
+                <span className="text-slate-500">{alignmentLabel(item.alignment, locale)}</span>
+              </span>
+            ))}
+            {sponsorContexts.length > 8 ? <span className="border border-slate-200 px-2 py-1 text-xs text-slate-500">+{sponsorContexts.length - 8}</span> : null}
           </div>
         ) : null}
       </div>
@@ -142,14 +164,19 @@ export function VoteBillDossierPanel({
                     <div className="mt-1 text-xs uppercase text-slate-500">
                       {document.documentKind ? labels.documentKinds[document.documentKind] ?? document.documentKind : labels.documentKinds.other}
                     </div>
+                    <div className="mt-2">
+                      <ConfidenceBadge confidence={documentConfidence[document.id] ?? confidenceForDocument({ textStatus: document.textStatus })} locale={locale} />
+                    </div>
                     <BillDocumentTextToggle
                       documentId={document.id}
                       preview={document.textPreview}
                       labels={{
-                        show: labels.showText,
+                        show: document.documentKind === "proposal" ? labels.showProjectText : labels.showText,
                         hide: labels.hideText,
                         loading: labels.loadingText,
-                        failed: labels.failedText
+                        failed: labels.failedText,
+                        status: labels.automaticTextStatus,
+                        note: labels.automaticTextNote
                       }}
                     />
                   </div>
@@ -176,6 +203,9 @@ export function VoteBillDossierPanel({
                     <span className="mt-1 block text-xs uppercase text-slate-500">
                       {document.documentKind ? labels.documentKinds[document.documentKind] ?? document.documentKind : labels.documentKinds.other}
                     </span>
+                    <span className="mt-2 block">
+                      <ConfidenceBadge confidence={documentConfidence[document.id] ?? confidenceForDocument({ textStatus: document.textStatus })} locale={locale} />
+                    </span>
                   </a>
                 ))}
               </div>
@@ -191,6 +221,28 @@ export function VoteBillDossierPanel({
       ) : null}
     </section>
   );
+}
+
+function alignmentLabel(alignment: GovernanceAlignment, locale: AppLocale): string {
+  const labels = {
+    ro: {
+      government: "guvern",
+      governing_support: "susținere",
+      opposition: "opoziție",
+      mixed: "mixt",
+      unaffiliated: "neafiliat",
+      unknown: "necunoscut"
+    },
+    en: {
+      government: "government",
+      governing_support: "support",
+      opposition: "opposition",
+      mixed: "mixed",
+      unaffiliated: "unaffiliated",
+      unknown: "unknown"
+    }
+  } satisfies Record<AppLocale, Record<GovernanceAlignment, string>>;
+  return labels[locale][alignment];
 }
 
 function uniqueDisplayNames(values: string[]): string[] {

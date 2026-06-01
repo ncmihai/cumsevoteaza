@@ -7,7 +7,8 @@ import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import type { ChamberId } from "@cumsevoteaza/parliament-model";
 import { deleteStoredAssets, importStoredAssetsFromInventory, type AssetType } from "./asset-import";
-import { importBillText } from "./bill-text";
+import { importBillText, importBillTextBatch } from "./bill-text";
+import { auditBillTextQuality } from "./bill-text-quality-audit";
 import { cleanupSupersededCdepHistoryRows } from "./cdep-history-cleanup";
 import { importCdepHistoryProfiles } from "./cdep-history-import";
 import { auditCurrentLegislature } from "./current-legislature-audit";
@@ -145,6 +146,38 @@ async function main() {
     if (!hasFlag("persist")) {
       console.log("Dry run only. Re-run with --persist to fetch the official PDF temporarily and store derived text.");
     }
+    return;
+  }
+
+  if (command === "bill-text:batch") {
+    const result = await importBillTextBatch({
+      year: numberFlag("year"),
+      limit: numberFlag("limit"),
+      documentKind: flag("document-kind"),
+      includeFailed: hasFlag("include-failed"),
+      includeUnsupported: hasFlag("include-unsupported"),
+      timeoutMs: numberFlag("timeout-ms"),
+      insecure: hasFlag("insecure"),
+      persist: hasFlag("persist")
+    });
+    await writeImport("bill-text-batch", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(hasFlag("summary-only") ? compactBillTextBatchResult(result) : result, null, 2));
+    if (!hasFlag("persist")) {
+      console.log("Dry run only. Re-run with --persist to fetch official PDFs temporarily and store derived text.");
+    }
+    return;
+  }
+
+  if (command === "audit:bill-text-quality") {
+    const result = await auditBillTextQuality({
+      year: numberFlag("year"),
+      documentKind: flag("document-kind"),
+      limit: numberFlag("limit"),
+      suspiciousOnly: hasFlag("suspicious-only"),
+      minChars: numberFlag("min-chars")
+    });
+    await writeImport("bill-text-quality-audit", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
     return;
   }
 
@@ -1303,6 +1336,24 @@ async function reclassifyBillDocuments(options: { year?: number; limit?: number;
   } finally {
     await session.close();
   }
+}
+
+function compactBillTextBatchResult(result: Awaited<ReturnType<typeof importBillTextBatch>>) {
+  return {
+    filters: result.filters,
+    candidates: result.candidates,
+    stored: result.stored,
+    unsupported: result.unsupported,
+    failed: result.failed,
+    missing: result.missing,
+    dryRun: result.dryRun,
+    sample: result.rows.slice(0, 10).map((row) => ({
+      documentId: row.documentId,
+      billId: row.billId,
+      previousTextStatus: row.previousTextStatus,
+      result: row.result
+    }))
+  };
 }
 
 function numberFlag(name: string): number | undefined {

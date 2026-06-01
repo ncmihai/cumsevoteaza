@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { formatDate, voteChoiceLabels } from "@cumsevoteaza/parliament-model";
 import { getVotePageData } from "@/lib/data";
+import { getDocumentConfidenceMap } from "@/lib/document-confidence";
 import { getHotCount } from "@/lib/explorer-data";
 import { isLocale, messagesFor, type AppLocale } from "@/lib/i18n";
+import { confidenceForSource } from "@/lib/source-confidence";
 import { EngagementTracker } from "../../_components/EngagementTracker";
 import { GovernmentContextPanel } from "../../_components/GovernmentContextPanel";
 import { HotButton } from "../../_components/HotButton";
@@ -33,7 +35,10 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
     individualVotes,
     seatVotes
   } = data;
-  const hotCount = await getHotCount("vote", vote.id);
+  const [hotCount, billDocumentConfidence] = await Promise.all([
+    getHotCount("vote", vote.id),
+    getDocumentConfidenceMap(billDocuments.map((document) => document.id))
+  ]);
   const sponsorNames = uniqueDisplayNames(
     billSponsorContexts.map((item) => item.member?.displayName ?? item.sponsor.name ?? "").filter(Boolean)
   ).slice(0, 4);
@@ -53,15 +58,17 @@ export default async function VotePage({ params }: { params: Promise<{ locale: s
               voteDate={vote.heldOn}
               procedureSteps={billProcedureSteps}
               documents={billDocuments}
+              documentConfidence={Object.fromEntries(billDocumentConfidence)}
               sponsorNames={sponsorNames}
               sponsorOverflowCount={Math.max(0, billSponsorContexts.length - sponsorNames.length)}
+              sponsorContexts={billSponsorContexts}
               labels={labels}
             />
           ) : null}
         </div>
         <div className="flex flex-col items-start gap-2">
           <HotButton entityType="vote" entityId={vote.id} initialCount={hotCount} label={labels.publicInterest} />
-          {source ? <SourceBadge source={source} label={messages.common.source} /> : null}
+          {source ? <SourceBadge source={source} label={messages.common.source} confidence={confidenceForSource(source)} locale={locale} /> : null}
         </div>
       </div>
 
@@ -105,11 +112,14 @@ const votePageLabels = {
     extractedText: "Text extras",
     noExtractedText: "Textul extras nu este încă disponibil pentru documentele acestui proiect.",
     fullBillPage: "Deschide pagina completă a proiectului",
+    showProjectText: "Vezi textul proiectului",
     showText: "Vezi text extras",
     hideText: "Ascunde textul",
     loadingText: "Se încarcă textul...",
     failedText: "Textul extras nu este disponibil.",
     textUnavailable: "Textul extras nu este disponibil pentru acest document.",
+    automaticTextStatus: "Extras automat",
+    automaticTextNote: "Pentru citare, verificați PDF-ul oficial.",
     chambers: {
       deputies: "Camera Deputaților",
       senate: "Senat",
@@ -140,11 +150,14 @@ const votePageLabels = {
     extractedText: "Extracted text",
     noExtractedText: "Extracted text is not available yet for this bill's documents.",
     fullBillPage: "Open full bill page",
+    showProjectText: "Show bill text",
     showText: "Show extracted text",
     hideText: "Hide text",
     loadingText: "Loading text...",
     failedText: "Extracted text is not available.",
     textUnavailable: "Extracted text is not available for this document.",
+    automaticTextStatus: "Automatic extraction",
+    automaticTextNote: "Use the official PDF for citation.",
     chambers: {
       deputies: "Chamber of Deputies",
       senate: "Senate",
@@ -175,11 +188,14 @@ const votePageLabels = {
   extractedText: string;
   noExtractedText: string;
   fullBillPage: string;
+  showProjectText: string;
   showText: string;
   hideText: string;
   loadingText: string;
   failedText: string;
   textUnavailable: string;
+  automaticTextStatus: string;
+  automaticTextNote: string;
   chambers: Record<string, string>;
   documentKinds: Record<string, string>;
 }>;

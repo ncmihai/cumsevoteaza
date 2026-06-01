@@ -1217,3 +1217,56 @@ implementation steps.
   `PL-x 49/2026`, `PL-x 30/2026`, `PL-x 27/2026`, and `PL-x 22/2026`
   were marked `unsupported` because their official archive PDFs did not yield
   useful text.
+- [x] Add `ingest:bill-text:batch` for capped proposal-text extraction runs.
+  It can select by year/document kind, retry failed/missing rows, and
+  explicitly retry `unsupported` rows after OCR improvements with
+  `--include-unsupported`.
+- [x] Add a local macOS Vision OCR fallback for scanned CDEP proposal PDFs.
+  The renderer was corrected after testing `PL-x 400/2026`; OCR now extracts
+  readable Romanian text when `pypdf` cannot read embedded text.
+- [x] Run the first OCR-backed 2026 proposal text batches. Result: `26`
+  additional proposal documents stored as derived text assets/chunks in Digi
+  and Neon, including the previously unsupported `PL-x 400/2026` sample.
+- [x] Complete the remaining 2026 proposal-text queue in capped batches.
+  Result: `209` more proposal documents stored (`50 + 50 + 50 + 50 + 9`),
+  then the final check returned `0` remaining pending/failed/missing/
+  unsupported 2026 proposal-text candidates.
+- [x] Fix member activity read-model counting before using member/party stats
+  as product signals. Vote and proposal counts now only count rows that fall
+  inside the mandate legislature/chamber window.
+- [x] Wrap read-model refresh in a transaction so rebuild failures roll back
+  instead of leaving summary/search tables partially refreshed.
+- [x] Add `ingest:audit:bill-text-quality` for 2026 OCR review before moving
+  to older years. The audit flags missing chunks, very short text, weak legal
+  vocabulary, noisy characters, and repeated-line artifacts.
+- [x] Run the bill-text quality audit over the current full 2026 proposal set.
+  Result: `237` scanned, `4` suspicious (`3` very short, `1` repeated-line).
+- [x] Tighten bill/vote dossier text UI copy so stored proposal text is labeled
+  as automatically extracted and users are directed back to the official PDF
+  for citation.
+- [x] Add a public `/ro/data-health` repair-queue entrypoint backed by
+  deterministic health issues and token-gated review state. The first queues
+  cover suspicious OCR rows, unlinked votes, duplicate identifiers, missing
+  procedure timelines, and weak vote titles; review actions only upsert
+  `data_health_reviews`.
+- [x] Add source-confidence badges, verified extracted-text search, and
+  deterministic section diff scaffolding on bill/vote dossier surfaces.
+- [x] Promote bill text parsing into a shared deterministic parser with typed
+  sections, parser quality, and warnings for missing headings,
+  amendment-only documents, huge sections, duplicate headings, and many short
+  sections.
+- [x] Add a `Structură text` data-health queue from parser warnings, plus
+  shared review mode controls and status filters on `/ro/data-health`.
+- [x] Make bill/vote document confidence badges use live OCR/parser health
+  state, so suspicious stored text appears as `needs_review` unless the
+  document has accepted/reviewed health state.
+- [ ] Manually inspect and repair or review the four suspicious 2026
+  proposal-text rows now surfaced in `/ro/data-health` before any broad 2025
+  extraction.
+- [ ] Run the `0015_data_health_reviews` migration in the production Neon
+  project before using token-gated review controls outside local/dev.
+- [ ] Tune the first data-health query set if the live dataset grows further:
+  current local smoke check loads `/ro/data-health` in roughly 4-5 seconds
+  after query simplification.
+- [ ] Use the completed 2026 text set as the guideline for UI/relevance tuning,
+  then continue selected 2025/2024 bills linked to visible vote pages.

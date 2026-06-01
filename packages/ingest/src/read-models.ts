@@ -11,8 +11,9 @@ export interface ReadModelRefreshSummary {
 export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
   const session = createDbSession();
   try {
-    await session.db.execute(sql`delete from bill_vote_summaries`);
-    await session.db.execute(sql`
+    return await session.db.transaction(async (tx) => {
+      await tx.execute(sql`delete from bill_vote_summaries`);
+      await tx.execute(sql`
       insert into bill_vote_summaries (
         bill_id,
         submitted_on,
@@ -39,8 +40,8 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
       group by b.id
     `);
 
-    await session.db.execute(sql`delete from vote_coverage_summaries`);
-    await session.db.execute(sql`
+      await tx.execute(sql`delete from vote_coverage_summaries`);
+      await tx.execute(sql`
       insert into vote_coverage_summaries (
         vote_id,
         coverage_level,
@@ -68,8 +69,8 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
       group by v.id, ss.status
     `);
 
-    await session.db.execute(sql`delete from member_legislature_activity`);
-    await session.db.execute(sql`
+      await tx.execute(sql`delete from member_legislature_activity`);
+      await tx.execute(sql`
       insert into member_legislature_activity (
         id,
         member_id,
@@ -115,11 +116,11 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
           min(v.held_on) as first_vote_on,
           max(v.held_on) as last_vote_on
         from base b
-        left join individual_votes iv on iv.member_id = b.member_id
-        left join votes v on v.id = iv.vote_id
+        left join votes v on v.chamber = b.chamber
           and v.held_on >= b.starts_on
           and v.held_on < b.ends_on
-          and v.chamber = b.chamber
+        left join individual_votes iv on iv.vote_id = v.id
+          and iv.member_id = b.member_id
         group by b.member_id, b.legislature_id, b.chamber
       ),
       proposal_counts as (
@@ -127,7 +128,7 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
           b.member_id,
           b.legislature_id,
           b.chamber,
-          count(distinct bs.bill_id)::int as proposals,
+          count(distinct be.bill_id)::int as proposals,
           min(be.occurred_on) as first_proposal_on,
           max(be.occurred_on) as last_proposal_on
         from base b
@@ -196,8 +197,8 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
       left join role_counts rc on rc.member_id = b.member_id and rc.legislature_id = b.legislature_id and rc.chamber = b.chamber
     `);
 
-    await session.db.execute(sql`delete from entity_search_index`);
-    await session.db.execute(sql`
+      await tx.execute(sql`delete from entity_search_index`);
+      await tx.execute(sql`
       insert into entity_search_index (
         id,
         entity_type,
@@ -316,19 +317,20 @@ export async function refreshReadModels(): Promise<ReadModelRefreshSummary> {
       order by id, source_date desc nulls last
     `);
 
-    const [billRows, voteRows, memberRows, searchRows] = await Promise.all([
-      session.db.execute<{ count: number }>(sql`select count(*)::int as count from bill_vote_summaries`),
-      session.db.execute<{ count: number }>(sql`select count(*)::int as count from vote_coverage_summaries`),
-      session.db.execute<{ count: number }>(sql`select count(*)::int as count from member_legislature_activity`),
-      session.db.execute<{ count: number }>(sql`select count(*)::int as count from entity_search_index`)
-    ]);
+      const [billRows, voteRows, memberRows, searchRows] = await Promise.all([
+        tx.execute<{ count: number }>(sql`select count(*)::int as count from bill_vote_summaries`),
+        tx.execute<{ count: number }>(sql`select count(*)::int as count from vote_coverage_summaries`),
+        tx.execute<{ count: number }>(sql`select count(*)::int as count from member_legislature_activity`),
+        tx.execute<{ count: number }>(sql`select count(*)::int as count from entity_search_index`)
+      ]);
 
-    return {
-      billVoteSummaries: billRows[0]?.count ?? 0,
-      voteCoverageSummaries: voteRows[0]?.count ?? 0,
-      memberLegislatureActivity: memberRows[0]?.count ?? 0,
-      entitySearchIndex: searchRows[0]?.count ?? 0
-    };
+      return {
+        billVoteSummaries: billRows[0]?.count ?? 0,
+        voteCoverageSummaries: voteRows[0]?.count ?? 0,
+        memberLegislatureActivity: memberRows[0]?.count ?? 0,
+        entitySearchIndex: searchRows[0]?.count ?? 0
+      };
+    });
   } finally {
     await session.close();
   }

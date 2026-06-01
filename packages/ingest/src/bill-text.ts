@@ -4,14 +4,16 @@ import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
 import type { BillDocumentTextChunk, DocumentTextStatus } from "@cumsevoteaza/parliament-model";
 import { uploadDerivedAsset } from "./asset-import";
 
 const execFileAsync = promisify(execFile);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
 export type BillTextImportOptions = {
   billId?: string;
@@ -21,6 +23,27 @@ export type BillTextImportOptions = {
   timeoutMs?: number;
   insecure?: boolean;
 };
+
+export type BillTextBatchOptions = {
+  year?: number;
+  limit?: number;
+  documentKind?: string;
+  includeFailed?: boolean;
+  includeUnsupported?: boolean;
+  persist?: boolean;
+  timeoutMs?: number;
+  insecure?: boolean;
+};
+
+interface BillTextCandidate extends Record<string, unknown> {
+  document_id: string;
+  bill_id: string;
+  title: string;
+  document_kind: string;
+  text_status: DocumentTextStatus;
+  url: string;
+  event_on: string | null;
+}
 
 export async function importBillText(options: BillTextImportOptions) {
   if (!options.billId && !options.documentId) {
@@ -130,6 +153,48 @@ export async function importBillText(options: BillTextImportOptions) {
   }
 }
 
+export async function importBillTextBatch(options: BillTextBatchOptions) {
+  const candidates = await selectBatchCandidates(options);
+  const rows = [];
+  for (const candidate of candidates) {
+    const result = await importBillText({
+      documentId: candidate.document_id,
+      documentKind: options.documentKind,
+      timeoutMs: options.timeoutMs,
+      insecure: options.insecure,
+      persist: options.persist
+    });
+    rows.push({
+      documentId: candidate.document_id,
+      billId: candidate.bill_id,
+      billTitle: candidate.title,
+      documentKind: candidate.document_kind,
+      previousTextStatus: candidate.text_status,
+      officialUrl: candidate.url,
+      result
+    });
+    if (options.persist) await sleep(500);
+  }
+
+  return {
+    filters: {
+      year: options.year,
+      limit: options.limit ?? 10,
+      documentKind: options.documentKind ?? "proposal",
+      includeFailed: Boolean(options.includeFailed),
+      includeUnsupported: Boolean(options.includeUnsupported),
+      persist: Boolean(options.persist)
+    },
+    candidates: candidates.length,
+    stored: rows.filter((row) => row.result.status === "stored").length,
+    unsupported: rows.filter((row) => row.result.status === "unsupported").length,
+    failed: rows.filter((row) => row.result.status === "failed").length,
+    missing: rows.filter((row) => row.result.status === "missing").length,
+    dryRun: rows.filter((row) => row.result.status === "dry_run").length,
+    rows
+  };
+}
+
 async function selectDocument(db: ReturnType<typeof createDbSession>["db"], options: BillTextImportOptions) {
   if (options.documentId) {
     return db.query.documents.findFirst({ where: eq(schema.documents.id, options.documentId) });
@@ -137,6 +202,39 @@ async function selectDocument(db: ReturnType<typeof createDbSession>["db"], opti
   const rows = await db.select().from(schema.documents).where(eq(schema.documents.billId, options.billId!));
   const wantedKind = options.documentKind ?? "proposal";
   return rows.find((row) => row.documentKind === wantedKind) ?? rows[0];
+}
+
+async function selectBatchCandidates(options: BillTextBatchOptions): Promise<BillTextCandidate[]> {
+  const session = createDbSession();
+  const documentKind = options.documentKind ?? "proposal";
+  const limit = options.limit ?? 10;
+  const statusFilter = options.includeUnsupported
+    ? sql`and d.text_status in ('pending', 'failed', 'missing', 'unsupported')`
+    : options.includeFailed
+    ? sql`and d.text_status in ('pending', 'failed', 'missing')`
+    : sql`and d.text_status = 'pending'`;
+  try {
+    return await session.db.execute<BillTextCandidate>(sql`
+      select
+        d.id as document_id,
+        d.bill_id,
+        b.title,
+        d.document_kind,
+        d.text_status,
+        d.url,
+        coalesce(bvs.latest_event_on, bvs.submitted_on) as event_on
+      from documents d
+      join bills b on b.id = d.bill_id
+      left join bill_vote_summaries bvs on bvs.bill_id = b.id
+      where d.document_kind = ${documentKind}
+        ${statusFilter}
+        ${options.year ? sql`and coalesce(bvs.latest_event_on, bvs.submitted_on) >= ${`${options.year}-01-01`}::date and coalesce(bvs.latest_event_on, bvs.submitted_on) < ${`${options.year + 1}-01-01`}::date` : sql``}
+      order by coalesce(bvs.latest_event_on, bvs.submitted_on) desc nulls last, d.bill_id, d.id
+      limit ${limit}
+    `);
+  } finally {
+    await session.close();
+  }
 }
 
 async function fetchAndExtractPdfText(url: string, options: { timeoutMs: number; insecure: boolean }): Promise<
@@ -190,12 +288,34 @@ export function chunkText(text: string, size = 1800): string[] {
 async function extractPdfText(bytes: Buffer): Promise<string> {
   const pythonText = await extractPdfTextWithPython(bytes);
   if (pythonText && pythonText.length > 40) return pythonText;
+  const ocrText = await extractPdfTextWithMacVision(bytes);
+  if (ocrText && ocrText.length > 40) return ocrText;
   const raw = bytes.toString("latin1");
   const literalStrings = [...raw.matchAll(/\(([^()]{3,1000})\)\s*Tj/g)].map((match) => decodePdfLiteral(match[1] ?? ""));
   const arrayStrings = [...raw.matchAll(/\[((?:\s*\([^()]{1,1000}\)\s*-?\d*\.?\d*)+)\]\s*TJ/g)].flatMap((match) =>
     [...(match[1] ?? "").matchAll(/\(([^()]{1,1000})\)/g)].map((part) => decodePdfLiteral(part[1] ?? ""))
   );
   return cleanExtractedText([...literalStrings, ...arrayStrings].join(" "));
+}
+
+async function extractPdfTextWithMacVision(bytes: Buffer): Promise<string | undefined> {
+  const scriptPath = path.join(repoRoot, "tools/pdf-ocr/extract_pdf_text.swift");
+  if (!existsSync(scriptPath)) return undefined;
+  const tempDir = await mkdtemp(path.join(tmpdir(), "cumvoteaza-bill-ocr-"));
+  const pdfPath = path.join(tempDir, "document.pdf");
+  try {
+    await writeFile(pdfPath, bytes);
+    const { stdout } = await execFileAsync("swift", [scriptPath, pdfPath], {
+      maxBuffer: 20 * 1024 * 1024,
+      timeout: 120_000
+    });
+    const text = cleanExtractedText(stdout);
+    return text.length > 40 ? text : undefined;
+  } catch {
+    return undefined;
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
 }
 
 async function extractPdfTextWithPython(bytes: Buffer): Promise<string | undefined> {
@@ -243,6 +363,10 @@ function decodePdfLiteral(value: string): string {
     .replace(/\\r/g, "\n")
     .replace(/\\t/g, " ")
     .replace(/\\([()\\])/g, "$1");
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function updateDocumentTextStatus(

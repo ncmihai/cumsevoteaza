@@ -26,6 +26,8 @@
     "ingest:bill-documents:classify": "npm --workspace @cumsevoteaza/ingest run bill-documents:classify --",
     "ingest:bill-dossiers:refresh": "npm --workspace @cumsevoteaza/ingest run bill-dossiers:refresh --",
     "ingest:bill-text": "npm --workspace @cumsevoteaza/ingest run bill-text --",
+    "ingest:bill-text:batch": "npm --workspace @cumsevoteaza/ingest run bill-text:batch --",
+    "ingest:audit:bill-text-quality": "npm --workspace @cumsevoteaza/ingest run audit:bill-text-quality --",
     "ingest:senate:vote": "npm --workspace @cumsevoteaza/ingest run senate:vote --",
     "ingest:chamber:vote": "npm --workspace @cumsevoteaza/ingest run chamber:vote --",
     "ingest:senate:roster": "npm --workspace @cumsevoteaza/ingest run senate:roster --",

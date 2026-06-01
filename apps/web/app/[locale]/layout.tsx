@@ -42,6 +42,9 @@ export default async function LocaleLayout({
               <Link className="rounded-md px-3 py-2 hover:bg-[#309898]/10 hover:text-[#0c6464]" href={`/${locale}/compozitii`}>
                 {messages.nav.compositions}
               </Link>
+              <Link className="rounded-md px-3 py-2 hover:bg-[#309898]/10 hover:text-[#0c6464]" href={`/${locale}/data-health`}>
+                {messages.nav.dataHealth}
+              </Link>
               <LocaleSwitcher locale={locale} />
             </nav>
           </div>

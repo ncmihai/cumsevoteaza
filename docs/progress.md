@@ -2622,3 +2622,134 @@ Verification:
     requiring lifecycle review, `30` unlinked procedural/source-limited votes,
     and `9` weak amendment vote titles that should use linked bill context
     rather than overwriting the raw vote title.
+
+## 2026-05-30 — OCR-Backed Bill Text Extraction
+
+- Added `ingest:bill-text:batch`, a capped batch command for proposal text
+  extraction. It supports `--year`, `--limit`, `--document-kind`,
+  `--include-failed`, `--include-unsupported`, `--persist`, `--insecure`, and
+  `--timeout-ms`, so scanned rows can be retried after parser/OCR fixes.
+- Added a local macOS Vision OCR fallback for official CDEP PDFs. The first
+  test exposed a renderer flip problem: Quick Look showed `pl436.pdf` was
+  readable, while OCR output was garbage. After correcting the PDF render
+  transform, the same file produced readable Romanian legal text.
+- Retried `doc-bill-pl-x-400-2026-2` directly. It stored
+  `asset-bill-text-doc-bill-pl-x-400-2026-2` with `5800` bytes and `4`
+  searchable chunks.
+- Ran three capped OCR-backed 2026 proposal batches:
+  - First retry batch stored `5/5` previously unsupported documents.
+  - Second batch stored `10/10` documents.
+  - Third batch stored `10/10` documents.
+- Current result from this pass: `26` additional proposal text artifacts were
+  stored without saving official PDFs. Official PDFs remain linked to CDEP;
+  Digi stores only derived `.txt` artifacts, while Neon stores previews and
+  searchable chunks.
+- Completed the rest of the 2026 proposal-text queue in conservative capped
+  batches:
+  - `50/50` stored in the first large batch.
+  - `50/50` stored in the second large batch.
+  - `50/50` stored in the third large batch.
+  - `50/50` stored in the fourth large batch.
+  - `9/9` stored in the final small batch.
+- A final dry-run check with `--year=2026 --include-unsupported` returned
+  `0` remaining pending/failed/missing/unsupported proposal-text candidates.
+  The completed 2026 text set is now available as the reference slice for
+  bill-text UI tuning and parser quality review.
+
+## 2026-06-01 — Text Quality And Activity Reliability Pass
+
+- Fixed `member_legislature_activity` refresh SQL so vote counts only include
+  votes inside the member's mandate legislature/chamber window. The previous
+  join shape could count a member's vote choice before the vote-date filter was
+  applied.
+- Tightened proposal counts in the same read model so a sponsored bill is only
+  counted when the bill has an event inside the legislature window.
+- Wrapped `refreshReadModels()` in a database transaction so the delete/rebuild
+  sequence cannot leave public read tables partially refreshed if a later step
+  fails.
+- Added `ingest:audit:bill-text-quality`, a read-only audit command for stored
+  bill text. It flags suspicious rows using chunk count, text length, legal
+  vocabulary hits, non-text/noise ratio, and repeated-line ratio.
+- Smoke-ran the new audit on a capped 2026 proposal slice:
+  `npm run ingest:audit:bill-text-quality -- --year=2026 --limit=10 --suspicious-only`.
+  Result: `10` scanned, `0` suspicious rows in that sample.
+- Ran the same audit over the full current 2026 stored proposal-text slice with
+  `--limit=300 --suspicious-only`. Result: `237` scanned, `4` suspicious:
+  `3` very short text rows and `1` high repeated-line row. No rows were flagged
+  for missing chunks, low legal vocabulary, or high noise ratio.
+- Updated bill and vote dossier text expansion copy so proposal documents use
+  `Vezi textul proiectului` and expanded text carries an automatic-extraction
+  caveat pointing users back to the official PDF for citation.
+
+## 2026-06-01 — Public Data Health And Bill Text Review Layer
+
+- Added `data_health_reviews` plus migration `0015_data_health_reviews`.
+  Review rows are keyed by deterministic issue keys and only store status,
+  reviewer, note, and timestamps; they do not mutate canonical bills, votes,
+  documents, or text chunks.
+- Added `/ro/data-health` and `/api/data-health` as the public repair-queue
+  entrypoint. Current queues cover suspicious OCR rows, votes without linked
+  bills, duplicate lifecycle identifiers, bills with documents but no
+  procedure timeline, and weak/procedural vote titles. Each row shows official
+  links, app links, candidates where available, metrics, status, and the
+  suggested CLI/manual action.
+- Added `/api/data-health/reviews`, protected by
+  `Authorization: Bearer DATA_HEALTH_REVIEW_TOKEN`. The endpoint validates
+  status/type payloads and upserts review state only.
+- Added source-confidence badges and shared confidence rules for source
+  snapshots and extracted document text. Bill pages, vote bill dossiers, and
+  official document lists now expose whether a source is parsed, partial,
+  OCR-derived, accepted OCR, missing, unsupported, or needs review.
+- Added `/api/bills/[id]/text-search` plus a bill-page search box. Search uses
+  only stored derived text chunks and excludes OCR-suspicious documents unless
+  their review state is `accepted` or `reviewed`.
+- Added deterministic legal-section parsing and adjacent document comparison
+  helpers for the collapsed bill-page “Ce s-a schimbat” panel. The v1 diff is
+  heuristic and auditable: no LLM summaries, only section added/removed/
+  changed/unchanged counts and capped word-level changes.
+- Extended vote/bill context surfaces with existing vote-date data: nominal
+  vote tables now label groups as vote-date groups, vote bill dossiers expose
+  sponsor alignment chips, and bill/vote source badges show confidence state.
+- Verification passed:
+  `npm run typecheck`, `npm run test -- --runInBand`, and `npm run build`.
+  Local browser/API smoke checks loaded `/ro/data-health`, confirmed the
+  review API rejects missing tokens with `401`, loaded a bill page with the
+  new text-search/confidence UI, and confirmed text search returns through the
+  public API. The only browser console error was the pre-existing missing
+  favicon `404`.
+
+## 2026-06-01 — Bill Parser And Review Workflow Pass
+
+- Promoted legal text section parsing into `parseBillText()` in the shared
+  parliament model. The parser emits `bill-parser-v1`, typed sections
+  (`preamble`, `unique_article`, `article`, `amendment`, `point`,
+  `paragraph`, `annex`, `unknown`), normalized headings, offsets, quality,
+  and warnings.
+- Rewired deterministic document comparison to use the shared parser instead
+  of a local regex-only splitter. Existing “Ce s-a schimbat” output remains
+  deterministic and auditable, but now has a parser foundation that can be
+  improved independently.
+- Added parser warning coverage to data health as a new `Structură text` /
+  `Text structure` queue. It currently flags rows such as long documents with
+  no structural headings and amendment-only documents, which are the exact
+  rows where a raw proposal-vs-report diff would be misleading.
+- Reworked `/ro/data-health` review UX:
+  - one review token input at the top of the page instead of per-row tokens;
+  - one reviewer input reused across rows;
+  - status filter across all queues (`open`, `reviewed`, `ignored`,
+    `accepted`, `fixed`, or all);
+  - row review controls remain token-gated and still only upsert review state.
+- Tightened bill/vote document confidence badges to reuse live OCR/parser
+  health state. Stored text with open OCR/parser warnings now displays as
+  `needs_review` unless the document has an accepted or reviewed health
+  state, instead of relying only on `documents.text_status`.
+- Added tests for the parser and warning classifier alongside the existing
+  diff and health-key tests. Verification passed again:
+  `npm run typecheck`, `npm run test -- --runInBand`, and `npm run build`.
+- Local smoke checks:
+  - `/ro/data-health` returned `200`;
+  - `/api/data-health` returned `200`;
+  - missing review token returned `401`;
+  - browser snapshot confirmed `Mod review`, `Structură text`, status filter,
+    and parser-warning rows render. The only browser noise was dev-only
+    `127.0.0.1` HMR origin blocking and the existing missing favicon `404`.
