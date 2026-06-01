@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { eq, sql } from "drizzle-orm";
 import { createDbSession } from "@cumsevoteaza/db";
 import * as schema from "@cumsevoteaza/db";
-import type { ChamberId } from "@cumsevoteaza/parliament-model";
+import { dataHealthIssueKey, type ChamberId } from "@cumsevoteaza/parliament-model";
 import { deleteStoredAssets, importStoredAssetsFromInventory, type AssetType } from "./asset-import";
 import { importBillText, importBillTextBatch } from "./bill-text";
 import { auditBillTextQuality } from "./bill-text-quality-audit";
@@ -534,6 +534,50 @@ async function main() {
     return;
   }
 
+  if (command === "repair:link-vote-bill") {
+    const result = await repairLinkVoteBill({
+      voteId: requiredFlag("vote-id"),
+      billId: requiredFlag("bill-id"),
+      persist: hasFlag("persist"),
+      allowWeakMatch: hasFlag("allow-weak-match"),
+      allowRelink: hasFlag("allow-relink"),
+      reviewer: flag("reviewer"),
+      note: flag("note")
+    });
+    await writeImport("repair-link-vote-bill", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    if (!hasFlag("persist")) {
+      console.log("Dry run only. Re-run with --persist to update vote.bill_id and mark the data-health issue fixed.");
+    }
+    return;
+  }
+
+  if (command === "repair:refresh-missing-procedure") {
+    const result = await refreshDeputiesBillDossiers({
+      billId: requiredFlag("bill-id"),
+      year: numberFlag("year"),
+      limit: 1,
+      persist: hasFlag("persist"),
+      allowIdMismatch: hasFlag("allow-id-mismatch")
+    });
+    await writeImport("repair-refresh-missing-procedure", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    if (!hasFlag("persist")) {
+      console.log("Dry run only. Re-run with --persist to refetch and persist the bill dossier.");
+    }
+    return;
+  }
+
+  if (command === "repair:duplicate-bill-plan") {
+    const result = await repairDuplicateBillPlan({
+      primaryBillId: requiredFlag("primary-bill-id"),
+      duplicateBillId: requiredFlag("duplicate-bill-id")
+    });
+    await writeImport("repair-duplicate-bill-plan", result, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
   if (command === "refresh-read-models") {
     console.log(JSON.stringify(await refreshReadModels(), null, 2));
     return;
@@ -543,10 +587,41 @@ async function main() {
 }
 
 interface RefreshDeputiesDossiersOptions {
+  billId?: string;
   year?: number;
   limit: number;
   persist: boolean;
   allowIdMismatch: boolean;
+}
+
+interface RepairLinkVoteBillOptions {
+  voteId: string;
+  billId: string;
+  persist: boolean;
+  allowWeakMatch: boolean;
+  allowRelink: boolean;
+  reviewer?: string;
+  note?: string;
+}
+
+interface RepairDuplicateBillPlanOptions {
+  primaryBillId: string;
+  duplicateBillId: string;
+}
+
+interface RepairVoteRow extends Record<string, unknown> {
+  id: string;
+  title: string;
+  held_on: string;
+  bill_id: string | null;
+  source_url: string | null;
+}
+
+interface RepairBillRow extends Record<string, unknown> {
+  id: string;
+  slug: string;
+  title: string;
+  identifiers: Record<string, string>;
 }
 
 interface RefreshDeputiesDossierCandidate extends Record<string, unknown> {
@@ -607,6 +682,7 @@ async function refreshDeputiesBillDossiers(options: RefreshDeputiesDossiersOptio
 
   return {
     filters: {
+      billId: options.billId,
       year: options.year,
       limit: options.limit,
       persist: options.persist,
@@ -640,6 +716,7 @@ async function loadDeputiesDossierRefreshCandidates(options: RefreshDeputiesDoss
       left join bill_procedure_steps bps on bps.bill_id = b.id
       left join documents d on d.bill_id = b.id
       where b.identifiers ? 'deputies'
+        ${options.billId ? sql`and b.id = ${options.billId}` : sql``}
         ${options.year ? sql`and coalesce(bvs.latest_event_on, bvs.submitted_on) >= ${`${options.year}-01-01`}::date and coalesce(bvs.latest_event_on, bvs.submitted_on) < ${`${options.year + 1}-01-01`}::date` : sql``}
       group by b.id, b.title, bvs.latest_event_on, bvs.submitted_on
       having count(distinct bps.id) = 0
@@ -650,6 +727,159 @@ async function loadDeputiesDossierRefreshCandidates(options: RefreshDeputiesDoss
   } finally {
     await session.close();
   }
+}
+
+async function repairLinkVoteBill(options: RepairLinkVoteBillOptions) {
+  const session = createDbSession();
+  try {
+    const [voteRows, billRows] = await Promise.all([
+      session.db.execute<RepairVoteRow>(sql`
+        select v.id, v.title, v.held_on, v.bill_id, ss.source_url
+        from votes v
+        left join source_snapshots ss on ss.id = v.source_snapshot_id
+        where v.id = ${options.voteId}
+        limit 1
+      `),
+      session.db.execute<RepairBillRow>(sql`
+        select id, slug, title, identifiers
+        from bills
+        where id = ${options.billId}
+        limit 1
+      `)
+    ]);
+    const vote = voteRows[0];
+    const bill = billRows[0];
+    if (!vote) return { status: "missing_vote", options };
+    if (!bill) return { status: "missing_bill", options, vote };
+    if (vote.bill_id && vote.bill_id !== bill.id && !options.allowRelink) {
+      return {
+        status: "blocked_existing_link",
+        reason: "Vote already links to a different bill. Re-run with --allow-relink only after manual review.",
+        vote,
+        bill
+      };
+    }
+
+    const evidence = voteBillEvidence(vote, bill);
+    if (!evidence.hasStrongMatch && !options.allowWeakMatch) {
+      return {
+        status: "blocked_weak_match",
+        reason: "No official identifier from the vote title/source matched the candidate bill identifiers. Re-run with --allow-weak-match only after manual review.",
+        vote,
+        bill,
+        evidence
+      };
+    }
+
+    const issueKey = dataHealthIssueKey({ type: "vote-unlinked", entityId: vote.id });
+    const now = new Date();
+    if (options.persist) {
+      await session.db.transaction(async (tx) => {
+        await tx.update(schema.votes).set({ billId: bill.id }).where(eq(schema.votes.id, vote.id));
+        await tx
+          .insert(schema.dataHealthReviews)
+          .values({
+            id: `data-health-review-${issueKey.replace(/[^a-zA-Z0-9._-]+/g, "-")}`,
+            issueKey,
+            issueType: "vote-unlinked",
+            entityType: "vote",
+            entityId: vote.id,
+            status: "fixed",
+            note: options.note ?? `Linked to ${bill.id} via repair:link-vote-bill.`,
+            reviewer: options.reviewer ?? "cli",
+            reviewedAt: now,
+            updatedAt: now
+          })
+          .onConflictDoUpdate({
+            target: schema.dataHealthReviews.issueKey,
+            set: {
+              issueType: "vote-unlinked",
+              entityType: "vote",
+              entityId: vote.id,
+              status: "fixed",
+              note: options.note ?? `Linked to ${bill.id} via repair:link-vote-bill.`,
+              reviewer: options.reviewer ?? "cli",
+              reviewedAt: now,
+              updatedAt: now
+            }
+          });
+      });
+      await refreshReadModels();
+    }
+
+    return {
+      status: options.persist ? "fixed" : "dry_run",
+      persist: options.persist,
+      vote: {
+        id: vote.id,
+        title: vote.title,
+        heldOn: vote.held_on,
+        previousBillId: vote.bill_id,
+        nextBillId: bill.id,
+        sourceUrl: vote.source_url
+      },
+      bill: {
+        id: bill.id,
+        slug: bill.slug,
+        title: bill.title,
+        identifiers: bill.identifiers
+      },
+      evidence,
+      issueKey,
+      nextAction: options.persist
+        ? "Read models refreshed and data-health issue marked fixed."
+        : "Review evidence, then re-run with --persist if the link is correct."
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+async function repairDuplicateBillPlan(options: RepairDuplicateBillPlanOptions) {
+  const session = createDbSession();
+  try {
+    const rows = await session.db.execute<Record<string, unknown>>(sql`
+      select
+        b.id,
+        b.slug,
+        b.title,
+        b.identifiers,
+        (select count(*)::int from bill_events be where be.bill_id = b.id) as events,
+        (select count(*)::int from bill_procedure_steps bps where bps.bill_id = b.id) as procedure_steps,
+        (select count(*)::int from documents d where d.bill_id = b.id) as documents,
+        (select count(*)::int from bill_sponsors bs where bs.bill_id = b.id) as sponsors,
+        (select count(*)::int from votes v where v.bill_id = b.id) as votes,
+        (select count(*)::int from bill_document_text_chunks c where c.bill_id = b.id) as text_chunks
+      from bills b
+      where b.id in (${options.primaryBillId}, ${options.duplicateBillId})
+      order by b.id
+    `);
+    const presentIds = new Set(rows.map((row) => String(row.id)));
+    return {
+      status: presentIds.has(options.primaryBillId) && presentIds.has(options.duplicateBillId) ? "plan_only" : "missing_bill",
+      warning: "No automatic merge is performed. This command only reports dependent rows so a merge migration can be reviewed explicitly.",
+      primaryBillId: options.primaryBillId,
+      duplicateBillId: options.duplicateBillId,
+      rows,
+      suggestedNextStep: "If this is a real duplicate lifecycle row, create a reviewed migration that rewrites dependent foreign keys to the primary bill and marks the duplicate issue fixed."
+    };
+  } finally {
+    await session.close();
+  }
+}
+
+function voteBillEvidence(vote: RepairVoteRow, bill: RepairBillRow) {
+  const voteIdentifiers = extractedIdentifiers(`${vote.title} ${vote.source_url ?? ""}`);
+  const billIdentifiers = Object.values(bill.identifiers ?? {});
+  const matches = voteIdentifiers.filter((voteIdentifier) =>
+    billIdentifiers.some((billIdentifier) => normalizeIdentifier(voteIdentifier) === normalizeIdentifier(billIdentifier))
+  );
+  return {
+    voteIdentifiers,
+    billIdentifiers,
+    matches,
+    hasStrongMatch: matches.length > 0
+  };
 }
 
 function sleep(ms: number) {
@@ -965,6 +1195,12 @@ function legislatureFromProfileUrl(url: string): ParsedRoster["legislature"] | u
 function flag(name: string): string | undefined {
   const prefix = `--${name}=`;
   return process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
+}
+
+function requiredFlag(name: string): string {
+  const value = flag(name);
+  if (!value) throw new Error(`Missing required --${name}=... flag.`);
+  return value;
 }
 
 function hasFlag(name: string): boolean {
@@ -1371,6 +1607,14 @@ function listFlag(name: string): string[] | undefined {
     .map((item) => item.trim())
     .filter(Boolean);
   return items.length > 0 ? items : undefined;
+}
+
+function extractedIdentifiers(value: string): string[] {
+  return [...new Set([...value.matchAll(/\b(?:PL-x|PLX|L|B|BP)\s*[-]?\s*\d+\/\d{4}\b/gi)].map((match) => match[0].replace(/\s+/g, " ").trim()))];
+}
+
+function normalizeIdentifier(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, "").replace("plx", "pl-x");
 }
 
 function numberListFlag(name: string): number[] | undefined {

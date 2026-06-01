@@ -1268,5 +1268,10 @@ implementation steps.
 - [ ] Tune the first data-health query set if the live dataset grows further:
   current local smoke check loads `/ro/data-health` in roughly 4-5 seconds
   after query simplification.
+- [x] Add guarded repair CLI entrypoints for the data-health queues:
+  `repair:link-vote-bill`, `repair:refresh-missing-procedure`, and
+  read-only `repair:duplicate-bill-plan`. Vote linking is dry-run by default,
+  blocks weak matches unless explicitly reviewed, and marks the data-health
+  issue fixed only when persisted.
 - [ ] Use the completed 2026 text set as the guideline for UI/relevance tuning,
   then continue selected 2025/2024 bills linked to visible vote pages.

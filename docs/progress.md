@@ -2753,3 +2753,29 @@ Verification:
   - browser snapshot confirmed `Mod review`, `Structură text`, status filter,
     and parser-warning rows render. The only browser noise was dev-only
     `127.0.0.1` HMR origin blocking and the existing missing favicon `404`.
+
+## 2026-06-01 — Guarded Repair CLI Commands
+
+- Added explicit repair entrypoints that keep web review actions non-mutating:
+  - `npm run repair:link-vote-bill -- --vote-id=... --bill-id=...`
+  - `npm run repair:refresh-missing-procedure -- --bill-id=...`
+  - `npm run repair:duplicate-bill-plan -- --primary-bill-id=... --duplicate-bill-id=...`
+- `repair:link-vote-bill` is dry-run by default. It validates that the vote
+  and bill exist, refuses to overwrite an existing different `vote.bill_id`
+  unless `--allow-relink` is supplied, and blocks weak matches unless an
+  official identifier from the vote title/source matches the candidate bill or
+  `--allow-weak-match` is supplied after manual review. With `--persist`, it
+  updates `vote.bill_id`, marks `vote-unlinked:<voteId>` fixed in
+  `data_health_reviews`, and refreshes read models.
+- `repair:refresh-missing-procedure` reuses the existing guarded CDEP dossier
+  refresh path, but scopes it to a single `--bill-id`. It still checks parsed
+  bill ID mismatches unless `--allow-id-mismatch` is supplied.
+- `repair:duplicate-bill-plan` is intentionally read-only. It reports
+  dependent row counts for the primary and duplicate bill so any lifecycle
+  merge can be reviewed as a separate explicit migration.
+- Data-health row suggested actions now point to these repair commands where
+  appropriate instead of vague manual instructions.
+- Dry-run smoke check:
+  `npm run repair:link-vote-bill -- --vote-id=vote-deputies-https-www-cdep-ro-ords-pls-steno-evot2015-nominal-idv-37014 --bill-id=bill-l129-2026`
+  correctly returned `blocked_weak_match` because the presence-check vote has
+  no official identifier evidence tying it to `L129/2026`.

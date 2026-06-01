@@ -326,7 +326,7 @@ function ocrIssues(row: OcrRow, reviews: Map<string, ReviewRow>): HealthIssue[] 
       href: `/ro/bills/${row.bill_slug}`,
       officialUrl: row.official_url,
       reason,
-      action: `Inspectați PDF-ul oficial și, dacă e nevoie, rulați: npm run ingest:bill-text -- --document=${row.document_id} --persist --insecure`,
+      action: `Inspectați PDF-ul oficial și, dacă e nevoie, rulați: npm run ingest:bill-text -- --document=${row.document_id} --persist --insecure. Dacă textul este corect, marcați issue-ul accepted/reviewed.`,
       status: "open",
       candidates: [],
       metrics: ocrMetrics(row)
@@ -373,7 +373,9 @@ function voteIssue(row: VoteIssueRow, billIndex: BillIndexRow[], reviews: Map<st
     href: `/ro/votes/${row.vote_id}`,
     officialUrl: row.source_url ?? undefined,
     reason: type === "vote-unlinked" ? "Vot importat fără proiect legat." : "Titlu procedural/slab; contextul proiectului ar trebui afișat separat.",
-    action: type === "vote-unlinked" ? "Verificați candidații înainte de a lega vote.bill_id." : "Păstrați titlul brut și afișați contextul proiectului legat.",
+      action: type === "vote-unlinked"
+        ? candidateActionForVote(row, candidates)
+        : "Păstrați titlul brut și afișați contextul proiectului legat.",
     status: "open",
     candidates,
     metrics: { heldOn: row.held_on, candidates: candidates.length }
@@ -389,7 +391,7 @@ function duplicateIssue(row: DuplicateIdentifierRow, reviews: Map<string, Review
     entityId: row.identifier_key,
     title: row.identifier_key,
     reason: "Mai multe proiecte au același identificator oficial.",
-    action: "Revizuiți manual dacă este un ciclu legislativ comun sau o dublură care trebuie unită.",
+    action: duplicateRepairAction(row),
     status: "open",
     candidates: row.rows.map((bill) => ({ id: bill.id, title: bill.title, href: `/ro/bills/${bill.slug}`, reason: "same identifier" })),
     metrics: { rows: row.rows.length }
@@ -407,7 +409,7 @@ function missingProcedureIssue(row: MissingProcedureRow, reviews: Map<string, Re
     href: `/ro/bills/${row.slug}`,
     officialUrl: row.source_urls[0],
     reason: "Proiectul are documente, dar nu are pași de procedură structurați.",
-    action: `Rulați în batch controlat: npm run ingest:bill-dossiers:refresh -- --limit=1 --persist`,
+    action: `Rulați reparația punctuală: npm run repair:refresh-missing-procedure -- --bill-id=${row.bill_id} --persist`,
     status: "open",
     candidates: [],
     metrics: { documents: Number(row.documents) }
@@ -441,6 +443,18 @@ function candidatesForVote(vote: VoteIssueRow, bills: BillIndexRow[]): HealthCan
     .filter((bill) => ids.some((id) => Object.values(bill.identifiers ?? {}).some((value) => normalizeIdentifier(value) === normalizeIdentifier(id))))
     .slice(0, 5)
     .map((bill) => ({ id: bill.bill_id, title: bill.title, href: `/ro/bills/${bill.slug}`, reason: "identifier match" }));
+}
+
+function candidateActionForVote(vote: VoteIssueRow, candidates: HealthCandidate[]): string {
+  const first = candidates[0];
+  if (!first) return "Nu există candidat puternic. Nu legați automat; inspectați sursa oficială și titlul votului.";
+  return `Verificați candidatul, apoi rulați: npm run repair:link-vote-bill -- --vote-id=${vote.vote_id} --bill-id=${first.id} --persist`;
+}
+
+function duplicateRepairAction(row: DuplicateIdentifierRow): string {
+  const [primary, duplicate] = row.rows;
+  if (!primary || !duplicate) return "Revizuiți manual dacă este un ciclu legislativ comun sau o dublură care trebuie unită.";
+  return `Generați planul fără mutații: npm run repair:duplicate-bill-plan -- --primary-bill-id=${primary.id} --duplicate-bill-id=${duplicate.id}`;
 }
 
 function ocrReasons(row: OcrRow): string[] {

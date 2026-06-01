@@ -47,6 +47,9 @@
     "import:pending": "tsx src/cli.ts import:pending",
     "audit:current-legislature": "tsx src/cli.ts audit:current-legislature",
     "audit:dossier-reconciliation": "tsx src/cli.ts audit:dossier-reconciliation",
+    "repair:link-vote-bill": "tsx src/cli.ts repair:link-vote-bill",
+    "repair:refresh-missing-procedure": "tsx src/cli.ts repair:refresh-missing-procedure",
+    "repair:duplicate-bill-plan": "tsx src/cli.ts repair:duplicate-bill-plan",
     "refresh-read-models": "tsx src/cli.ts refresh-read-models"
   },
   "dependencies": {
